@@ -61,3 +61,6 @@ AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. I
 
 ## Manual Verification
 - After `npm run build`, load `build/chrome-mv3-prod` in `chrome://extensions` as an unpacked extension.
+- After reloading the extension in `chrome://extensions`, also reload the target web page. Existing tabs can keep an older injected content-script instance until the page is refreshed.
+- If a content-script change still does not appear after extension reload + page reload, close and reopen the tab before concluding the build did not take effect.
+- For background/service-worker changes, verify the updated worker from the extension's service worker inspector before testing requests.
