@@ -1,5 +1,7 @@
-import { useMemo, useState, type CSSProperties } from "react"
+import { useMemo, useState } from "react"
 
+import { useUiTheme } from "~/shared/ui/theme"
+import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiSpace, uiTypography } from "~/shared/ui/tokens"
 import type { BuiltInActionId, CustomActionTemplate } from "~/shared/types"
 
 interface Props {
@@ -22,7 +24,10 @@ export default function SelectionToolbar({
   onCustomAction,
   onFreeSubmit
 }: Props) {
+  const theme = useUiTheme()
   const [freeInput, setFreeInput] = useState("")
+  const [focused, setFocused] = useState<"input" | string | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
 
   const top = useMemo(() => {
     if (!anchor) {
@@ -30,10 +35,11 @@ export default function SelectionToolbar({
     }
 
     const viewportHeight = window.innerHeight
-    const preferredTop = anchor.y - 56
-    const maxTop = Math.max(8, viewportHeight - 56)
+    const preferredTop = anchor.y - uiLayout.toolbar.yOffset
+    const minTop = uiLayout.edgeInset
+    const maxTop = Math.max(minTop, viewportHeight - uiLayout.toolbar.yOffset)
 
-    return Math.min(Math.max(8, preferredTop), maxTop)
+    return Math.min(Math.max(minTop, preferredTop), maxTop)
   }, [anchor])
 
   const left = useMemo(() => {
@@ -42,14 +48,28 @@ export default function SelectionToolbar({
     }
 
     const viewportWidth = window.innerWidth
-    const preferredLeft = anchor.x - 160
-    const maxLeft = Math.max(8, viewportWidth - 328)
+    const preferredLeft = anchor.x - uiLayout.toolbar.preferredXOffset
+    const minLeft = uiLayout.edgeInset
+    const maxLeft = Math.max(minLeft, viewportWidth - uiLayout.toolbar.widthEstimate)
 
-    return Math.min(Math.max(8, preferredLeft), maxLeft)
+    return Math.min(Math.max(minLeft, preferredLeft), maxLeft)
   }, [anchor])
 
   if (!visible || !anchor) {
     return null
+  }
+
+  const baseButtonStyle = {
+    border: "none",
+    borderRadius: uiRadius.pill,
+    padding: `${uiSpace[4]}px ${uiSpace[12]}px`,
+    fontSize: uiTypography.fontSize.sm,
+    fontWeight: uiTypography.fontWeight.semibold,
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+    color: theme.text.inverse,
+    background: theme.brand.primary,
+    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
   }
 
   return (
@@ -60,37 +80,72 @@ export default function SelectionToolbar({
         left,
         display: "flex",
         alignItems: "center",
-        gap: 8,
+        gap: uiSpace[8],
         pointerEvents: "auto",
-        background: "#111827",
-        color: "#ffffff",
-        borderRadius: 999,
-        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
-        padding: "8px 10px",
-        fontSize: 12,
-        fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-        zIndex: 2147483647,
+        background: theme.bg.surface,
+        color: theme.text.primary,
+        borderRadius: uiRadius.pill,
+        border: `1px solid ${theme.border.default}`,
+        boxShadow: uiShadow.md,
+        padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+        fontSize: uiTypography.fontSize.sm,
+        fontFamily: uiTypography.fontFamily,
+        zIndex: uiLayer.overlay,
         maxWidth: "calc(100vw - 16px)",
         overflowX: "auto"
       }}>
       <span
         style={{
-          fontWeight: 700,
-          padding: "0 4px",
+          fontWeight: uiTypography.fontWeight.bold,
+          padding: `0 ${uiSpace[4]}px`,
+          color: theme.text.secondary,
           whiteSpace: "nowrap"
         }}>
         AI Help Me
       </span>
 
-      <button style={buttonStyle} onClick={() => onBuiltInAction("explain")}>
+      <button
+        style={{
+          ...baseButtonStyle,
+          background: hovered === "built-in-explain" ? theme.brand.primaryHover : theme.brand.primary,
+          boxShadow:
+            focused === "built-in-explain" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
+        }}
+        onMouseEnter={() => setHovered("built-in-explain")}
+        onMouseLeave={() => setHovered(null)}
+        onFocus={() => setFocused("built-in-explain")}
+        onBlur={() => setFocused(null)}
+        onClick={() => onBuiltInAction("explain")}>
         解释
       </button>
-      <button style={buttonStyle} onClick={() => onBuiltInAction("translate")}>
+      <button
+        style={{
+          ...baseButtonStyle,
+          background: hovered === "built-in-translate" ? theme.brand.primaryHover : theme.brand.primary,
+          boxShadow:
+            focused === "built-in-translate" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
+        }}
+        onMouseEnter={() => setHovered("built-in-translate")}
+        onMouseLeave={() => setHovered(null)}
+        onFocus={() => setFocused("built-in-translate")}
+        onBlur={() => setFocused(null)}
+        onClick={() => onBuiltInAction("translate")}>
         翻译
       </button>
 
       {customActions.map((item) => (
-        <button key={item.id} style={buttonStyle} onClick={() => onCustomAction(item.template)}>
+        <button
+          key={item.id}
+          style={{
+            ...baseButtonStyle,
+            background: hovered === item.id ? theme.brand.primaryHover : theme.brand.primary,
+            boxShadow: focused === item.id ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
+          }}
+          onMouseEnter={() => setHovered(item.id)}
+          onMouseLeave={() => setHovered(null)}
+          onFocus={() => setFocused(item.id)}
+          onBlur={() => setFocused(null)}
+          onClick={() => onCustomAction(item.template)}>
           {item.label}
         </button>
       ))}
@@ -98,6 +153,8 @@ export default function SelectionToolbar({
       <input
         value={freeInput}
         onChange={(event) => setFreeInput(event.target.value)}
+        onFocus={() => setFocused("input")}
+        onBlur={() => setFocused(null)}
         onKeyDown={(event) => {
           if (event.key !== "Enter") {
             return
@@ -111,29 +168,22 @@ export default function SelectionToolbar({
           onFreeSubmit(value)
           setFreeInput("")
         }}
+        aria-label="输入自定义需求"
         placeholder="输入需求后回车"
         style={{
-          border: "1px solid rgba(255,255,255,0.3)",
-          background: "transparent",
-          color: "#ffffff",
-          borderRadius: 999,
-          padding: "4px 10px",
+          border: `1px solid ${focused === "input" ? theme.border.strong : theme.border.default}`,
+          background: theme.bg.surfaceAlt,
+          color: theme.text.primary,
+          borderRadius: uiRadius.pill,
+          padding: `${uiSpace[4]}px ${uiSpace[12]}px`,
+          boxShadow: focused === "input" ? `0 0 0 3px ${theme.bg.overlay}` : "none",
           outline: "none",
-          minWidth: 140,
-          fontSize: 12
+          minWidth: uiLayout.toolbar.inputMinWidth,
+          fontSize: uiTypography.fontSize.sm,
+          fontFamily: "inherit",
+          transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
         }}
       />
     </div>
   )
-}
-
-const buttonStyle: CSSProperties = {
-  border: "none",
-  background: "#2563eb",
-  color: "#ffffff",
-  borderRadius: 999,
-  padding: "4px 10px",
-  fontSize: 12,
-  cursor: "pointer",
-  whiteSpace: "nowrap"
 }

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
+import { useUiTheme } from "~/shared/ui/theme"
+import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiSpace, uiTypography } from "~/shared/ui/tokens"
 import type { ChatMessage } from "~/shared/types"
 
 interface Props {
@@ -11,13 +13,16 @@ interface Props {
 }
 
 const INITIAL_POSITION = {
-  x: 24,
-  y: 24
+  x: uiLayout.chatPanel.initialX,
+  y: uiLayout.chatPanel.initialY
 }
 
 export default function ChatPanel({ visible, messages, loading, onSend, onClose }: Props) {
+  const theme = useUiTheme()
   const [input, setInput] = useState("")
-  const [position, setPosition] = useState(INITIAL_POSITION)
+  const [position, setPosition] = useState<{ x: number; y: number }>(INITIAL_POSITION)
+  const [focused, setFocused] = useState<"input" | "send" | "close" | null>(null)
+  const [hovered, setHovered] = useState<"send" | "close" | null>(null)
   const dragStateRef = useRef<{
     dragging: boolean
     offsetX: number
@@ -38,8 +43,14 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
         return
       }
 
-      const nextX = Math.max(8, Math.min(window.innerWidth - 408, event.clientX - dragStateRef.current.offsetX))
-      const nextY = Math.max(8, Math.min(window.innerHeight - 308, event.clientY - dragStateRef.current.offsetY))
+      const nextX = Math.max(
+        uiLayout.edgeInset,
+        Math.min(window.innerWidth - uiLayout.chatPanel.width - uiLayout.edgeInset, event.clientX - dragStateRef.current.offsetX)
+      )
+      const nextY = Math.max(
+        uiLayout.edgeInset,
+        Math.min(window.innerHeight - uiLayout.chatPanel.height - uiLayout.edgeInset, event.clientY - dragStateRef.current.offsetY)
+      )
 
       setPosition({
         x: nextX,
@@ -64,24 +75,27 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
     return null
   }
 
+  const sendDisabled = loading || !input.trim()
+
   return (
     <div
       style={{
         position: "fixed",
         left: position.x,
         top: position.y,
-        width: 400,
-        height: 300,
-        borderRadius: 12,
+        width: uiLayout.chatPanel.width,
+        height: uiLayout.chatPanel.height,
+        borderRadius: uiRadius.lg,
         overflow: "hidden",
-        background: "#ffffff",
-        boxShadow: "0 20px 50px rgba(0, 0, 0, 0.25)",
-        border: "1px solid #e5e7eb",
+        background: theme.bg.surface,
+        boxShadow: uiShadow.lg,
+        border: `1px solid ${theme.border.default}`,
         display: "flex",
         flexDirection: "column",
         pointerEvents: "auto",
-        zIndex: 2147483647,
-        fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+        zIndex: uiLayer.overlay,
+        fontFamily: uiTypography.fontFamily,
+        transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
       }}>
       <div
         onMouseDown={(event) => {
@@ -91,25 +105,35 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
         }}
         style={{
           cursor: "move",
-          background: "#111827",
-          color: "#ffffff",
-          padding: "10px 12px",
+          background: theme.bg.surfaceAlt,
+          color: theme.text.primary,
+          padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+          borderBottom: `1px solid ${theme.border.default}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
+          gap: uiSpace[8],
           userSelect: "none"
         }}>
-        <strong style={{ fontSize: 13 }}>AI Help Me</strong>
+        <strong style={{ fontSize: uiTypography.fontSize.md, fontWeight: uiTypography.fontWeight.semibold }}>AI Help Me</strong>
         <button
           onClick={onClose}
+          onMouseEnter={() => setHovered("close")}
+          onMouseLeave={() => setHovered(null)}
+          onFocus={() => setFocused("close")}
+          onBlur={() => setFocused(null)}
+          aria-label="关闭聊天面板"
           style={{
             border: "none",
-            background: "transparent",
-            color: "#ffffff",
+            background: hovered === "close" ? theme.bg.page : "transparent",
+            color: theme.text.secondary,
             cursor: "pointer",
-            fontSize: 16,
-            lineHeight: "16px"
+            width: 28,
+            height: 28,
+            borderRadius: uiRadius.sm,
+            lineHeight: "16px",
+            fontSize: uiTypography.fontSize.xl,
+            boxShadow: focused === "close" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
           }}>
           ×
         </button>
@@ -119,14 +143,14 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: 12,
+          padding: uiSpace[12],
           display: "flex",
           flexDirection: "column",
-          gap: 8,
-          background: "#f9fafb"
+          gap: uiSpace[8],
+          background: theme.bg.surfaceAlt
         }}>
         {messages.length === 0 ? (
-          <div style={{ color: "#6b7280", fontSize: 13 }}>请选择动作或输入问题开始对话。</div>
+          <div style={{ color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>请选择动作或输入问题开始对话。</div>
         ) : null}
 
         {messages.map((item) => (
@@ -135,34 +159,36 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
             style={{
               alignSelf: item.role === "user" ? "flex-end" : "flex-start",
               maxWidth: "85%",
-              padding: "8px 10px",
-              borderRadius: 10,
-              lineHeight: 1.45,
-              fontSize: 13,
+              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+              borderRadius: uiRadius.md,
+              lineHeight: 1.5,
+              fontSize: uiTypography.fontSize.md,
               whiteSpace: "pre-wrap",
               wordBreak: "break-word",
-              background: item.role === "user" ? "#2563eb" : "#ffffff",
-              color: item.role === "user" ? "#ffffff" : "#111827",
-              border: item.role === "user" ? "none" : "1px solid #e5e7eb"
+              background: item.role === "user" ? theme.brand.primary : theme.bg.surface,
+              color: item.role === "user" ? theme.text.inverse : theme.text.primary,
+              border: item.role === "user" ? "none" : `1px solid ${theme.border.default}`
             }}>
             {item.content}
           </div>
         ))}
 
-        {loading ? <div style={{ color: "#6b7280", fontSize: 12 }}>AI 正在回答...</div> : null}
+        {loading ? <div style={{ color: theme.text.secondary, fontSize: uiTypography.fontSize.sm }}>AI 正在回答...</div> : null}
       </div>
 
       <div
         style={{
           display: "flex",
-          gap: 8,
-          padding: 10,
-          borderTop: "1px solid #e5e7eb",
-          background: "#ffffff"
+          gap: uiSpace[8],
+          padding: uiSpace[12],
+          borderTop: `1px solid ${theme.border.default}`,
+          background: theme.bg.surface
         }}>
         <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
+          onFocus={() => setFocused("input")}
+          onBlur={() => setFocused(null)}
           onKeyDown={(event) => {
             if (event.key !== "Enter" || event.shiftKey) {
               return
@@ -178,17 +204,23 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
             onSend(value)
             setInput("")
           }}
+          aria-label="继续提问"
           placeholder="继续提问（Enter 发送，Shift+Enter 换行）"
           style={{
             flex: 1,
             minHeight: 56,
             resize: "none",
-            borderRadius: 8,
-            border: "1px solid #d1d5db",
-            padding: "8px 10px",
-            fontSize: 13,
+            borderRadius: uiRadius.sm,
+            border: `1px solid ${focused === "input" ? theme.border.strong : theme.border.default}`,
+            background: theme.bg.surface,
+            color: theme.text.primary,
+            padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+            fontSize: uiTypography.fontSize.md,
             fontFamily: "inherit",
-            outline: "none"
+            lineHeight: 1.45,
+            outline: "none",
+            boxShadow: focused === "input" ? `0 0 0 3px ${theme.bg.overlay}` : "none",
+            transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
           }}
         />
         <button
@@ -201,16 +233,28 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
             onSend(value)
             setInput("")
           }}
+          onMouseEnter={() => setHovered("send")}
+          onMouseLeave={() => setHovered(null)}
+          onFocus={() => setFocused("send")}
+          onBlur={() => setFocused(null)}
+          disabled={sendDisabled}
           style={{
-            width: 72,
+            width: 84,
             border: "none",
-            borderRadius: 8,
-            background: "#2563eb",
-            color: "#ffffff",
-            fontWeight: 600,
-            cursor: "pointer"
+            borderRadius: uiRadius.sm,
+            background: sendDisabled
+              ? theme.state.disabled
+              : hovered === "send"
+                ? theme.brand.primaryHover
+                : theme.brand.primary,
+            color: theme.text.inverse,
+            fontWeight: uiTypography.fontWeight.semibold,
+            cursor: sendDisabled ? "not-allowed" : "pointer",
+            opacity: sendDisabled ? 0.72 : 1,
+            boxShadow: focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none",
+            transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
           }}>
-          发送
+          {loading ? "发送中" : "发送"}
         </button>
       </div>
     </div>

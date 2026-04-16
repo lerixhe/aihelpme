@@ -2,12 +2,17 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react"
 
 import { hasTextPlaceholder } from "~/shared/prompt"
 import { DEFAULT_SETTINGS, getSettings, saveSettings } from "~/shared/storage"
+import { useUiThemeName } from "~/shared/ui/theme"
+import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import type { CustomActionTemplate, ExtensionSettings } from "~/shared/types"
 
 export default function OptionsPage() {
+  const themeName = useUiThemeName()
+  const theme = uiThemes[themeName]
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<string>("")
+  const [focusedField, setFocusedField] = useState<string | null>(null)
 
   useEffect(() => {
     void getSettings().then((loaded) => {
@@ -39,28 +44,74 @@ export default function OptionsPage() {
     }))
   }
 
+  const cardStyle: CSSProperties = {
+    border: `1px solid ${theme.border.default}`,
+    borderRadius: uiRadius.lg,
+    padding: uiSpace[12],
+    background: theme.bg.surface,
+    boxShadow: uiShadow.sm
+  }
+
+  const fieldStyle: CSSProperties = {
+    display: "grid",
+    gap: 6,
+    marginBottom: uiSpace[12],
+    fontSize: uiTypography.fontSize.md,
+    color: theme.text.secondary
+  }
+
+  const createInputStyle = (fieldName: string): CSSProperties => ({
+    border: `1px solid ${focusedField === fieldName ? theme.border.strong : theme.border.default}`,
+    borderRadius: uiRadius.sm,
+    padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+    fontSize: uiTypography.fontSize.md,
+    fontFamily: uiTypography.fontFamily,
+    outline: "none",
+    color: theme.text.primary,
+    background: theme.bg.surface,
+    boxShadow: focusedField === fieldName ? `0 0 0 3px ${theme.bg.overlay}` : "none",
+    transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+  })
+
+  const buttonStyle: CSSProperties = {
+    border: "none",
+    borderRadius: uiRadius.sm,
+    padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+    background: theme.brand.primary,
+    color: theme.text.inverse,
+    fontWeight: uiTypography.fontWeight.semibold,
+    cursor: "pointer",
+    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+  }
+
   return (
     <main
       style={{
         maxWidth: 860,
         margin: "20px auto",
-        fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-        padding: "0 16px",
-        color: "#111827"
+        fontFamily: uiTypography.fontFamily,
+        padding: "0 16px 24px",
+        color: theme.text.primary,
+        background: theme.bg.page,
+        minHeight: "100vh"
       }}>
-      <h1 style={{ marginBottom: 8 }}>AI Help Me 设置</h1>
-      <p style={{ marginTop: 0, color: "#6b7280" }}>配置 OpenAI 兼容接口、翻译语言和自定义动作模板。</p>
+      <h1 style={{ marginBottom: uiSpace[8], fontSize: 28 }}>AI Help Me 设置</h1>
+      <p style={{ marginTop: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.lg }}>
+        配置 OpenAI 兼容接口、翻译语言和自定义动作模板。
+      </p>
 
       <section style={cardStyle}>
         <label style={fieldStyle}>
           <span>API Base URL</span>
           <input
             value={settings.apiBaseUrl}
+            onFocus={() => setFocusedField("apiBaseUrl")}
+            onBlur={() => setFocusedField(null)}
             onChange={(event) => {
               setSettings((current) => ({ ...current, apiBaseUrl: event.target.value }))
             }}
             placeholder="https://api.openai.com/v1"
-            style={inputStyle}
+            style={createInputStyle("apiBaseUrl")}
           />
         </label>
 
@@ -69,11 +120,13 @@ export default function OptionsPage() {
           <input
             type="password"
             value={settings.apiKey}
+            onFocus={() => setFocusedField("apiKey")}
+            onBlur={() => setFocusedField(null)}
             onChange={(event) => {
               setSettings((current) => ({ ...current, apiKey: event.target.value }))
             }}
             placeholder="sk-..."
-            style={inputStyle}
+            style={createInputStyle("apiKey")}
           />
         </label>
 
@@ -81,30 +134,34 @@ export default function OptionsPage() {
           <span>Model</span>
           <input
             value={settings.model}
+            onFocus={() => setFocusedField("model")}
+            onBlur={() => setFocusedField(null)}
             onChange={(event) => {
               setSettings((current) => ({ ...current, model: event.target.value }))
             }}
             placeholder="gpt-4o-mini"
-            style={inputStyle}
+            style={createInputStyle("model")}
           />
         </label>
 
-        <label style={fieldStyle}>
+        <label style={{ ...fieldStyle, marginBottom: 0 }}>
           <span>翻译目标语言</span>
           <input
             value={settings.translationLanguage}
+            onFocus={() => setFocusedField("translationLanguage")}
+            onBlur={() => setFocusedField(null)}
             onChange={(event) => {
               setSettings((current) => ({ ...current, translationLanguage: event.target.value }))
             }}
             placeholder="简体中文"
-            style={inputStyle}
+            style={createInputStyle("translationLanguage")}
           />
         </label>
       </section>
 
-      <section style={{ ...cardStyle, marginTop: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <h2 style={{ margin: 0, fontSize: 16 }}>自定义动作按钮</h2>
+      <section style={{ ...cardStyle, marginTop: uiSpace[16] }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: uiSpace[12] }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>自定义动作按钮</h2>
           <button
             onClick={() => {
               setSettings((current) => ({
@@ -124,39 +181,44 @@ export default function OptionsPage() {
           </button>
         </div>
 
-        <p style={{ marginTop: 0, color: "#6b7280", fontSize: 13 }}>
+        <p style={{ marginTop: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>
           模板必须包含 <code>{"{text}"}</code> 占位符，用来注入用户选中的文本。
         </p>
 
         {settings.customActions.map((item, index) => {
           const invalid = !hasTextPlaceholder(item.template)
+          const rowBg = invalid ? theme.state.warningBg : theme.bg.surface
 
           return (
             <div
               key={item.id}
               style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 10,
-                padding: 10,
-                marginBottom: 10,
-                background: invalid ? "#fff7ed" : "#ffffff"
+                border: `1px solid ${invalid ? theme.state.warning : theme.border.default}`,
+                borderRadius: uiRadius.md,
+                padding: uiSpace[12],
+                marginBottom: uiSpace[12],
+                background: rowBg
               }}>
-              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto", gap: uiSpace[8] }}>
                 <input
                   value={item.label}
+                  onFocus={() => setFocusedField(`${item.id}-label`)}
+                  onBlur={() => setFocusedField(null)}
                   onChange={(event) => {
                     updateCustomAction(index, { label: event.target.value })
                   }}
                   placeholder="按钮名称"
-                  style={inputStyle}
+                  style={createInputStyle(`${item.id}-label`)}
                 />
                 <input
                   value={item.template}
+                  onFocus={() => setFocusedField(`${item.id}-template`)}
+                  onBlur={() => setFocusedField(null)}
                   onChange={(event) => {
                     updateCustomAction(index, { template: event.target.value })
                   }}
                   placeholder="模板，必须包含 {text}"
-                  style={inputStyle}
+                  style={createInputStyle(`${item.id}-template`)}
                 />
                 <button
                   onClick={() => {
@@ -165,19 +227,21 @@ export default function OptionsPage() {
                       customActions: current.customActions.filter((action) => action.id !== item.id)
                     }))
                   }}
-                  style={{ ...buttonStyle, background: "#dc2626" }}>
+                  style={{ ...buttonStyle, background: theme.state.error }}>
                   删除
                 </button>
               </div>
               {invalid ? (
-                <div style={{ marginTop: 8, color: "#c2410c", fontSize: 12 }}>模板缺少 {"{text}"} 占位符。</div>
+                <div style={{ marginTop: uiSpace[8], color: theme.state.warning, fontSize: uiTypography.fontSize.sm }}>
+                  模板缺少 {"{text}"} 占位符。
+                </div>
               ) : null}
             </div>
           )
         })}
       </section>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: uiSpace[12], marginTop: uiSpace[16] }}>
         <button
           disabled={!canSave || saving}
           onClick={() => {
@@ -210,45 +274,17 @@ export default function OptionsPage() {
           style={{
             ...buttonStyle,
             opacity: !canSave || saving ? 0.55 : 1,
-            cursor: !canSave || saving ? "not-allowed" : "pointer"
+            cursor: !canSave || saving ? "not-allowed" : "pointer",
+            background: !canSave || saving ? theme.state.disabled : theme.brand.primary
           }}>
           {saving ? "保存中..." : "保存设置"}
         </button>
-        {status ? <span style={{ fontSize: 13, color: "#374151" }}>{status}</span> : null}
+        {status ? (
+          <span style={{ fontSize: uiTypography.fontSize.md, color: status.includes("失败") ? theme.state.error : theme.text.secondary }}>
+            {status}
+          </span>
+        ) : null}
       </div>
     </main>
   )
-}
-
-const cardStyle: CSSProperties = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 12,
-  background: "#ffffff"
-}
-
-const fieldStyle: CSSProperties = {
-  display: "grid",
-  gap: 6,
-  marginBottom: 10,
-  fontSize: 13,
-  color: "#374151"
-}
-
-const inputStyle: CSSProperties = {
-  border: "1px solid #d1d5db",
-  borderRadius: 8,
-  padding: "8px 10px",
-  fontSize: 13,
-  outline: "none"
-}
-
-const buttonStyle: CSSProperties = {
-  border: "none",
-  borderRadius: 8,
-  padding: "8px 12px",
-  background: "#2563eb",
-  color: "#ffffff",
-  fontWeight: 600,
-  cursor: "pointer"
 }
