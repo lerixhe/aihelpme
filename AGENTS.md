@@ -59,10 +59,11 @@ AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. I
 - Event filtering for extension UI should not rely only on `event.target`; use `event.composedPath()` when available so Shadow DOM retargeting does not bypass extension-root checks.
 - When debugging content-script selection bugs, verify whether the failure is caused by stale injected code before changing logic repeatedly. Reload the extension and refresh the target tab after each build.
 
-## Lessons From Toolbar Input Bug
-- Root cause: earlier fixes repeatedly used correct-looking event guards, but they were built on an incorrect assumption that `document.activeElement` reflected the real focused input. In Shadow DOM, it often resolves to the host element instead, which made extension-internal selection look like page selection.
-- Failure mode: selecting text inside the toolbar input triggered the same selection pipeline used for page text, which recomputed prompt context and toolbar position from the wrong source.
-- Correct fix pattern: first confirm actual runtime focus/selection behavior in the injected environment, then hard-block selection updates at the core update path whenever deep focus is inside extension UI.
+## Bug Fixing Workflow
+- Do not keep patching around event symptoms once one or two fixes fail. If an event-driven bug is not resolved quickly, stop and re-evaluate the problem from the product requirement and architecture boundary instead of adding more guards.
+- Re-state the real ownership boundary before changing code. In this project, that often means distinguishing page state from extension-UI-local state, and deciding which side is allowed to drive rendering, visibility, and positioning.
+- Prefer structural fixes at the state/source-of-truth layer over incremental event-condition patches. Event filters are acceptable only when they clearly enforce an already-correct architectural boundary.
+- When a bug appears to be caused by browser events, verify whether the real issue is stale assumptions about focus, selection ownership, runtime context, or Shadow DOM behavior before modifying multiple handlers.
 
 ## Verified Repo Conventions
 - TypeScript uses strict mode with `moduleResolution: "Bundler"` and the `~/*` alias rooted at `src/*`.

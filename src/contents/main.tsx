@@ -30,9 +30,11 @@ function App() {
   const [customActions, setCustomActions] = useState<{ id: string; label: string; template: string }[]>([])
 
   const messagesRef = useRef<ChatMessage[]>([])
+  const extensionRootRef = useRef<HTMLDivElement | null>(null)
   const lastAnchorRef = useRef<{ x: number; y: number } | null>(null)
   const toolbarVisibleRef = useRef(false)
   const selectionContextRef = useRef<SelectionContext | null>(null)
+  const extensionInteractionRef = useRef(false)
 
   useEffect(() => {
     messagesRef.current = messages
@@ -89,6 +91,11 @@ function App() {
     }
 
     const isInsideExtensionRoot = (target: EventTarget | null) => {
+      const extensionRoot = extensionRootRef.current
+      if (extensionRoot && target instanceof Node && extensionRoot.contains(target)) {
+        return true
+      }
+
       if (target instanceof HTMLElement) {
         return !!target.closest(extensionRootSelector)
       }
@@ -109,16 +116,62 @@ function App() {
       return isInsideExtensionRoot(getDeepActiveElement())
     }
 
+    const hasSelectedTextInControl = (element: Element | null) => {
+      if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+        return false
+      }
+
+      const { selectionStart, selectionEnd } = element
+      return selectionStart != null && selectionEnd != null && selectionStart !== selectionEnd
+    }
+
+    const hasSelectionInsideExtensionUi = () => {
+      const extensionRoot = extensionRootRef.current
+      if (!extensionRoot) {
+        return false
+      }
+
+      const activeElement = getDeepActiveElement()
+      if (isInsideExtensionRoot(activeElement) && hasSelectedTextInControl(activeElement)) {
+        return true
+      }
+
+      const selections: Selection[] = []
+      const documentSelection = window.getSelection()
+      if (documentSelection) {
+        selections.push(documentSelection)
+      }
+
+      const extensionRootNode = extensionRoot.getRootNode()
+      const shadowSelectionGetter =
+        extensionRootNode instanceof ShadowRoot ? (extensionRootNode as ShadowRoot & { getSelection?: () => Selection | null }).getSelection : null
+
+      if (typeof shadowSelectionGetter === "function") {
+        const shadowSelection = shadowSelectionGetter.call(extensionRootNode)
+        if (shadowSelection) {
+          selections.push(shadowSelection)
+        }
+      }
+
+      return selections.some((selection) => {
+        if (!selection.toString().trim()) {
+          return false
+        }
+
+        return isInsideExtensionRoot(selection.anchorNode) || isInsideExtensionRoot(selection.focusNode)
+      })
+    }
+
     const hasCapturedPageSelection = () => {
       return !!(toolbarVisibleRef.current && selectionContextRef.current)
     }
 
     const shouldPreserveToolbar = (target: EventTarget | null) => {
-      return hasCapturedPageSelection() && (isInsideExtensionRoot(target) || isExtensionUiFocused())
+      return hasCapturedPageSelection() && (isInsideExtensionRoot(target) || isExtensionUiFocused() || extensionInteractionRef.current)
     }
 
     const readSelectionText = () => {
-      if (isExtensionUiFocused()) {
+      if (isExtensionUiFocused() || hasSelectionInsideExtensionUi()) {
         return ""
       }
 
@@ -135,6 +188,10 @@ function App() {
         rafId = null
 
         if (isExtensionUiFocused()) {
+          return
+        }
+
+        if (hasSelectionInsideExtensionUi()) {
           return
         }
 
@@ -184,7 +241,11 @@ function App() {
     }
 
     const onSelectionChange = (event: Event) => {
-      if (isExtensionUiFocused()) {
+      if (extensionInteractionRef.current) {
+        return
+      }
+
+      if (isExtensionUiFocused() || hasSelectionInsideExtensionUi()) {
         return
       }
 
@@ -226,8 +287,11 @@ function App() {
 
     const onDocumentMouseDown = (event: MouseEvent) => {
       if (isInsideExtensionEvent(event)) {
+        extensionInteractionRef.current = true
         return
       }
+
+      extensionInteractionRef.current = false
 
       if (toolbarVisibleRef.current && !readSelectionText() && !isExtensionUiFocused()) {
         closeToolbar()
@@ -332,7 +396,7 @@ function App() {
   }
 
   return (
-    <div data-ai-help-me-root="true" style={{ pointerEvents: "none" }}>
+    <div ref={extensionRootRef} data-ai-help-me-root="true" style={{ pointerEvents: "none" }}>
       <SelectionToolbar
         visible={toolbarVisible}
         anchor={toolbarAnchor}
