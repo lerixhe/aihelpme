@@ -1,17 +1,16 @@
-import type { PlasmoCSConfig } from "plasmo"
 import { useEffect, useRef, useState } from "react"
 
 import ChatPanel from "~/contents/components/ChatPanel"
 import SelectionToolbar from "~/contents/components/SelectionToolbar"
 import { askAi } from "~/shared/messaging"
 import { appendPageContext, formatBuiltInPrompt, formatCustomPrompt, formatFreeInputPrompt } from "~/shared/prompt"
-import { getSelectionAnchor, getSelectionContext } from "~/shared/selection"
+import { getSelectionSnapshot } from "~/shared/selection"
 import { getSettings } from "~/shared/storage"
 import type { BuiltInActionId, ChatMessage, SelectionContext } from "~/shared/types"
 
-export const config: PlasmoCSConfig = {
+export const config = {
   matches: ["<all_urls>"]
-}
+} as const
 
 function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
   return {
@@ -57,76 +56,121 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const updateSelection = (event?: MouseEvent) => {
-      const context = getSelectionContext()
-      const anchorFromRange = getSelectionAnchor()
+    let rafId: number | null = null
 
-      if (!context) {
-        setToolbarVisible(false)
-        return
-      }
-
-      let anchor = anchorFromRange
-
-      if (!anchor && event) {
-        anchor = {
-          x: event.clientX,
-          y: event.clientY
-        }
-      }
-
-      if (!anchor && lastAnchorRef.current) {
-        anchor = lastAnchorRef.current
-      }
-
-      if (!anchor) {
-        setToolbarVisible(false)
-        return
-      }
-
-      lastAnchorRef.current = anchor
-      setSelectionContext(context)
-      setToolbarAnchor(anchor)
-      setToolbarVisible(true)
+    const readSelectionText = () => {
+      const snapshot = getSelectionSnapshot(document.activeElement)
+      return snapshot?.context.text.trim() ?? ""
     }
 
-    const onMouseUp = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.closest("[data-ai-help-me-root='true']")) {
+    const updateSelection = (event?: Event) => {
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId)
+      }
+
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null
+
+        const target = event?.target ?? null
+        const snapshot = getSelectionSnapshot(target)
+
+        if (!snapshot) {
+          setToolbarVisible(false)
+          return
+        }
+
+        let anchor = snapshot.anchor
+
+        if (!anchor && event instanceof MouseEvent) {
+          anchor = {
+            x: event.clientX,
+            y: event.clientY
+          }
+        }
+
+        if (!anchor && lastAnchorRef.current) {
+          anchor = lastAnchorRef.current
+        }
+
+        if (!anchor) {
+          setToolbarVisible(false)
+          return
+        }
+
+        lastAnchorRef.current = anchor
+        setSelectionContext(snapshot.context)
+        setToolbarAnchor(anchor)
+        setToolbarVisible(true)
+      })
+    }
+
+    const isInsideExtensionRoot = (target: EventTarget | null) => {
+      return target instanceof HTMLElement && !!target.closest("[data-ai-help-me-root='true']")
+    }
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (isInsideExtensionRoot(event.target)) {
         return
       }
 
       updateSelection(event)
     }
 
-    const onSelectionChange = () => {
-      if (!window.getSelection()?.toString().trim()) {
+    const onSelectionChange = (event: Event) => {
+      if (!readSelectionText()) {
+        setToolbarVisible(false)
         return
       }
 
-      updateSelection()
+      updateSelection(event)
     }
 
-    document.addEventListener("mouseup", onMouseUp)
-    document.addEventListener("selectionchange", onSelectionChange)
-
-    const onDocumentMouseDown = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.closest("[data-ai-help-me-root='true']")) {
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (isInsideExtensionRoot(event.target)) {
         return
       }
 
-      if (!window.getSelection()?.toString().trim()) {
+      if (!readSelectionText()) {
+        return
+      }
+
+      updateSelection(event)
+    }
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (isInsideExtensionRoot(event.target)) {
+        return
+      }
+
+      updateSelection(event)
+    }
+
+    const onDocumentMouseDown = (event: MouseEvent) => {
+      if (isInsideExtensionRoot(event.target)) {
+        return
+      }
+
+      if (!readSelectionText()) {
         setToolbarVisible(false)
       }
     }
 
-    document.addEventListener("mousedown", onDocumentMouseDown)
+    document.addEventListener("pointerup", onPointerUp, true)
+    document.addEventListener("selectionchange", onSelectionChange, true)
+    document.addEventListener("keyup", onKeyUp, true)
+    document.addEventListener("focusin", onFocusIn, true)
+    document.addEventListener("mousedown", onDocumentMouseDown, true)
 
     return () => {
-      document.removeEventListener("mouseup", onMouseUp)
-      document.removeEventListener("selectionchange", onSelectionChange)
-      document.removeEventListener("mousedown", onDocumentMouseDown)
+      if (rafId != null) {
+        window.cancelAnimationFrame(rafId)
+      }
+
+      document.removeEventListener("pointerup", onPointerUp, true)
+      document.removeEventListener("selectionchange", onSelectionChange, true)
+      document.removeEventListener("keyup", onKeyUp, true)
+      document.removeEventListener("focusin", onFocusIn, true)
+      document.removeEventListener("mousedown", onDocumentMouseDown, true)
     }
   }, [])
 

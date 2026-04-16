@@ -47,7 +47,8 @@ Current repo status for quality commands:
 The extension has 3 runtime contexts plus shared core modules:
 
 1. **Content script UI (`src/contents/main.tsx`)**
-   - Detects selection + computes anchor position.
+   - Detects selection via a unified snapshot path (range/input/textarea) and computes a stable toolbar anchor.
+   - Uses capture-phase listeners (`pointerup`, `selectionchange`, `keyup`, `focusin`, `mousedown`) to improve trigger reliability on complex pages.
    - Renders inline toolbar (`SelectionToolbar`) and floating chat panel (`ChatPanel`).
    - Builds prompts (built-in/custom/free input), appends page context, keeps chat history in React state.
    - Sends AI requests through messaging layer, never directly to remote API.
@@ -67,12 +68,12 @@ The extension has 3 runtime contexts plus shared core modules:
    - `types.ts`: message/settings/domain types.
    - `storage.ts`: settings defaults + `chrome.storage.sync` read/write.
    - `prompt.ts`: built-in/custom/free prompt assembly + page context append.
-   - `selection.ts`: selected text + anchor extraction.
+   - `selection.ts`: selection snapshot extraction (text + page context + anchor).
    - `messaging.ts`: content → background request wrapper.
 
 ## Key data flow
 1. User selects text on page.
-2. Content script reads `SelectionContext` and toolbar anchor.
+2. Content script reads a selection snapshot (selected text + page context + toolbar anchor).
 3. User clicks built-in/custom action (or enters free input).
 4. Prompt is generated and enriched with page title/URL.
 5. Content script sends full message history via `askAi`.
@@ -90,3 +91,5 @@ The extension has 3 runtime contexts plus shared core modules:
 - Root `background.ts` and `options.tsx` are lightweight Plasmo entry files that re-export/import real implementations from `src/*`.
 - Build-time warning about missing `svgo` may appear (`htmlnano minifySvg`), but current build still succeeds.
 - No `.cursor/rules`, `.cursorrules`, `.github/copilot-instructions.md`, or root README were found in this repo at the time of writing.
+- Follow-up TODO: broaden content-script injection coverage for iframe/about:blank-like contexts (Saladict-style compatibility target). Verify final output in both `.plasmo/chrome-mv3.plasmo.manifest.json` and `build/chrome-mv3-prod/manifest.json`; avoid `package.json > manifest.content_scripts` overrides that create duplicate entries.
+- Expected browser limits remain: restricted pages like `chrome://*` and Chrome Web Store are not injectable by extension design.

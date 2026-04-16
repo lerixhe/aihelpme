@@ -29,7 +29,11 @@ export default function SelectionToolbar({
       return 0
     }
 
-    return Math.max(8, anchor.y - 56)
+    const viewportHeight = window.innerHeight
+    const preferredTop = anchor.y - 56
+    const maxTop = Math.max(8, viewportHeight - 56)
+
+    return Math.min(Math.max(8, preferredTop), maxTop)
   }, [anchor])
 
   const left = useMemo(() => {
@@ -37,7 +41,11 @@ export default function SelectionToolbar({
       return 0
     }
 
-    return Math.max(8, anchor.x - 160)
+    const viewportWidth = window.innerWidth
+    const preferredLeft = anchor.x - 160
+    const maxLeft = Math.max(8, viewportWidth - 328)
+
+    return Math.min(Math.max(8, preferredLeft), maxLeft)
   }, [anchor])
 
   if (!visible || !anchor) {
@@ -47,7 +55,7 @@ export default function SelectionToolbar({
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         top,
         left,
         display: "flex",
