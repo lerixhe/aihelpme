@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Project Summary
+AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. It lets users select text on any page, trigger AI actions from an inline toolbar, and continue conversation in a floating chat panel.
+
 ## Quick Facts
 - Chrome extension built with Plasmo + React + TypeScript.
 - AI backend uses an OpenAI-compatible `/chat/completions` endpoint.
