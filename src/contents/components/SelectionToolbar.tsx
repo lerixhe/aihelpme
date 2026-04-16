@@ -14,6 +14,7 @@ interface Props {
   onBuiltInAction: (action: BuiltInActionId) => void
   onCustomAction: (template: string) => void
   onFreeSubmit: (input: string) => void
+  onClose: () => void
 }
 
 export default function SelectionToolbar({
@@ -22,7 +23,8 @@ export default function SelectionToolbar({
   customActions,
   onBuiltInAction,
   onCustomAction,
-  onFreeSubmit
+  onFreeSubmit,
+  onClose
 }: Props) {
   const theme = useUiTheme()
   const [freeInput, setFreeInput] = useState("")
@@ -74,6 +76,15 @@ export default function SelectionToolbar({
 
   return (
     <div
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape") {
+          return
+        }
+
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+      }}
       style={{
         position: "fixed",
         top,

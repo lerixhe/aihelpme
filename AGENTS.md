@@ -52,6 +52,18 @@ AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. I
 - Preserve `{text}` placeholder validation for custom actions before saving.
 - Conversation is intentionally per-page in-memory only; refresh/close clears it.
 
+## Selection UI Pitfalls
+- Plasmo content-script UI may run inside Shadow DOM. Do not rely on `document.activeElement` alone to determine whether focus is inside extension UI; use deep active-element traversal through nested `shadowRoot` boundaries.
+- Treat extension-internal selection, focus, and pointer events as UI-local interactions. Text selection inside toolbar/chat inputs must never update page selection context, toolbar anchor, or toolbar visibility.
+- Do not let transient page-selection loss during focus transfer into extension inputs hide the toolbar. Once a page selection has produced a toolbar, preserve that state during extension-internal interaction and only close on explicit outside interaction, submit, or dedicated close behavior.
+- Event filtering for extension UI should not rely only on `event.target`; use `event.composedPath()` when available so Shadow DOM retargeting does not bypass extension-root checks.
+- When debugging content-script selection bugs, verify whether the failure is caused by stale injected code before changing logic repeatedly. Reload the extension and refresh the target tab after each build.
+
+## Lessons From Toolbar Input Bug
+- Root cause: earlier fixes repeatedly used correct-looking event guards, but they were built on an incorrect assumption that `document.activeElement` reflected the real focused input. In Shadow DOM, it often resolves to the host element instead, which made extension-internal selection look like page selection.
+- Failure mode: selecting text inside the toolbar input triggered the same selection pipeline used for page text, which recomputed prompt context and toolbar position from the wrong source.
+- Correct fix pattern: first confirm actual runtime focus/selection behavior in the injected environment, then hard-block selection updates at the core update path whenever deep focus is inside extension UI.
+
 ## Verified Repo Conventions
 - TypeScript uses strict mode with `moduleResolution: "Bundler"` and the `~/*` alias rooted at `src/*`.
 - Settings defaults live in `src/shared/storage.ts`; current defaults include `https://api.openai.com/v1` and model `gpt-4o-mini`.

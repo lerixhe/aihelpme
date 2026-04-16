@@ -31,10 +31,26 @@ function App() {
 
   const messagesRef = useRef<ChatMessage[]>([])
   const lastAnchorRef = useRef<{ x: number; y: number } | null>(null)
+  const toolbarVisibleRef = useRef(false)
+  const selectionContextRef = useRef<SelectionContext | null>(null)
 
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  useEffect(() => {
+    toolbarVisibleRef.current = toolbarVisible
+  }, [toolbarVisible])
+
+  useEffect(() => {
+    selectionContextRef.current = selectionContext
+  }, [selectionContext])
+
+  const closeToolbar = () => {
+    setToolbarVisible(false)
+    setToolbarAnchor(null)
+    setSelectionContext(null)
+  }
 
   useEffect(() => {
     void getSettings().then((settings) => {
@@ -57,9 +73,56 @@ function App() {
 
   useEffect(() => {
     let rafId: number | null = null
+    const extensionRootSelector = "[data-ai-help-me-root='true']"
+
+    const getDeepActiveElement = (root: Document | ShadowRoot = document): Element | null => {
+      const activeElement = root.activeElement
+      if (!activeElement) {
+        return null
+      }
+
+      if (activeElement instanceof HTMLElement && activeElement.shadowRoot) {
+        return getDeepActiveElement(activeElement.shadowRoot) ?? activeElement
+      }
+
+      return activeElement
+    }
+
+    const isInsideExtensionRoot = (target: EventTarget | null) => {
+      if (target instanceof HTMLElement) {
+        return !!target.closest(extensionRootSelector)
+      }
+
+      if (target instanceof Node && target.parentElement) {
+        return !!target.parentElement.closest(extensionRootSelector)
+      }
+
+      return false
+    }
+
+    const isInsideExtensionEvent = (event: Event) => {
+      const path = typeof event.composedPath === "function" ? event.composedPath() : []
+      return path.some((node) => isInsideExtensionRoot(node))
+    }
+
+    const isExtensionUiFocused = () => {
+      return isInsideExtensionRoot(getDeepActiveElement())
+    }
+
+    const hasCapturedPageSelection = () => {
+      return !!(toolbarVisibleRef.current && selectionContextRef.current)
+    }
+
+    const shouldPreserveToolbar = (target: EventTarget | null) => {
+      return hasCapturedPageSelection() && (isInsideExtensionRoot(target) || isExtensionUiFocused())
+    }
 
     const readSelectionText = () => {
-      const snapshot = getSelectionSnapshot(document.activeElement)
+      if (isExtensionUiFocused()) {
+        return ""
+      }
+
+      const snapshot = getSelectionSnapshot(getDeepActiveElement())
       return snapshot?.context.text.trim() ?? ""
     }
 
@@ -71,11 +134,19 @@ function App() {
       rafId = window.requestAnimationFrame(() => {
         rafId = null
 
+        if (isExtensionUiFocused()) {
+          return
+        }
+
         const target = event?.target ?? null
         const snapshot = getSelectionSnapshot(target)
 
         if (!snapshot) {
-          setToolbarVisible(false)
+          if (shouldPreserveToolbar(target)) {
+            return
+          }
+
+          closeToolbar()
           return
         }
 
@@ -93,7 +164,7 @@ function App() {
         }
 
         if (!anchor) {
-          setToolbarVisible(false)
+          closeToolbar()
           return
         }
 
@@ -104,12 +175,8 @@ function App() {
       })
     }
 
-    const isInsideExtensionRoot = (target: EventTarget | null) => {
-      return target instanceof HTMLElement && !!target.closest("[data-ai-help-me-root='true']")
-    }
-
     const onPointerUp = (event: PointerEvent) => {
-      if (isInsideExtensionRoot(event.target)) {
+      if (isInsideExtensionEvent(event)) {
         return
       }
 
@@ -117,8 +184,16 @@ function App() {
     }
 
     const onSelectionChange = (event: Event) => {
+      if (isExtensionUiFocused()) {
+        return
+      }
+
       if (!readSelectionText()) {
-        setToolbarVisible(false)
+        if (hasCapturedPageSelection()) {
+          return
+        }
+
+        closeToolbar()
         return
       }
 
@@ -126,7 +201,7 @@ function App() {
     }
 
     const onKeyUp = (event: KeyboardEvent) => {
-      if (isInsideExtensionRoot(event.target)) {
+      if (isInsideExtensionEvent(event)) {
         return
       }
 
@@ -138,7 +213,11 @@ function App() {
     }
 
     const onFocusIn = (event: FocusEvent) => {
-      if (isInsideExtensionRoot(event.target)) {
+      if (isInsideExtensionEvent(event)) {
+        return
+      }
+
+      if (hasCapturedPageSelection() && !readSelectionText()) {
         return
       }
 
@@ -146,12 +225,12 @@ function App() {
     }
 
     const onDocumentMouseDown = (event: MouseEvent) => {
-      if (isInsideExtensionRoot(event.target)) {
+      if (isInsideExtensionEvent(event)) {
         return
       }
 
-      if (!readSelectionText()) {
-        setToolbarVisible(false)
+      if (toolbarVisibleRef.current && !readSelectionText() && !isExtensionUiFocused()) {
+        closeToolbar()
       }
     }
 
@@ -217,7 +296,7 @@ function App() {
 
     const finalPrompt = appendPageContext(rawPrompt, context)
     await sendPrompt(finalPrompt)
-    setToolbarVisible(false)
+    closeToolbar()
   }
 
   const handleBuiltInAction = async (action: BuiltInActionId) => {
@@ -266,6 +345,9 @@ function App() {
         }}
         onFreeSubmit={(input) => {
           void handleFreeSubmit(input)
+        }}
+        onClose={() => {
+          closeToolbar()
         }}
       />
 
