@@ -47,7 +47,7 @@ export default function OptionsPage() {
   const cardStyle: CSSProperties = {
     border: `1px solid ${theme.border.default}`,
     borderRadius: uiRadius.lg,
-    padding: uiSpace[12],
+    padding: uiSpace[16],
     background: theme.bg.surface,
     boxShadow: uiShadow.sm
   }
@@ -68,7 +68,7 @@ export default function OptionsPage() {
     fontFamily: uiTypography.fontFamily,
     outline: "none",
     color: theme.text.primary,
-    background: theme.bg.surface,
+    background: theme.bg.surfaceAlt,
     boxShadow: focusedField === fieldName ? `0 0 0 3px ${theme.bg.overlay}` : "none",
     transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
   })
@@ -88,19 +88,44 @@ export default function OptionsPage() {
     <main
       style={{
         maxWidth: 860,
-        margin: "20px auto",
+        margin: "0 auto",
         fontFamily: uiTypography.fontFamily,
-        padding: "0 16px 24px",
+        padding: "32px 16px 40px",
         color: theme.text.primary,
         background: theme.bg.page,
         minHeight: "100vh"
       }}>
-      <h1 style={{ marginBottom: uiSpace[8], fontSize: 28 }}>AI Help Me 设置</h1>
-      <p style={{ marginTop: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.lg }}>
-        配置 OpenAI 兼容接口、翻译语言和自定义动作模板。
-      </p>
+      <section
+        style={{
+          ...cardStyle,
+          marginBottom: uiSpace[16],
+          background: theme.bg.surfaceAlt,
+          borderColor: theme.border.subtle
+        }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: `${uiSpace[4]}px ${uiSpace[8]}px`,
+            borderRadius: uiRadius.pill,
+            background: theme.bg.surfaceMuted,
+            color: theme.text.secondary,
+            fontSize: uiTypography.fontSize.sm,
+            marginBottom: uiSpace[12]
+          }}>
+          简洁主题配置台
+        </div>
+        <h1 style={{ margin: `0 0 ${uiSpace[8]}px`, fontSize: 30 }}>AI Help Me 设置</h1>
+        <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.lg, lineHeight: 1.6 }}>
+          配置 OpenAI 兼容接口、翻译语言和自定义动作模板，保持扩展交互简单、清晰、易读。
+        </p>
+      </section>
 
       <section style={cardStyle}>
+        <div style={{ marginBottom: uiSpace[16] }}>
+          <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>基础连接</h2>
+          <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>先完成模型接口与翻译语言设置。</p>
+        </div>
         <label style={fieldStyle}>
           <span>API Base URL</span>
           <input
@@ -161,7 +186,10 @@ export default function OptionsPage() {
 
       <section style={{ ...cardStyle, marginTop: uiSpace[16] }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: uiSpace[12] }}>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>自定义动作按钮</h2>
+          <div>
+            <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>自定义动作按钮</h2>
+            <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>让常用指令直接出现在选中文本后的工具栏中。</p>
+          </div>
           <button
             onClick={() => {
               setSettings((current) => ({
@@ -197,9 +225,10 @@ export default function OptionsPage() {
                 borderRadius: uiRadius.md,
                 padding: uiSpace[12],
                 marginBottom: uiSpace[12],
-                background: rowBg
+                background: rowBg,
+                boxShadow: invalid ? "none" : uiShadow.sm
               }}>
-              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto", gap: uiSpace[8] }}>
+              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr auto", gap: uiSpace[8], alignItems: "start" }}>
                 <input
                   value={item.label}
                   onFocus={() => setFocusedField(`${item.id}-label`)}
@@ -280,7 +309,7 @@ export default function OptionsPage() {
           {saving ? "保存中..." : "保存设置"}
         </button>
         {status ? (
-          <span style={{ fontSize: uiTypography.fontSize.md, color: status.includes("失败") ? theme.state.error : theme.text.secondary }}>
+          <span style={{ fontSize: uiTypography.fontSize.md, color: status.includes("失败") ? theme.state.error : theme.text.secondary, lineHeight: 1.5 }}>
             {status}
           </span>
         ) : null}
