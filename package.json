@@ -1,0 +1,29 @@
+{
+  "name": "ai-help-me",
+  "displayName": "AI Help Me",
+  "version": "0.0.1",
+  "description": "A lightweight Chrome extension for getting AI help on selected web content.",
+  "author": "",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "plasmo": "latest",
+    "typescript": "latest"
+  },
+  "manifest": {
+    "permissions": ["storage"],
+    "host_permissions": ["<all_urls>"]
+  }
+}
