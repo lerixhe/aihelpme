@@ -7,8 +7,9 @@ import type { ChatMessage } from "~/shared/types"
 interface Props {
   visible: boolean
   messages: ChatMessage[]
-  loading: boolean
+  requestState: "idle" | "streaming" | "cancelled" | "failed"
   onSend: (input: string) => void
+  onStop: () => void
   onClose: () => void
 }
 
@@ -17,12 +18,13 @@ const INITIAL_POSITION = {
   y: uiLayout.chatPanel.initialY
 }
 
-export default function ChatPanel({ visible, messages, loading, onSend, onClose }: Props) {
+export default function ChatPanel({ visible, messages, requestState, onSend, onStop, onClose }: Props) {
   const theme = useUiTheme()
   const [input, setInput] = useState("")
   const [position, setPosition] = useState<{ x: number; y: number }>(INITIAL_POSITION)
   const [focused, setFocused] = useState<"input" | "send" | "close" | null>(null)
   const [hovered, setHovered] = useState<"send" | "close" | null>(null)
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
   const dragStateRef = useRef<{
     dragging: boolean
     offsetX: number
@@ -71,13 +73,23 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
     }
   }, [visible])
 
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) {
+      return
+    }
+
+    container.scrollTop = container.scrollHeight
+  }, [messages, requestState])
+
   if (!visible) {
     return null
   }
 
-  const sendDisabled = loading || !input.trim()
+  const isStreaming = requestState === "streaming"
+  const sendDisabled = isStreaming || !input.trim()
+  const actionButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
   const closeButtonShadow = focused === "close" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
-  const sendButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
 
   return (
     <div
@@ -147,6 +159,7 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
       </div>
 
       <div
+        ref={messagesContainerRef}
         style={{
           flex: 1,
           overflowY: "auto",
@@ -191,7 +204,7 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
           </div>
         ))}
 
-        {loading ? (
+        {isStreaming ? (
           <div
             style={{
               color: theme.text.secondary,
@@ -201,10 +214,10 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
               borderRadius: uiRadius.md,
               background: theme.bg.surface,
               border: `1px solid ${theme.border.default}`
-            }}>
-            AI 正在回答...
-          </div>
-        ) : null}
+             }}>
+             AI 正在生成中...
+            </div>
+          ) : null}
       </div>
 
       <div
@@ -229,7 +242,7 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
             event.preventDefault()
 
             const value = input.trim()
-            if (!value || loading) {
+            if (!value || isStreaming) {
               return
             }
 
@@ -257,8 +270,13 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
         />
         <button
           onClick={() => {
+            if (isStreaming) {
+              onStop()
+              return
+            }
+
             const value = input.trim()
-            if (!value || loading) {
+            if (!value) {
               return
             }
 
@@ -269,24 +287,28 @@ export default function ChatPanel({ visible, messages, loading, onSend, onClose 
           onMouseLeave={() => setHovered(null)}
           onFocus={() => setFocused("send")}
           onBlur={() => setFocused(null)}
-          disabled={sendDisabled}
+          disabled={sendDisabled && !isStreaming}
           style={{
             width: 96,
             border: "none",
             borderRadius: uiRadius.sm,
-            background: sendDisabled
-              ? theme.state.disabled
-              : hovered === "send"
-                ? theme.brand.primaryHover
-                : theme.brand.primary,
+            background: isStreaming
+              ? hovered === "send"
+                ? theme.bg.page
+                : theme.bg.surfaceMuted
+              : sendDisabled
+                ? theme.state.disabled
+                : hovered === "send"
+                  ? theme.brand.primaryHover
+                  : theme.brand.primary,
             color: theme.text.inverse,
             fontWeight: uiTypography.fontWeight.semibold,
-            cursor: sendDisabled ? "not-allowed" : "pointer",
-            opacity: sendDisabled ? 0.72 : 1,
-            boxShadow: sendButtonShadow,
+            cursor: isStreaming ? "pointer" : sendDisabled ? "not-allowed" : "pointer",
+            opacity: sendDisabled && !isStreaming ? 0.72 : 1,
+            boxShadow: actionButtonShadow,
             transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
           }}>
-          {loading ? "发送中" : "发送"}
+          {isStreaming ? "停止" : "发送"}
         </button>
       </div>
     </div>

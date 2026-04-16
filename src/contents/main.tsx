@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 import ChatPanel from "~/contents/components/ChatPanel"
 import SelectionToolbar from "~/contents/components/SelectionToolbar"
-import { askAi } from "~/shared/messaging"
+import { streamChat } from "~/shared/messaging"
 import { appendPageContext, formatBuiltInPrompt, formatCustomPrompt, formatFreeInputPrompt } from "~/shared/prompt"
 import { getSelectionSnapshot } from "~/shared/selection"
 import { getSettings } from "~/shared/storage"
@@ -20,13 +20,32 @@ function createMessage(role: ChatMessage["role"], content: string): ChatMessage 
   }
 }
 
+function updateMessageContent(messages: ChatMessage[], id: string, content: string): ChatMessage[] {
+  return messages.map((message) => {
+    if (message.id !== id) {
+      return message
+    }
+
+    return {
+      ...message,
+      content
+    }
+  })
+}
+
+type ChatRequestState =
+  | { status: "idle" }
+  | { status: "streaming"; assistantMessageId: string }
+  | { status: "cancelled"; assistantMessageId: string }
+  | { status: "failed"; assistantMessageId: string; error: string }
+
 function App() {
   const [toolbarVisible, setToolbarVisible] = useState(false)
   const [toolbarAnchor, setToolbarAnchor] = useState<{ x: number; y: number } | null>(null)
   const [selectionContext, setSelectionContext] = useState<SelectionContext | null>(null)
   const [chatVisible, setChatVisible] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loading, setLoading] = useState(false)
+  const [requestState, setRequestState] = useState<ChatRequestState>({ status: "idle" })
   const [customActions, setCustomActions] = useState<{ id: string; label: string; template: string }[]>([])
 
   const messagesRef = useRef<ChatMessage[]>([])
@@ -35,6 +54,7 @@ function App() {
   const toolbarVisibleRef = useRef(false)
   const selectionContextRef = useRef<SelectionContext | null>(null)
   const extensionInteractionRef = useRef(false)
+  const activeStreamAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     messagesRef.current = messages
@@ -318,38 +338,98 @@ function App() {
   }, [])
 
   const sendPrompt = async (prompt: string) => {
+    activeStreamAbortRef.current?.abort()
+
+    const abortController = new AbortController()
+    activeStreamAbortRef.current = abortController
+
+    const isCurrentRequest = () => activeStreamAbortRef.current === abortController
+
     const userMessage = createMessage("user", prompt)
-    const nextMessages = [...messagesRef.current, userMessage]
+    const assistantMessage = createMessage("assistant", "")
+    const nextMessages = [...messagesRef.current, userMessage, assistantMessage]
 
     messagesRef.current = nextMessages
     setMessages(nextMessages)
     setChatVisible(true)
-    setLoading(true)
+    setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
 
     try {
-      const response = await askAi(nextMessages)
+      let streamedContent = ""
+      let terminalState: "completed" | "cancelled" | "failed" | null = null
 
-      if (!response.ok) {
-        const errorMessage = createMessage("assistant", response.error || "请求失败")
-        const afterError = [...messagesRef.current, errorMessage]
-        messagesRef.current = afterError
-        setMessages(afterError)
+      await streamChat(nextMessages, {
+        signal: abortController.signal,
+        onEvent: (event) => {
+          if (!isCurrentRequest()) {
+            return
+          }
+
+          if (event.type === "started") {
+            setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
+            return
+          }
+
+          if (event.type === "chunk") {
+            streamedContent += event.content
+
+            const updatedMessages = updateMessageContent(messagesRef.current, assistantMessage.id, streamedContent)
+            messagesRef.current = updatedMessages
+            setMessages(updatedMessages)
+            return
+          }
+
+          if (event.type === "completed") {
+            terminalState = "completed"
+            setRequestState({ status: "idle" })
+            return
+          }
+
+          if (event.type === "cancelled") {
+            terminalState = "cancelled"
+            setRequestState({ status: "cancelled", assistantMessageId: assistantMessage.id })
+            return
+          }
+
+          terminalState = "failed"
+          setRequestState({
+            status: "failed",
+            assistantMessageId: assistantMessage.id,
+            error: event.error
+          })
+
+          const afterFailure = updateMessageContent(messagesRef.current, assistantMessage.id, `请求失败：${event.error}`)
+          messagesRef.current = afterFailure
+          setMessages(afterFailure)
+        }
+      })
+
+      if (terminalState === "completed" && !streamedContent) {
+        const afterEmpty = updateMessageContent(messagesRef.current, assistantMessage.id, "AI 未返回有效内容。")
+        messagesRef.current = afterEmpty
+        setMessages(afterEmpty)
+      }
+    } catch (error: unknown) {
+      if (!isCurrentRequest()) {
         return
       }
 
-      const assistantMessage = createMessage("assistant", response.data?.content || "")
-      const afterSuccess = [...messagesRef.current, assistantMessage]
-      messagesRef.current = afterSuccess
-      setMessages(afterSuccess)
-    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "未知错误"
-      const fallbackMessage = createMessage("assistant", `请求失败：${message}`)
-      const afterFailure = [...messagesRef.current, fallbackMessage]
+      setRequestState({ status: "failed", assistantMessageId: assistantMessage.id, error: message })
+      const afterFailure = updateMessageContent(messagesRef.current, assistantMessage.id, `请求失败：${message}`)
       messagesRef.current = afterFailure
       setMessages(afterFailure)
     } finally {
-      setLoading(false)
+      if (activeStreamAbortRef.current === abortController) {
+        activeStreamAbortRef.current = null
+      }
+
+      setRequestState((current) => (current.status === "streaming" && current.assistantMessageId === assistantMessage.id ? { status: "idle" } : current))
     }
+  }
+
+  const stopStreaming = () => {
+    activeStreamAbortRef.current?.abort()
   }
 
   const runWithSelectionContext = async (rawPrompt: string) => {
@@ -418,7 +498,8 @@ function App() {
       <ChatPanel
         visible={chatVisible}
         messages={messages}
-        loading={loading}
+        requestState={requestState.status}
+        onStop={stopStreaming}
         onSend={(input) => {
           void handleFollowupSend(input)
         }}

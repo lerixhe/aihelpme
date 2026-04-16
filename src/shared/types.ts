@@ -26,17 +26,44 @@ export interface ChatMessage {
   content: string
 }
 
-export interface AskAiRequest {
-  type: "AI_HELP_ME_ASK"
+export interface ChatStreamStartRequest {
+  type: "AI_HELP_ME_CHAT_STREAM_START"
   payload: {
     messages: ChatMessage[]
   }
 }
 
-export interface AskAiResponse {
-  ok: boolean
-  data?: {
-    content: string
-  }
-  error?: string
+export interface ChatStreamCancelRequest {
+  type: "AI_HELP_ME_CHAT_STREAM_CANCEL"
 }
+
+export interface ChatStreamStartedEvent {
+  type: "started"
+}
+
+export interface ChatStreamChunkEvent {
+  type: "chunk"
+  content: string
+}
+
+export interface ChatStreamCompletedEvent {
+  type: "completed"
+}
+
+export interface ChatStreamCancelledEvent {
+  type: "cancelled"
+}
+
+export interface ChatStreamFailedEvent {
+  type: "failed"
+  error: string
+}
+
+export type ChatStreamRequest = ChatStreamStartRequest | ChatStreamCancelRequest
+
+export type ChatStreamEvent =
+  | ChatStreamStartedEvent
+  | ChatStreamChunkEvent
+  | ChatStreamCompletedEvent
+  | ChatStreamCancelledEvent
+  | ChatStreamFailedEvent
