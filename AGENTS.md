@@ -4,7 +4,6 @@
 AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. It lets users select text on any page, trigger AI actions from an inline toolbar, and continue conversation in a floating chat panel.
 
 ## Quick Facts
-- Chrome extension built with Plasmo + React + TypeScript.
 - AI backend uses an OpenAI-compatible `/chat/completions` endpoint.
 - Default prompt context includes selected text, page title, and page URL.
 - Translation target language is configurable in Options.
@@ -18,7 +17,7 @@ AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. I
 - `npm run package`: package the extension bundle.
 
 ## Entry Points
-- `src/contents/main.tsx`: content-script UI entry. Must remain a default-exported React component.
+- `src/contents/main.tsx`: content-script UI entry.
 - `background.ts`: thin Plasmo background entry; it calls `setupBackgroundMessageHandler()`.
 - `options.tsx`: thin Plasmo options entry that re-exports `src/options/index.tsx`.
 
@@ -59,11 +58,21 @@ AI Help Me is a Chrome extension (MV3) built with Plasmo + React + TypeScript. I
 - Event filtering for extension UI should not rely only on `event.target`; use `event.composedPath()` when available so Shadow DOM retargeting does not bypass extension-root checks.
 - When debugging content-script selection bugs, verify whether the failure is caused by stale injected code before changing logic repeatedly. Reload the extension and refresh the target tab after each build.
 
-## Bug Fixing Workflow
-- Do not keep patching around event symptoms once one or two fixes fail. If an event-driven bug is not resolved quickly, stop and re-evaluate the problem from the product requirement and architecture boundary instead of adding more guards.
-- Re-state the real ownership boundary before changing code. In this project, that often means distinguishing page state from extension-UI-local state, and deciding which side is allowed to drive rendering, visibility, and positioning.
-- Prefer structural fixes at the state/source-of-truth layer over incremental event-condition patches. Event filters are acceptable only when they clearly enforce an already-correct architectural boundary.
+## Development Workflow
+- Ask clarifying questions proactively whenever project background, real use cases, product direction, release scope, target completeness, or non-obvious constraints are unclear.
+- Do not fill in missing product assumptions silently when they could change architecture, UX, data flow, or the amount of work. Ask first and align on the requirement boundary.
+- Before non-trivial implementation, confirm the user goal, the scenario, what this version must include now, what can be deferred, and the expected level of polish.
+- When tradeoffs exist, clarify the decision priority with the user, such as delivery speed, minimal diff, maintainability, extensibility, UX quality, or technical correctness under edge cases.
+- Re-state the relevant product boundary and architecture boundary before editing code so the source of truth and side-effect ownership are explicit.
+- For bug fixes, do not keep patching event symptoms once one or two fixes fail. Re-evaluate the problem from the product requirement and architecture boundary instead of adding more guards.
+- Prefer structural fixes at the state/source-of-truth layer over incremental condition patches. Event filters are acceptable only when they clearly enforce an already-correct architectural boundary.
 - When a bug appears to be caused by browser events, verify whether the real issue is stale assumptions about focus, selection ownership, runtime context, or Shadow DOM behavior before modifying multiple handlers.
+- Apply the same discipline to features and refactors. Do not treat missing behavior as a cue to add one more local branch or flag without checking the larger ownership model first.
+- Prefer making the source of truth explicit over deriving behavior from scattered booleans, placeholder values, or coupled UI effects. If a workflow has lifecycle states such as idle, streaming, cancelled, failed, or completed, model them deliberately.
+- When a new capability exposes mixed responsibilities, pause and simplify the structure first. A small structural refactor is preferred over repeatedly extending an already-confused flow.
+- Design new protocol, messaging, or event-driven behavior as coherent end-to-end flows. Avoid leaving parallel legacy and new paths in place unless there is a concrete compatibility requirement.
+- If a request appears to conflict with the project's longer-term direction or existing architecture, surface the tradeoff explicitly and resolve it with the user before proceeding.
+- For small, local, low-risk changes, proceed directly; for product- or architecture-shaping work, prefer a short question round before editing.
 
 ## Verified Repo Conventions
 - TypeScript uses strict mode with `moduleResolution: "Bundler"` and the `~/*` alias rooted at `src/*`.
