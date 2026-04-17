@@ -18,7 +18,13 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 const SETTINGS_KEY = "ai-help-me:settings"
 
 export async function getSettings(): Promise<ExtensionSettings> {
-  const result = await chrome.storage.sync.get(SETTINGS_KEY)
+  let result: Record<string, unknown>
+  try {
+    result = await chrome.storage.sync.get(SETTINGS_KEY)
+  } catch {
+    return DEFAULT_SETTINGS
+  }
+
   const saved = result[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined
 
   if (!saved) {
@@ -45,7 +51,11 @@ export async function getSettings(): Promise<ExtensionSettings> {
 }
 
 export async function saveSettings(settings: ExtensionSettings): Promise<void> {
-  await chrome.storage.sync.set({
-    [SETTINGS_KEY]: settings
-  })
+  try {
+    await chrome.storage.sync.set({
+      [SETTINGS_KEY]: settings
+    })
+  } catch {
+    // Extension context may have been invalidated
+  }
 }

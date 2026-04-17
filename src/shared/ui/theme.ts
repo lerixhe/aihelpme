@@ -59,11 +59,19 @@ export function useUiThemeName(): UiThemeName {
       })
     }
 
-    chrome.storage.onChanged.addListener(onStorageChanged)
+    try {
+      chrome.storage.onChanged.addListener(onStorageChanged)
+    } catch {
+      // Extension context may have been invalidated
+    }
 
     return () => {
       mediaQuery?.removeEventListener("change", onSystemThemeChange)
-      chrome.storage.onChanged.removeListener(onStorageChanged)
+      try {
+        chrome.storage.onChanged.removeListener(onStorageChanged)
+      } catch {
+        // Extension context may have been invalidated
+      }
     }
   }, [])
 

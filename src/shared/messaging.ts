@@ -29,12 +29,22 @@ export async function streamChat(messages: ChatMessage[], options: StreamChatOpt
   }
 
   await new Promise<void>((resolve, reject) => {
-    const port = chrome.runtime.connect({ name: MESSAGE_TYPES.STREAM_PORT_NAME })
+    let port: chrome.runtime.Port
+    try {
+      port = chrome.runtime.connect({ name: MESSAGE_TYPES.STREAM_PORT_NAME })
+    } catch {
+      reject(new Error(ERROR_MESSAGES.CONTEXT_INVALIDATED))
+      return
+    }
     let settled = false
 
     const cleanup = () => {
-      port.onMessage.removeListener(handleMessage)
-      port.onDisconnect.removeListener(handleDisconnect)
+      try {
+        port.onMessage.removeListener(handleMessage)
+        port.onDisconnect.removeListener(handleDisconnect)
+      } catch {
+        // Extension context may have been invalidated
+      }
       options.signal?.removeEventListener("abort", handleAbort)
     }
 
@@ -56,7 +66,7 @@ export async function streamChat(messages: ChatMessage[], options: StreamChatOpt
       }
 
       settle(() => {
-        port.disconnect()
+        try { port.disconnect() } catch { /* context invalidated */ }
         resolve()
       })
     }
@@ -93,6 +103,11 @@ export async function streamChat(messages: ChatMessage[], options: StreamChatOpt
       return
     }
 
-    port.postMessage(request satisfies ChatStreamRequest)
+    try {
+      port.postMessage(request satisfies ChatStreamRequest)
+    } catch {
+      cleanup()
+      reject(new Error(ERROR_MESSAGES.CONTEXT_INVALIDATED))
+    }
   })
 }

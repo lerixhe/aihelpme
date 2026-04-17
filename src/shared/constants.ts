@@ -29,7 +29,8 @@ export const ERROR_MESSAGES = {
   API_TEST_MISSING_FIELDS: "请填写 API Base URL、API Key 和 Model 后再测试。",
   FETCH_MODELS_FAILED: "获取模型列表失败",
   FETCH_MODELS_MISSING_URL: "请先填写 API Base URL",
-  FETCH_MODELS_EMPTY: "未找到可用模型"
+  FETCH_MODELS_EMPTY: "未找到可用模型",
+  CONTEXT_INVALIDATED: "扩展上下文已失效，请刷新页面重试。"
 } as const
 
 // UI messages
