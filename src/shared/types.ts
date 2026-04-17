@@ -76,6 +76,8 @@ export interface SelectionAnchor {
   x: number
   y: number
   rectRight: number
+  mouseX: number
+  mouseY: number
 }
 
 export interface SelectionSnapshot {

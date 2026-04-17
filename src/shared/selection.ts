@@ -30,7 +30,9 @@ function getRangeAnchor(selection: Selection | null): SelectionAnchor | null {
   return {
     x: rect.left + Math.max(rect.width / 2, 0),
     y: rect.top,
-    rectRight: rect.left + rect.width
+    rectRight: rect.left + rect.width,
+    mouseX: 0,
+    mouseY: 0
   }
 }
 
@@ -44,7 +46,9 @@ function getElementAnchor(element: Element): SelectionAnchor | null {
   return {
     x: rect.left + Math.max(rect.width / 2, 0),
     y: rect.top,
-    rectRight: rect.left + rect.width
+    rectRight: rect.left + rect.width,
+    mouseX: 0,
+    mouseY: 0
   }
 }
 

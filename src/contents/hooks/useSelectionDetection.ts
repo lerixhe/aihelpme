@@ -25,6 +25,7 @@ export function useSelectionDetection({
 }: UseSelectionDetectionOptions) {
   const rafIdRef = useRef<number | null>(null)
   const lastAnchorRef = useRef<SelectionAnchor | null>(null)
+  const lastMouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
   const updateSelection = useCallback(
     (event?: Event) => {
@@ -43,6 +44,12 @@ export function useSelectionDetection({
           return
         }
 
+        // Capture mouse position from the triggering event
+        if (event instanceof MouseEvent) {
+          lastMouseRef.current = { x: event.clientX, y: event.clientY }
+        }
+        const mouse = lastMouseRef.current
+
         const target = event?.target ?? null
         const snapshot = getSelectionSnapshot(target)
 
@@ -57,7 +64,9 @@ export function useSelectionDetection({
           anchor = {
             x: event.clientX,
             y: event.clientY,
-            rectRight: event.clientX
+            rectRight: event.clientX,
+            mouseX: event.clientX,
+            mouseY: event.clientY
           }
         }
 
@@ -69,6 +78,9 @@ export function useSelectionDetection({
           onSelectionChange(null, null)
           return
         }
+
+        // Stamp mouse position onto the anchor
+        anchor = { ...anchor, mouseX: mouse.x, mouseY: mouse.y }
 
         lastAnchorRef.current = anchor
         onSelectionChange(snapshot.context, anchor)

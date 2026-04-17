@@ -81,17 +81,26 @@ export default function SelectionToolbar({
 
     const viewportHeight = window.innerHeight
     const viewportWidth = window.innerWidth
+    const OFFSET_X = 12
+    const OFFSET_Y = 12
 
-    const preferredTop = anchor.y - TRIGGER_SIZE - 12
     const minTop = uiLayout.edgeInset
     const maxTop = Math.max(minTop, viewportHeight - TRIGGER_SIZE - uiLayout.edgeInset)
-    const top = Math.min(Math.max(minTop, preferredTop), maxTop)
-
-    const GAP = 8
-    const preferredLeft = anchor.rectRight + GAP
     const minLeft = uiLayout.edgeInset
     const maxLeft = Math.max(minLeft, viewportWidth - TRIGGER_SIZE - uiLayout.edgeInset)
-    const left = Math.min(Math.max(minLeft, preferredLeft), maxLeft)
+
+    // Default: upper-right of mouse cursor
+    let top = anchor.mouseY - TRIGGER_SIZE - OFFSET_Y
+    let left = anchor.mouseX + OFFSET_X
+
+    // Flip to upper-left if overflowing right edge
+    if (left + TRIGGER_SIZE > viewportWidth - uiLayout.edgeInset) {
+      left = anchor.mouseX - TRIGGER_SIZE - OFFSET_X
+    }
+
+    // Clamp to viewport bounds
+    top = Math.min(Math.max(minTop, top), maxTop)
+    left = Math.min(Math.max(minLeft, left), maxLeft)
 
     return { top, left }
   }, [anchor])
