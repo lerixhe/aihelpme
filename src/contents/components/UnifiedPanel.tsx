@@ -244,7 +244,7 @@ export default function UnifiedPanel({
           event.stopPropagation()
         }}
         style={{
-          width: 560,
+          width: 680,
           maxWidth: "calc(100vw - 32px)",
           height: "min(70vh, calc(100vh - 32px))",
           display: "flex",
