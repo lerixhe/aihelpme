@@ -39,72 +39,72 @@ export interface UiTheme {
 export const uiThemes: Record<UiThemeName, UiTheme> = {
   light: {
     bg: {
-      page: "#f0fdfa",
+      page: "#ffffff",
       surface: "#ffffff",
-      surfaceAlt: "#f8fffd",
-      surfaceMuted: "#ecfdf5",
-      overlay: "rgba(13, 148, 136, 0.16)"
+      surfaceAlt: "#fafafa",
+      surfaceMuted: "#f5f5f5",
+      overlay: "rgba(0, 0, 0, 0.08)"
     },
     text: {
-      primary: "#134e4a",
-      secondary: "#4b706b",
-      inverse: "#f8fffe"
+      primary: "#0a0a0a",
+      secondary: "#737373",
+      inverse: "#ffffff"
     },
     border: {
-      default: "#b7ece3",
-      strong: "#0d9488",
-      subtle: "#dff7f2"
+      default: "#e5e5e5",
+      strong: "#0a0a0a",
+      subtle: "#f0f0f0"
     },
     brand: {
-      primary: "#0d9488",
-      primaryHover: "#0f766e",
-      primaryActive: "#115e59",
-      secondary: "#e6fffb",
-      secondaryHover: "#cffaf1"
+      primary: "#0a0a0a",
+      primaryHover: "#262626",
+      primaryActive: "#404040",
+      secondary: "#f5f5f5",
+      secondaryHover: "#e5e5e5"
     },
     state: {
       error: "#dc2626",
       errorBg: "#fef2f2",
       warning: "#b45309",
       warningBg: "#fffbeb",
-      success: "#15803d",
+      success: "#16a34a",
       successBg: "#f0fdf4",
-      disabled: "#94a3b8"
+      disabled: "#a3a3a3"
     }
   },
   dark: {
     bg: {
-      page: "#071513",
-      surface: "#0f1f1d",
-      surfaceAlt: "#132826",
-      surfaceMuted: "#173330",
-      overlay: "rgba(15, 118, 110, 0.28)"
+      page: "#000000",
+      surface: "#0a0a0a",
+      surfaceAlt: "#171717",
+      surfaceMuted: "#262626",
+      overlay: "rgba(255, 255, 255, 0.12)"
     },
     text: {
-      primary: "#dcfdf7",
-      secondary: "#94c9c1",
-      inverse: "#06201d"
+      primary: "#fafafa",
+      secondary: "#a3a3a3",
+      inverse: "#0a0a0a"
     },
     border: {
-      default: "#28544e",
-      strong: "#2dd4bf",
-      subtle: "#183430"
+      default: "#262626",
+      strong: "#fafafa",
+      subtle: "#1a1a1a"
     },
     brand: {
-      primary: "#14b8a6",
-      primaryHover: "#2dd4bf",
-      primaryActive: "#0d9488",
-      secondary: "#173330",
-      secondaryHover: "#1b3f3a"
+      primary: "#fafafa",
+      primaryHover: "#e5e5e5",
+      primaryActive: "#d4d4d4",
+      secondary: "#262626",
+      secondaryHover: "#333333"
     },
     state: {
       error: "#f87171",
-      errorBg: "#3b171b",
+      errorBg: "#2a0a0a",
       warning: "#fbbf24",
-      warningBg: "#3b2f11",
+      warningBg: "#2a1f0a",
       success: "#4ade80",
-      successBg: "#112b1b",
-      disabled: "#64748b"
+      successBg: "#0a2a12",
+      disabled: "#525252"
     }
   }
 }
@@ -127,7 +127,9 @@ export const uiTypography = {
 
 export const uiSpace = {
   4: 4,
+  6: 6,
   8: 8,
+  10: 10,
   12: 12,
   16: 16,
   20: 20,
@@ -142,15 +144,17 @@ export const uiRadius = {
 } as const
 
 export const uiShadow = {
-  sm: "0 6px 18px rgba(8, 47, 73, 0.08)",
-  md: "0 18px 40px rgba(8, 47, 73, 0.14)",
-  lg: "0 24px 60px rgba(8, 47, 73, 0.2)"
+  sm: "0 1px 2px rgba(0, 0, 0, 0.05)",
+  md: "0 4px 12px rgba(0, 0, 0, 0.08)",
+  lg: "0 8px 24px rgba(0, 0, 0, 0.12)"
 } as const
 
 export const uiMotion = {
   durationFast: "150ms",
   durationNormal: "220ms",
-  easingStandard: "cubic-bezier(0.2, 0, 0, 1)"
+  durationExpanded: "300ms",
+  easingStandard: "cubic-bezier(0.2, 0, 0, 1)",
+  easingSpring: "cubic-bezier(0.34, 1.56, 0.64, 1)"
 } as const
 
 export const uiLayer = {

@@ -1,10 +1,11 @@
-import type { ExtensionSettings } from "~/shared/types"
+import type { ExtensionSettings, ThemePreference } from "~/shared/types"
 
 export const DEFAULT_SETTINGS: ExtensionSettings = {
   apiBaseUrl: "https://api.openai.com/v1",
   apiKey: "",
   model: "gpt-4o-mini",
   translationLanguage: "简体中文",
+  theme: "auto",
   customActions: [
     {
       id: "typo-check",
@@ -24,9 +25,13 @@ export async function getSettings(): Promise<ExtensionSettings> {
     return DEFAULT_SETTINGS
   }
 
+  const validThemes: ThemePreference[] = ["auto", "light", "dark"]
+  const theme = validThemes.includes(saved.theme as ThemePreference) ? (saved.theme as ThemePreference) : DEFAULT_SETTINGS.theme
+
   return {
     ...DEFAULT_SETTINGS,
     ...saved,
+    theme,
     customActions: Array.isArray(saved.customActions)
       ? saved.customActions
           .filter((item) => Boolean(item?.id) && Boolean(item?.label) && Boolean(item?.template))

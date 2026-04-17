@@ -4,7 +4,7 @@ import { hasTextPlaceholder } from "~/shared/prompt"
 import { DEFAULT_SETTINGS, getSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
-import type { CustomActionTemplate, ExtensionSettings } from "~/shared/types"
+import type { CustomActionTemplate, ExtensionSettings, ThemePreference } from "~/shared/types"
 
 export default function OptionsPage() {
   const themeName = useUiThemeName()
@@ -119,6 +119,70 @@ export default function OptionsPage() {
         <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.lg, lineHeight: 1.6 }}>
           配置 OpenAI 兼容接口、翻译语言和自定义动作模板，保持扩展交互简单、清晰、易读。
         </p>
+      </section>
+
+      <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
+        <div style={{ marginBottom: uiSpace[12] }}>
+          <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>外观主题</h2>
+          <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>选择界面配色方案，切换即时生效。</p>
+        </div>
+        <div style={{ display: "flex", gap: uiSpace[8] }}>
+          {(["auto", "light", "dark"] as ThemePreference[]).map((value) => {
+            const isSelected = settings.theme === value
+            const labels: Record<ThemePreference, string> = { auto: "跟随系统", light: "浅色", dark: "深色" }
+
+            return (
+              <button
+                key={value}
+                onClick={() => {
+                  setSettings((current) => ({ ...current, theme: value }))
+                  void saveSettings({ ...settings, theme: value })
+                }}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: uiSpace[6],
+                  padding: `${uiSpace[12]}px ${uiSpace[8]}px`,
+                  border: `2px solid ${isSelected ? theme.border.strong : theme.border.default}`,
+                  borderRadius: uiRadius.md,
+                  background: isSelected ? theme.brand.primary : theme.bg.surfaceAlt,
+                  color: isSelected ? theme.text.inverse : theme.text.primary,
+                  cursor: "pointer",
+                  fontSize: uiTypography.fontSize.sm,
+                  fontWeight: isSelected ? uiTypography.fontWeight.semibold : uiTypography.fontWeight.regular,
+                  fontFamily: uiTypography.fontFamily,
+                  outline: "none",
+                  transition: `all ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+                }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 28,
+                    borderRadius: uiRadius.sm,
+                    border: `1px solid ${isSelected ? theme.text.inverse : theme.border.default}`,
+                    background: value === "light" || (value === "auto" && themeName === "light") ? "#ffffff" : "#0a0a0a",
+                    position: "relative",
+                    overflow: "hidden"
+                  }}>
+                  {value === "auto" ? (
+                    <div style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "50%",
+                      height: "100%",
+                      background: "#ffffff",
+                      borderRight: `1px solid ${isSelected ? theme.text.inverse : theme.border.default}`
+                    }} />
+                  ) : null}
+                </div>
+                {labels[value]}
+              </button>
+            )
+          })}
+        </div>
       </section>
 
       <section style={cardStyle}>

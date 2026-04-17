@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
 
+import { getSettings } from "~/shared/storage"
 import { type UiThemeName, uiThemes } from "~/shared/ui/tokens"
+import type { ThemePreference } from "~/shared/types"
 
-function getPreferredThemeName(): UiThemeName {
+function getSystemThemeName(): UiThemeName {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return "light"
   }
@@ -10,24 +12,58 @@ function getPreferredThemeName(): UiThemeName {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
 
+function resolveThemeName(preference: ThemePreference): UiThemeName {
+  if (preference === "auto") {
+    return getSystemThemeName()
+  }
+
+  return preference
+}
+
 export function useUiThemeName(): UiThemeName {
-  const [themeName, setThemeName] = useState<UiThemeName>(() => getPreferredThemeName())
+  const [themeName, setThemeName] = useState<UiThemeName>(() => getSystemThemeName())
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return
+    let preference: ThemePreference = "auto"
+
+    const apply = () => {
+      setThemeName(resolveThemeName(preference))
     }
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    void getSettings().then((settings) => {
+      preference = settings.theme
+      apply()
+    })
 
-    const onThemeChange = () => {
-      setThemeName(mediaQuery.matches ? "dark" : "light")
+    const mediaQuery =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-color-scheme: dark)")
+        : null
+
+    const onSystemThemeChange = () => {
+      if (preference === "auto") {
+        apply()
+      }
     }
 
-    mediaQuery.addEventListener("change", onThemeChange)
+    mediaQuery?.addEventListener("change", onSystemThemeChange)
+
+    const onStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (_changes, areaName) => {
+      if (areaName !== "sync") {
+        return
+      }
+
+      void getSettings().then((settings) => {
+        preference = settings.theme
+        apply()
+      })
+    }
+
+    chrome.storage.onChanged.addListener(onStorageChanged)
 
     return () => {
-      mediaQuery.removeEventListener("change", onThemeChange)
+      mediaQuery?.removeEventListener("change", onSystemThemeChange)
+      chrome.storage.onChanged.removeListener(onStorageChanged)
     }
   }, [])
 
