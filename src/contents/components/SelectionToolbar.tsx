@@ -103,10 +103,14 @@ export default function SelectionToolbar({
 
   const currentText = capturedText
 
-  // Reset captured text when selection bubble reopens with new selection
+  // Reset captured text and collapsed state when toolbar reopens
   useEffect(() => {
     if (visible && selectionText) {
       setCapturedText(selectionText)
+    }
+    if (!visible) {
+      setExpanded(false)
+      setFreeInput("")
     }
   }, [visible, selectionText])
 
