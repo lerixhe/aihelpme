@@ -162,7 +162,7 @@ export default function OptionsPage() {
                     height: 28,
                     borderRadius: uiRadius.sm,
                     border: `1px solid ${isSelected ? theme.text.inverse : theme.border.default}`,
-                    background: value === "light" || (value === "auto" && themeName === "light") ? "#ffffff" : "#0a0a0a",
+                    background: value === "light" || (value === "auto" && themeName === "light") ? "#F0FDFA" : "#0F172A",
                     position: "relative",
                     overflow: "hidden"
                   }}>
@@ -173,7 +173,7 @@ export default function OptionsPage() {
                       left: 0,
                       width: "50%",
                       height: "100%",
-                      background: "#ffffff",
+                      background: "#F0FDFA",
                       borderRight: `1px solid ${isSelected ? theme.text.inverse : theme.border.default}`
                     }} />
                   ) : null}
@@ -368,7 +368,8 @@ export default function OptionsPage() {
             ...buttonStyle,
             opacity: !canSave || saving ? 0.55 : 1,
             cursor: !canSave || saving ? "not-allowed" : "pointer",
-            background: !canSave || saving ? theme.state.disabled : theme.brand.primary
+            background: !canSave || saving ? theme.state.disabled : theme.brand.primary,
+            transition: `all ${uiMotion.durationFast} ${uiMotion.easingStandard}`
           }}>
           {saving ? "保存中..." : "保存设置"}
         </button>

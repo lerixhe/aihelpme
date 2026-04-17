@@ -110,8 +110,21 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
         zIndex: uiLayer.overlay,
         fontFamily: uiTypography.fontFamily,
         transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-        backdropFilter: "blur(12px)"
+        backdropFilter: "blur(12px)",
+        animation: `chat-panel-enter 0.35s ${uiMotion.easingSpring} forwards`
       }}>
+      <style>{`
+        @keyframes chat-panel-enter {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
       <div
         onMouseDown={(event) => {
           dragStateRef.current.dragging = true
@@ -198,8 +211,21 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
               background: item.role === "user" ? theme.brand.primary : theme.bg.surface,
               color: item.role === "user" ? theme.text.inverse : theme.text.primary,
               border: item.role === "user" ? "none" : `1px solid ${theme.border.default}`,
-              boxShadow: item.role === "user" ? "none" : uiShadow.sm
+              boxShadow: item.role === "user" ? "none" : uiShadow.sm,
+              animation: `message-enter 0.3s ${uiMotion.easingEnter} forwards`
             }}>
+            <style>{`
+              @keyframes message-enter {
+                from {
+                  opacity: 0;
+                  transform: translateY(8px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+            `}</style>
             {item.content}
           </div>
         ))}

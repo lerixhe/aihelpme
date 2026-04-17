@@ -128,7 +128,7 @@ export default function SelectionToolbar({
     return null
   }
 
-  const gradientAccent = `linear-gradient(135deg, ${theme.brand.primary}, #7c3aed, ${theme.brand.primaryHover})`
+  const gradientAccent = `linear-gradient(135deg, ${theme.brand.primary}, ${theme.accent.primary}, ${theme.brand.primaryHover})`
 
   const actionButtonStyle = (id: string): React.CSSProperties => ({
     border: `1px solid ${hovered === id ? theme.border.default : theme.border.subtle}`,
@@ -159,12 +159,12 @@ export default function SelectionToolbar({
       <style>{`
         @keyframes ai-help-me-glow {
           0%, 100% {
-            box-shadow: 0 0 8px var(--glow-color, rgba(0,0,0,0.2)), 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 0 8px ${theme.brand.primary}40, 0 2px 8px rgba(0,0,0,0.08);
             transform: scale(1);
           }
           50% {
-            box-shadow: 0 0 20px var(--glow-color, rgba(0,0,0,0.35)), 0 2px 12px rgba(0,0,0,0.12);
-            transform: scale(1.08);
+            box-shadow: 0 0 20px ${theme.brand.primary}60, 0 2px 12px rgba(0,0,0,0.12);
+            transform: scale(1.05);
           }
         }
       `}</style>
@@ -235,17 +235,17 @@ export default function SelectionToolbar({
             overflow: "hidden",
             backdropFilter: "blur(16px)",
             transformOrigin: "0 0",
-            animation: `toolbar-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards`
+            animation: `toolbar-enter 0.35s ${uiMotion.easingSpring} forwards`
           }}>
           <style>{`
             @keyframes toolbar-enter {
               from {
                 opacity: 0;
-                transform: scale(0.85);
+                transform: scale(0.9) translateY(8px);
               }
               to {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1) translateY(0);
               }
             }
           `}</style>
@@ -285,7 +285,7 @@ export default function SelectionToolbar({
                   fontWeight: uiTypography.fontWeight.bold,
                   fontSize: uiTypography.fontSize.md,
                   letterSpacing: "-0.01em",
-                  background: `linear-gradient(135deg, ${theme.brand.primary}, #7c3aed)`,
+                  background: `linear-gradient(135deg, ${theme.brand.primary}, ${theme.accent.primary})`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text"

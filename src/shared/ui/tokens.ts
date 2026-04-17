@@ -25,6 +25,10 @@ export interface UiTheme {
     secondary: string
     secondaryHover: string
   }
+  accent: {
+    primary: string
+    primaryHover: string
+  }
   state: {
     error: string
     errorBg: string
@@ -39,72 +43,80 @@ export interface UiTheme {
 export const uiThemes: Record<UiThemeName, UiTheme> = {
   light: {
     bg: {
-      page: "#ffffff",
-      surface: "#ffffff",
-      surfaceAlt: "#fafafa",
-      surfaceMuted: "#f5f5f5",
+      page: "#F0FDFA",
+      surface: "#FFFFFF",
+      surfaceAlt: "#F0FDFA",
+      surfaceMuted: "#E8F1F4",
       overlay: "rgba(0, 0, 0, 0.08)"
     },
     text: {
-      primary: "#0a0a0a",
-      secondary: "#737373",
-      inverse: "#ffffff"
+      primary: "#134E4A",
+      secondary: "#5F9EA0",
+      inverse: "#FFFFFF"
     },
     border: {
-      default: "#e5e5e5",
-      strong: "#0a0a0a",
-      subtle: "#f0f0f0"
+      default: "#99F6E4",
+      strong: "#134E4A",
+      subtle: "#E8F1F4"
     },
     brand: {
-      primary: "#0a0a0a",
-      primaryHover: "#262626",
-      primaryActive: "#404040",
-      secondary: "#f5f5f5",
-      secondaryHover: "#e5e5e5"
+      primary: "#0D9488",
+      primaryHover: "#0F766E",
+      primaryActive: "#115E59",
+      secondary: "#E8F1F4",
+      secondaryHover: "#D1FAE5"
+    },
+    accent: {
+      primary: "#EA580C",
+      primaryHover: "#C2410C"
     },
     state: {
-      error: "#dc2626",
-      errorBg: "#fef2f2",
-      warning: "#b45309",
-      warningBg: "#fffbeb",
-      success: "#16a34a",
-      successBg: "#f0fdf4",
-      disabled: "#a3a3a3"
+      error: "#DC2626",
+      errorBg: "#FEF2F2",
+      warning: "#B45309",
+      warningBg: "#FFFBEB",
+      success: "#16A34A",
+      successBg: "#F0FDF4",
+      disabled: "#9CA3AF"
     }
   },
   dark: {
     bg: {
-      page: "#000000",
-      surface: "#0a0a0a",
-      surfaceAlt: "#171717",
-      surfaceMuted: "#262626",
+      page: "#0F172A",
+      surface: "#1E293B",
+      surfaceAlt: "#0F172A",
+      surfaceMuted: "#334155",
       overlay: "rgba(255, 255, 255, 0.12)"
     },
     text: {
-      primary: "#fafafa",
-      secondary: "#a3a3a3",
-      inverse: "#0a0a0a"
+      primary: "#F0FDFA",
+      secondary: "#94A3B8",
+      inverse: "#0F172A"
     },
     border: {
-      default: "#262626",
-      strong: "#fafafa",
-      subtle: "#1a1a1a"
+      default: "#334155",
+      strong: "#F0FDFA",
+      subtle: "#1E293B"
     },
     brand: {
-      primary: "#fafafa",
-      primaryHover: "#e5e5e5",
-      primaryActive: "#d4d4d4",
-      secondary: "#262626",
-      secondaryHover: "#333333"
+      primary: "#2DD4BF",
+      primaryHover: "#14B8A6",
+      primaryActive: "#0D9488",
+      secondary: "#334155",
+      secondaryHover: "#475569"
+    },
+    accent: {
+      primary: "#FB923C",
+      primaryHover: "#F97316"
     },
     state: {
-      error: "#f87171",
-      errorBg: "#2a0a0a",
-      warning: "#fbbf24",
-      warningBg: "#2a1f0a",
-      success: "#4ade80",
-      successBg: "#0a2a12",
-      disabled: "#525252"
+      error: "#F87171",
+      errorBg: "#2A0A0A",
+      warning: "#FBBF24",
+      warningBg: "#2A1F0A",
+      success: "#4ADE80",
+      successBg: "#0A2A12",
+      disabled: "#64748B"
     }
   }
 }
@@ -146,15 +158,20 @@ export const uiRadius = {
 export const uiShadow = {
   sm: "0 1px 2px rgba(0, 0, 0, 0.05)",
   md: "0 4px 12px rgba(0, 0, 0, 0.08)",
-  lg: "0 8px 24px rgba(0, 0, 0, 0.12)"
+  lg: "0 8px 24px rgba(0, 0, 0, 0.12)",
+  glow: "0 0 20px rgba(13, 148, 136, 0.3)",
+  glowStrong: "0 0 30px rgba(13, 148, 136, 0.5)"
 } as const
 
 export const uiMotion = {
   durationFast: "150ms",
   durationNormal: "220ms",
   durationExpanded: "300ms",
+  durationSlow: "400ms",
   easingStandard: "cubic-bezier(0.2, 0, 0, 1)",
-  easingSpring: "cubic-bezier(0.34, 1.56, 0.64, 1)"
+  easingSpring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+  easingEnter: "cubic-bezier(0, 0, 0.2, 1)",
+  easingExit: "cubic-bezier(0.4, 0, 1, 1)"
 } as const
 
 export const uiLayer = {
