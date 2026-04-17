@@ -89,7 +89,7 @@ function ThinkingBlock({
           }}>
           ▶
         </span>
-        {isStreaming ? "思考中..." : "思考过程"}
+        {isStreaming ? "思考中…" : "思考过程"}
         {isStreaming ? (
           <span
             style={{
@@ -226,6 +226,13 @@ export default function UnifiedPanel({
         [data-messages-scroll]::-webkit-scrollbar-thumb:hover {
           background-color: rgba(0, 0, 0, 0.25);
         }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
       `}</style>
 
       <div
@@ -285,6 +292,8 @@ export default function UnifiedPanel({
           </div>
           <button
             onClick={onClose}
+            onFocus={() => setFocused("close")}
+            onBlur={() => setFocused(null)}
             aria-label="关闭对话面板"
             style={{
               border: "none",
@@ -301,7 +310,8 @@ export default function UnifiedPanel({
               lineHeight: 1,
               padding: 0,
               outline: "none",
-              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              boxShadow: focused === "close" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
             }}
             onMouseEnter={(event) => {
               event.currentTarget.style.background = theme.bg.surfaceMuted
@@ -430,7 +440,7 @@ export default function UnifiedPanel({
                 background: theme.bg.surface,
                 border: `1px solid ${theme.border.default}`
               }}>
-              AI 正在生成中...
+              AI 正在生成中…
             </div>
           ) : null}
         </div>
