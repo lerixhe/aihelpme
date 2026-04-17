@@ -243,16 +243,33 @@ export default function UnifiedPanel({
             transform: translateY(0);
           }
         }
+        [data-messages-scroll]::-webkit-scrollbar {
+          width: 6px;
+        }
+        [data-messages-scroll]::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        [data-messages-scroll]::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.15);
+          border-radius: 3px;
+        }
+        [data-messages-scroll]::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(0, 0, 0, 0.25);
+        }
       `}</style>
 
       <div
         onClick={(event) => {
           event.stopPropagation()
         }}
+        onWheel={(event) => {
+          // Prevent wheel events from leaking to the host page
+          event.stopPropagation()
+        }}
         style={{
           width: 560,
           maxWidth: "calc(100vw - 32px)",
-          maxHeight: "min(70vh, calc(100vh - 32px))",
+          height: "min(70vh, calc(100vh - 32px))",
           display: "flex",
           flexDirection: "column",
           background: theme.bg.surface,
@@ -454,13 +471,13 @@ export default function UnifiedPanel({
         {/* Messages area */}
         <div
           ref={messagesContainerRef}
+          data-messages-scroll
           style={{
             flex: 1,
             overflowY: "auto",
+            overscrollBehavior: "contain",
             padding: uiSpace[12],
-            display: "flex",
-            flexDirection: "column",
-            gap: uiSpace[12],
+            display: "block",
             background: theme.bg.surfaceAlt,
             minHeight: 0
           }}>
@@ -484,8 +501,10 @@ export default function UnifiedPanel({
             <div
               key={item.id}
               style={{
-                alignSelf: item.role === "user" ? "flex-end" : "flex-start",
+                display: "block",
+                marginLeft: item.role === "user" ? "auto" : undefined,
                 maxWidth: "85%",
+                marginBottom: uiSpace[12],
                 borderRadius: uiRadius.md,
                 lineHeight: 1.5,
                 fontSize: uiTypography.fontSize.md,
@@ -506,12 +525,12 @@ export default function UnifiedPanel({
                 />
               ) : null}
               {item.content ? (
-                <div style={{ padding: `${uiSpace[8]}px ${uiSpace[12]}px` }}>
-                  {item.content}
-                </div>
-              ) : null}
-              {item.role === "user" ? (
-                <div style={{ padding: `${uiSpace[8]}px ${uiSpace[12]}px` }}>
+                <div
+                  style={{
+                    padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                    overflowWrap: "break-word",
+                    wordBreak: "break-word"
+                  }}>
                   {item.content}
                 </div>
               ) : null}
@@ -523,7 +542,6 @@ export default function UnifiedPanel({
               style={{
                 color: theme.text.secondary,
                 fontSize: uiTypography.fontSize.sm,
-                alignSelf: "flex-start",
                 padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
                 borderRadius: uiRadius.md,
                 background: theme.bg.surface,
