@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
@@ -97,7 +97,6 @@ export default function SelectionToolbar({
   const theme = useUiTheme()
   const [ringOpen, setRingOpen] = useState(false)
   const [ringHovered, setRingHovered] = useState<string | null>(null)
-  const ringCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const allActions: RingAction[] = useMemo(() => [
     { id: "built-in-explain", label: "解释", type: "built-in", actionId: "explain" },
@@ -140,23 +139,6 @@ export default function SelectionToolbar({
     window.getSelection()?.removeAllRanges()
   }
 
-  const scheduleRingClose = () => {
-    if (ringCloseTimer.current) {
-      clearTimeout(ringCloseTimer.current)
-    }
-    ringCloseTimer.current = setTimeout(() => {
-      setRingOpen(false)
-      setRingHovered(null)
-    }, 300)
-  }
-
-  const cancelRingClose = () => {
-    if (ringCloseTimer.current) {
-      clearTimeout(ringCloseTimer.current)
-      ringCloseTimer.current = null
-    }
-  }
-
   const handleRingActionHover = (action: RingAction) => {
     setRingOpen(false)
     setRingHovered(null)
@@ -174,15 +156,6 @@ export default function SelectionToolbar({
       setRingHovered(null)
     }
   }, [visible])
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (ringCloseTimer.current) {
-        clearTimeout(ringCloseTimer.current)
-      }
-    }
-  }, [])
 
   if (!visible || !anchor) {
     return null
@@ -252,7 +225,6 @@ export default function SelectionToolbar({
         tabIndex={0}
         aria-label={ringOpen ? "收起环形菜单" : "展开环形菜单"}
         onMouseEnter={handleTriggerEnter}
-        onMouseLeave={scheduleRingClose}
         onClick={() => {
           if (ringOpen) {
             setRingOpen(false)
@@ -299,8 +271,6 @@ export default function SelectionToolbar({
 
       {ringOpen && (
         <div
-          onMouseEnter={cancelRingClose}
-          onMouseLeave={scheduleRingClose}
           style={{
             position: "absolute",
             left: TRIGGER_SIZE / 2,
@@ -319,7 +289,6 @@ export default function SelectionToolbar({
                 title={action.label}
                 aria-label={action.label}
                 onMouseEnter={() => {
-                  cancelRingClose()
                   setRingHovered(action.id)
                   handleRingActionHover(action)
                 }}
