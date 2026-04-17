@@ -2,14 +2,11 @@ import { useMemo, useRef, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiSpace, uiTypography } from "~/shared/ui/tokens"
-import type { BuiltInActionId, CustomActionTemplate } from "~/shared/types"
+import type { BuiltInActionId, CustomActionTemplate, SelectionAnchor } from "~/shared/types"
 
 interface Props {
   visible: boolean
-  anchor: {
-    x: number
-    y: number
-  } | null
+  anchor: SelectionAnchor | null
   customActions: CustomActionTemplate[]
   onBuiltInAction: (action: BuiltInActionId) => void
   onCustomAction: (template: string) => void
@@ -88,7 +85,8 @@ export default function SelectionToolbar({
     const maxTop = Math.max(minTop, viewportHeight - TRIGGER_SIZE - uiLayout.edgeInset)
     const top = Math.min(Math.max(minTop, preferredTop), maxTop)
 
-    const preferredLeft = anchor.x - TRIGGER_SIZE / 2
+    const GAP = 8
+    const preferredLeft = anchor.rectRight + GAP
     const minLeft = uiLayout.edgeInset
     const maxLeft = Math.max(minLeft, viewportWidth - TRIGGER_SIZE - uiLayout.edgeInset)
     const left = Math.min(Math.max(minLeft, preferredLeft), maxLeft)
@@ -128,8 +126,6 @@ export default function SelectionToolbar({
     return null
   }
 
-  const gradientAccent = `linear-gradient(135deg, ${theme.brand.primary}, ${theme.accent.primary}, ${theme.brand.primaryHover})`
-
   const actionButtonStyle = (id: string): React.CSSProperties => ({
     border: `1px solid ${hovered === id ? theme.border.default : theme.border.subtle}`,
     borderRadius: uiRadius.pill,
@@ -142,7 +138,7 @@ export default function SelectionToolbar({
     background: hovered === id ? theme.brand.secondaryHover : theme.brand.secondary,
     outline: "none",
     boxShadow:
-      focused === id ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none",
+      focused === id ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
     transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
   })
 
@@ -223,7 +219,7 @@ export default function SelectionToolbar({
           }}
           style={{
             position: "absolute",
-            top: 0,
+            top: TRIGGER_SIZE + 4,
             left: 0,
             minWidth: 340,
             maxWidth: "min(460px, calc(100vw - 24px))",
@@ -253,7 +249,7 @@ export default function SelectionToolbar({
           <div
             style={{
               height: 3,
-              background: gradientAccent,
+              background: theme.brand.primary,
               borderRadius: `${uiRadius.lg}px ${uiRadius.lg}px 0 0`
             }}
           />
@@ -285,10 +281,7 @@ export default function SelectionToolbar({
                   fontWeight: uiTypography.fontWeight.bold,
                   fontSize: uiTypography.fontSize.md,
                   letterSpacing: "-0.01em",
-                  background: `linear-gradient(135deg, ${theme.brand.primary}, ${theme.accent.primary})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text"
+                  color: theme.brand.primary
                 }}>
                 AI Help Me
               </span>
@@ -394,12 +387,12 @@ export default function SelectionToolbar({
               placeholder="输入需求后回车"
               style={{
                 flex: 1,
-                border: `1px solid ${focused === "input" ? theme.border.strong : theme.border.default}`,
+                border: `1px solid ${focused === "input" ? theme.brand.primary : theme.border.default}`,
                 background: theme.bg.surfaceAlt,
                 color: theme.text.primary,
                 borderRadius: uiRadius.pill,
                 padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                boxShadow: focused === "input" ? `0 0 0 3px ${theme.bg.overlay}` : "none",
+                boxShadow: focused === "input" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
                 outline: "none",
                 minWidth: 140,
                 fontSize: uiTypography.fontSize.sm,

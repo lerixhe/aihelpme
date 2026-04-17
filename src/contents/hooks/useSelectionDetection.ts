@@ -72,7 +72,8 @@ export function useSelectionDetection({
         if (!anchor && event instanceof MouseEvent) {
           anchor = {
             x: event.clientX,
-            y: event.clientY
+            y: event.clientY,
+            rectRight: event.clientX
           }
         }
 

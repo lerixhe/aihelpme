@@ -75,6 +75,7 @@ export type ChatStreamEvent =
 export interface SelectionAnchor {
   x: number
   y: number
+  rectRight: number
 }
 
 export interface SelectionSnapshot {
