@@ -70,3 +70,29 @@ export type ChatStreamEvent =
   | ChatStreamCompletedEvent
   | ChatStreamCancelledEvent
   | ChatStreamFailedEvent
+
+// Selection types
+export interface SelectionAnchor {
+  x: number
+  y: number
+}
+
+export interface SelectionSnapshot {
+  context: SelectionContext
+  anchor: SelectionAnchor | null
+}
+
+// Chat request state types
+export type ChatRequestStatus = "idle" | "streaming" | "cancelled" | "failed"
+
+export type ChatRequestState =
+  | { status: "idle" }
+  | { status: "streaming"; assistantMessageId: string }
+  | { status: "cancelled"; assistantMessageId: string }
+  | { status: "failed"; assistantMessageId: string; error: string }
+
+// Stream handler options
+export interface StreamChatOptions {
+  onEvent: (event: ChatStreamEvent) => void
+  signal?: AbortSignal
+}

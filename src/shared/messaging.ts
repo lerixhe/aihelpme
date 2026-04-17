@@ -5,6 +5,7 @@ import type {
   ChatStreamStartRequest,
   ChatMessage
 } from "~/shared/types"
+import { MESSAGE_TYPES, ERROR_MESSAGES, STREAM_EVENTS } from "~/shared/constants"
 
 interface StreamChatOptions {
   onEvent: (event: ChatStreamEvent) => void
@@ -12,19 +13,23 @@ interface StreamChatOptions {
 }
 
 function isTerminalEvent(event: ChatStreamEvent): boolean {
-  return event.type === "completed" || event.type === "cancelled" || event.type === "failed"
+  return (
+    event.type === STREAM_EVENTS.COMPLETED ||
+    event.type === STREAM_EVENTS.CANCELLED ||
+    event.type === STREAM_EVENTS.FAILED
+  )
 }
 
 export async function streamChat(messages: ChatMessage[], options: StreamChatOptions): Promise<void> {
   const request: ChatStreamStartRequest = {
-    type: "AI_HELP_ME_CHAT_STREAM_START",
+    type: MESSAGE_TYPES.CHAT_STREAM_START,
     payload: {
       messages
     }
   }
 
   await new Promise<void>((resolve, reject) => {
-    const port = chrome.runtime.connect({ name: "AI_HELP_ME_STREAM" })
+    const port = chrome.runtime.connect({ name: MESSAGE_TYPES.STREAM_PORT_NAME })
     let settled = false
 
     const cleanup = () => {
@@ -63,13 +68,13 @@ export async function streamChat(messages: ChatMessage[], options: StreamChatOpt
 
       settle(() => {
         const runtimeError = chrome.runtime.lastError?.message
-        reject(new Error(runtimeError || "流式连接已断开"))
+        reject(new Error(runtimeError || ERROR_MESSAGES.STREAM_DISCONNECTED))
       })
     }
 
     const handleAbort = () => {
       const cancelRequest: ChatStreamCancelRequest = {
-        type: "AI_HELP_ME_CHAT_STREAM_CANCEL"
+        type: MESSAGE_TYPES.CHAT_STREAM_CANCEL
       }
 
       try {

@@ -1,14 +1,4 @@
-import type { SelectionContext } from "~/shared/types"
-
-export interface SelectionAnchor {
-  x: number
-  y: number
-}
-
-export interface SelectionSnapshot {
-  context: SelectionContext
-  anchor: SelectionAnchor | null
-}
+import type { SelectionContext, SelectionAnchor, SelectionSnapshot } from "~/shared/types"
 
 type TextControl = HTMLInputElement | HTMLTextAreaElement
 

@@ -5,6 +5,8 @@ import type {
   ChatStreamStartRequest,
   ChatMessage
 } from "~/shared/types"
+import { MESSAGE_TYPES, ERROR_MESSAGES } from "~/shared/constants"
+import { formatApiError, getErrorMessage, isAbortError } from "~/shared/errors"
 import { getSettings } from "~/shared/storage"
 
 function normalizeBaseUrl(url: string): string {
@@ -66,7 +68,7 @@ async function streamOpenAiCompatible(
   if (!settings.apiKey.trim()) {
     onEvent({
       type: "failed",
-      error: "请先在设置页填写 API Key。"
+      error: ERROR_MESSAGES.NO_API_KEY
     })
     return
   }
@@ -95,7 +97,7 @@ async function streamOpenAiCompatible(
     const rawError = await response.text()
     onEvent({
       type: "failed",
-      error: `AI 服务返回错误 (${response.status})：${rawError || "未知错误"}`
+      error: formatApiError(response.status, rawError)
     })
     return
   }
@@ -103,7 +105,7 @@ async function streamOpenAiCompatible(
   if (!response.body) {
     onEvent({
       type: "failed",
-      error: "AI 服务未返回可读取的流。"
+      error: ERROR_MESSAGES.NO_READABLE_STREAM
     })
     return
   }
@@ -137,7 +139,7 @@ async function streamOpenAiCompatible(
           if (!hasContent) {
             onEvent({
               type: "failed",
-              error: "AI 未返回有效内容。"
+              error: ERROR_MESSAGES.NO_VALID_CONTENT
             })
             return
           }
@@ -175,7 +177,7 @@ async function streamOpenAiCompatible(
   if (!hasContent) {
     onEvent({
       type: "failed",
-      error: "AI 未返回有效内容。"
+      error: ERROR_MESSAGES.NO_VALID_CONTENT
     })
     return
   }
@@ -185,7 +187,7 @@ async function streamOpenAiCompatible(
 
 export function setupBackgroundMessageHandler(): void {
   chrome.runtime.onConnect.addListener((port) => {
-    if (port.name !== "AI_HELP_ME_STREAM") {
+    if (port.name !== MESSAGE_TYPES.STREAM_PORT_NAME) {
       return
     }
 
@@ -196,12 +198,12 @@ export function setupBackgroundMessageHandler(): void {
     })
 
     port.onMessage.addListener((request: ChatStreamRequest) => {
-      if (request?.type === "AI_HELP_ME_CHAT_STREAM_CANCEL") {
+      if (request?.type === MESSAGE_TYPES.CHAT_STREAM_CANCEL) {
         abortController?.abort()
         return
       }
 
-      if (request?.type !== "AI_HELP_ME_CHAT_STREAM_START") {
+      if (request?.type !== MESSAGE_TYPES.CHAT_STREAM_START) {
         return
       }
 
@@ -215,7 +217,7 @@ export function setupBackgroundMessageHandler(): void {
           return
         }
       }).catch((error: unknown) => {
-        if (abortController?.signal.aborted && error instanceof DOMException && error.name === "AbortError") {
+        if (abortController?.signal.aborted && isAbortError(error)) {
           try {
             port.postMessage({ type: "cancelled" } satisfies ChatStreamEvent)
           } catch {
@@ -225,12 +227,12 @@ export function setupBackgroundMessageHandler(): void {
           return
         }
 
-        const message = error instanceof Error ? error.message : "未知错误"
+        const message = getErrorMessage(error)
 
         try {
           port.postMessage({
             type: "failed",
-            error: `请求失败：${message}`
+            error: `${ERROR_MESSAGES.REQUEST_FAILED}：${message}`
           } satisfies ChatStreamEvent)
         } catch {
           return

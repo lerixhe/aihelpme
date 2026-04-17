@@ -1,0 +1,177 @@
+import { useCallback, useRef, useState } from "react"
+
+import { UI_MESSAGES } from "~/shared/constants"
+import { streamChat } from "~/shared/messaging"
+import type { ChatMessage, ChatRequestState } from "~/shared/types"
+
+/**
+ * Generate unique message ID
+ */
+function createMessageId(): string {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+/**
+ * Create a new chat message
+ */
+function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
+  return {
+    id: createMessageId(),
+    role,
+    content
+  }
+}
+
+/**
+ * Update message content by ID
+ */
+function updateMessageContent(messages: ChatMessage[], id: string, content: string): ChatMessage[] {
+  return messages.map((message) => {
+    if (message.id !== id) {
+      return message
+    }
+    return {
+      ...message,
+      content
+    }
+  })
+}
+
+/**
+ * Hook for managing chat state and streaming requests
+ */
+export function useChatState() {
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [requestState, setRequestState] = useState<ChatRequestState>({ status: "idle" })
+  const [chatVisible, setChatVisible] = useState(false)
+
+  const messagesRef = useRef<ChatMessage[]>([])
+  const activeStreamAbortRef = useRef<AbortController | null>(null)
+
+  // Sync messages ref
+  const syncMessages = useCallback((newMessages: ChatMessage[]) => {
+    messagesRef.current = newMessages
+    setMessages(newMessages)
+  }, [])
+
+  // Stop streaming
+  const stopStreaming = useCallback(() => {
+    activeStreamAbortRef.current?.abort()
+  }, [])
+
+  // Send prompt
+  const sendPrompt = useCallback(
+    async (prompt: string) => {
+      activeStreamAbortRef.current?.abort()
+
+      const abortController = new AbortController()
+      activeStreamAbortRef.current = abortController
+
+      const isCurrentRequest = () => activeStreamAbortRef.current === abortController
+
+      const userMessage = createMessage("user", prompt)
+      const assistantMessage = createMessage("assistant", "")
+      const nextMessages = [...messagesRef.current, userMessage, assistantMessage]
+
+      syncMessages(nextMessages)
+      setChatVisible(true)
+      setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
+
+      try {
+        let streamedContent = ""
+        let terminalState: "completed" | "cancelled" | "failed" | null = null
+
+        await streamChat(nextMessages, {
+          signal: abortController.signal,
+          onEvent: (event) => {
+            if (!isCurrentRequest()) {
+              return
+            }
+
+            if (event.type === "started") {
+              setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
+              return
+            }
+
+            if (event.type === "chunk") {
+              streamedContent += event.content
+
+              const updatedMessages = updateMessageContent(messagesRef.current, assistantMessage.id, streamedContent)
+              messagesRef.current = updatedMessages
+              setMessages(updatedMessages)
+              return
+            }
+
+            if (event.type === "completed") {
+              terminalState = "completed"
+              setRequestState({ status: "idle" })
+              return
+            }
+
+            if (event.type === "cancelled") {
+              terminalState = "cancelled"
+              setRequestState({ status: "cancelled", assistantMessageId: assistantMessage.id })
+              return
+            }
+
+            terminalState = "failed"
+            setRequestState({
+              status: "failed",
+              assistantMessageId: assistantMessage.id,
+              error: event.error
+            })
+
+            const afterFailure = updateMessageContent(messagesRef.current, assistantMessage.id, event.error)
+            messagesRef.current = afterFailure
+            setMessages(afterFailure)
+          }
+        })
+
+        if (terminalState === "completed" && !streamedContent) {
+          const afterEmpty = updateMessageContent(messagesRef.current, assistantMessage.id, UI_MESSAGES.EMPTY_CHAT)
+          messagesRef.current = afterEmpty
+          setMessages(afterEmpty)
+        }
+      } catch (error: unknown) {
+        if (!isCurrentRequest()) {
+          return
+        }
+
+        const message = error instanceof Error ? error.message : "未知错误"
+        setRequestState({ status: "failed", assistantMessageId: assistantMessage.id, error: message })
+        const afterFailure = updateMessageContent(messagesRef.current, assistantMessage.id, `请求失败：${message}`)
+        messagesRef.current = afterFailure
+        setMessages(afterFailure)
+      } finally {
+        if (activeStreamAbortRef.current === abortController) {
+          activeStreamAbortRef.current = null
+        }
+
+        setRequestState((current) =>
+          current.status === "streaming" && current.assistantMessageId === assistantMessage.id
+            ? { status: "idle" }
+            : current
+        )
+      }
+    },
+    [syncMessages]
+  )
+
+  // Clear chat
+  const clearChat = useCallback(() => {
+    activeStreamAbortRef.current?.abort()
+    syncMessages([])
+    setRequestState({ status: "idle" })
+    setChatVisible(false)
+  }, [syncMessages])
+
+  return {
+    messages,
+    requestState,
+    chatVisible,
+    setChatVisible,
+    sendPrompt,
+    stopStreaming,
+    clearChat
+  }
+}
