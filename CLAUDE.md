@@ -19,7 +19,7 @@ Chrome extension (MV3) built with **Plasmo + React + TypeScript**. Users select 
 
 Three runtime contexts communicate via `chrome.runtime.onMessage`:
 
-1. **Content script** (`src/contents/main.tsx`) — Default-exported React component (Plasmo requirement). Detects selection, renders `SelectionToolbar` and `ChatPanel`, stores per-page conversation state in memory.
+1. **Content script** (`src/contents/main.tsx`) — Default-exported React component (Plasmo requirement). Detects selection, renders `SelectionToolbar` and `UnifiedPanel`, stores per-page conversation state in memory.
 2. **Background service worker** (`background.ts` → `src/background/index.ts`) — Handles all remote AI calls. Reads settings from `chrome.storage.sync`. Never move API requests into the content script.
 3. **Options page** (`options.tsx` → `src/options/index.tsx`) — Edits and persists API config, translation language, and custom actions.
 
@@ -67,16 +67,19 @@ See `docs/design-system.md` and `docs/ui-design-guidelines.md` for UI design sta
 沟通中使用以下名称指代各 UI 模块（详见 `docs/design-system.md` 第 0 节）：
 
 | 昵称 | 组件 | 解释 |
-|------|------|--------|
-| 选区泡泡 | `SelectionToolbar` 折叠态 | 选中文本后出现的圆形按钮 |
-| 选区面板 | `SelectionToolbar` 展开态 | 展开后的操作卡片 |
-| 对话窗 | `ChatPanel` | 浮动聊天窗口 |
-| 消息流 | `ChatPanel` 内部 | 消息气泡滚动区域 |
-| 输入栏 | `ChatPanel` 底部 | 文本输入 + 发送/停止 |
+|------|------|------|
+| 触发按钮 | `SelectionToolbar` 核心 | 选中文本后出现的圆形渐变按钮，带发光脉冲 |
+| 环形菜单 | `SelectionToolbar` 展开态 | 悬停触发按钮后展开的环形动作列表 |
+| 对话窗 | `UnifiedPanel` | 模态浮层聊天窗口，含遮罩 |
+| 遮罩层 | `UnifiedPanel` 外层 | 半透明黑色背景遮罩 |
+| 选区编辑区 | `UnifiedPanel` 顶部 | 已捕获选中文本的可编辑区域 |
+| 消息流 | `UnifiedPanel` 中部 | 消息气泡滚动区域 |
+| 思考块 | `UnifiedPanel` 消息内 | AI 推理过程的折叠展示 |
+| 输入栏 | `UnifiedPanel` 底部 | 文本输入 + 发送/停止按钮 |
 | 设置台 | `OptionsPage` | Chrome 选项页 |
 | 主题卡 | `OptionsPage` 子区 | Auto/Light/Dark 切换 |
-| 连接卡 | `OptionsPage` 子区 | API 配置 |
-| 动作卡 | `OptionsPage` 子区 | 自定义动作管理 |
+| 连接卡 | `OptionsPage` 子区 | API 配置 + 测试连接 + 获取模型 |
+| 动作卡 | `OptionsPage` 子区 | 自定义动作模板管理 |
 
 ## Development Approach
 

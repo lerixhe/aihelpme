@@ -8,7 +8,7 @@ Chrome extension (MV3) built with Plasmo + React + TypeScript. Users select text
 - Build may warn about missing `svgo` for `htmlnano minifySvg`; builds still succeed.
 - TypeScript path alias: `~/*` maps to `src/*` (tsconfig `paths`).
 - Design system docs: `docs/design-system.md`, `docs/ui-design-guidelines.md`.
-- UI module naming (选区泡泡/面板/对话窗 etc.) is defined in `docs/design-system.md` §0 and CLAUDE.md.
+- UI module naming (触发按钮/环形菜单/对话窗 etc.) is defined in `docs/design-system.md` §0 and CLAUDE.md.
 
 ## Commands
 - `npm run dev`: Plasmo dev build/watch.
@@ -24,7 +24,7 @@ Chrome extension (MV3) built with Plasmo + React + TypeScript. Users select text
 ## Architecture
 Three runtime contexts communicate via `chrome.runtime.onMessage`:
 
-- **Content script** (`src/contents/main.tsx`): detects selection from range/input/textarea, computes toolbar anchor, renders `SelectionToolbar` and `ChatPanel`, stores per-page conversation state in React.
+- **Content script** (`src/contents/main.tsx`): detects selection from range/input/textarea, computes toolbar anchor, renders `SelectionToolbar` and `UnifiedPanel`, stores per-page conversation state in React.
 - **Background** (`src/background/index.ts` via `background.ts`): registers the message handler, reads settings from `chrome.storage.sync`, calls the API, normalizes responses. **Never move API requests into the content script.**
 - **Options** (`src/options/index.tsx` via `options.tsx`): edits API config, translation language, and custom actions, then validates and persists settings.
 

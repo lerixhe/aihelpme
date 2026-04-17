@@ -23,16 +23,19 @@
 
 > 日常沟通和文档中统一使用以下中文昵称和英文代号指代各 UI 模块。
 
-| 中文名称 | 英文名场 | 组件 | 说明 |
+| 中文名称 | 英文名称 | 组件 | 说明 |
 |----------|----------|------|------|
-| **选区泡泡** | Selection Bubble | `SelectionToolbar`（折叠态） | 选中文本后出现的圆形渐变按钮，带发光脉冲动画 |
-| **选区面板** | Selection Panel | `SelectionToolbar`（展开态） | 展开后的操作卡片：选中文本编辑区、内置/自定义动作按钮、自由输入 |
-| **对话窗** | Chat Window | `ChatPanel` | 浮动聊天窗口，可拖拽，含标题栏、消息流、输入栏 |
-| **消息流** | Message Stream | `ChatPanel` 内部 | 对话窗中上下滚动的消息气泡区域，含用户/AI 双方消息 |
-| **输入栏** | Chat Input | `ChatPanel` 底部 | 文本输入框 + 发送/停止按钮，Enter 发送、Shift+Enter 换行 |
+| **触发按钮** | Trigger Button | `SelectionToolbar` 核心 | 选中文本后出现的圆形渐变按钮，带发光脉冲动画 |
+| **环形菜单** | Ring Menu | `SelectionToolbar` 展开态 | 悬停/点击触发按钮后展开的环形动作按钮列表 |
+| **对话窗** | Chat Window | `UnifiedPanel` | 模态浮层聊天窗口，含遮罩层、标题栏、选区编辑区、消息流、输入栏 |
+| **遮罩层** | Overlay | `UnifiedPanel` 外层 | 半透明黑色背景，点击可关闭对话窗 |
+| **选区编辑区** | Selection Editor | `UnifiedPanel` 顶部 | 已捕获选中文本的可编辑 textarea |
+| **消息流** | Message Stream | `UnifiedPanel` 中部 | 上下滚动的消息气泡区域，含用户/AI 双方消息 |
+| **思考块** | Thinking Block | `UnifiedPanel` 消息内 | AI 推理过程（reasoning_content）的可折叠展示区 |
+| **输入栏** | Chat Input | `UnifiedPanel` 底部 | 文本输入框 + 发送/停止按钮，Enter 发送、Shift+Enter 换行 |
 | **设置台** | Settings Console | `OptionsPage` | Chrome 扩展选项页，含主题卡、连接卡、动作卡 |
 | **主题卡** | Theme Card | `OptionsPage` 子区 | 设置台中 Auto / Light / Dark 主题切换 |
-| **连接卡** | Connection Card | `OptionsPage` 子区 | 设置台中 API 地址、Key、模型、翻译语言配置 |
+| **连接卡** | Connection Card | `OptionsPage` 子区 | 设置台中 API 地址、Key、模型、翻译语言配置，含测试连接和获取模型 |
 | **动作卡** | Actions Card | `OptionsPage` 子区 | 设置台中自定义动作按钮模板的增删编辑 |
 
 ---
@@ -284,75 +287,21 @@ animation: ai-help-me-glow 2s ease-in-out infinite;
 animation: toolbar-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 ```
 
-#### ChatPanel
-
-**面板进入：**
-```css
-@keyframes chat-panel-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-animation: chat-panel-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-```
-
-**消息气泡：**
-```css
-@keyframes message-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-animation: message-enter 0.3s cubic-bezier(0, 0, 0.2, 1) forwards;
-```
-
-### 7.4 动画原则
-
-1. **性能优先**：仅动画化 `transform` 和 `opacity`
-2. **时长控制**：150-400ms，避免过长动画
-3. **有意义**：动画应传达状态变化或层级关系
-4. **可访问**：支持 `prefers-reduced-motion` 媒体查询
-
----
-
-## 8. 组件规范
-
-### 8.1 SelectionToolbar
+#### UnifiedPanel
 
 **结构：**
-- 品牌标识（渐变图标 + 文字）
-- 内置动作按钮（解释、翻译）
-- 自定义动作按钮
-- 自由输入框 + 发送按钮
+- 遮罩层（点击关闭）
+- 标题栏（品牌标识 + 关闭按钮）
+- 选区编辑区（捕获文本的可编辑区域）
+- 消息区（可滚动，含思考块）
+- 输入区（文本框 + 发送/停止按钮）
 
 **样式规范：**
-- 按钮：`padding: 4px 12px`，`border-radius: pill`
-- 输入框：`padding: 8px 12px`，`border-radius: pill`
-- 间距：按钮之间 `8px`
-- 动画：展开动画、发光效果
-
-### 8.2 ChatPanel
-
-**结构：**
-- 标题栏（可拖拽）
-- 消息区（可滚动）
-- 输入区（文本框 + 发送按钮）
-
-**样式规范：**
-- 面板尺寸：`420px × 360px`
+- 面板宽度：`680px`，最大 `calc(100vw - 32px)`
+- 面板高度：`min(70vh, calc(100vh - 32px))`
 - 圆角：`18px`
 - 消息气泡：用户消息使用品牌色，助手消息使用白色/深色
-- 动画：面板进入动画、消息气泡动画
+- 动画：遮罩渐入、面板缩放入场、消息气泡动画
 
 ### 8.3 Options Page
 
