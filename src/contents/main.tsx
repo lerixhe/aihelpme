@@ -36,7 +36,8 @@ function App() {
     capturedText,
     setCapturedText,
     sendPrompt,
-    stopStreaming
+    stopStreaming,
+    resetMessages
   } = useChatState()
 
   // Handle selection change — suppress while panel is open
@@ -77,13 +78,14 @@ function App() {
       setCapturedText(text)
       setPanelOpen(true)
       closeToolbar()
+      resetMessages()
 
       if (selectionContext) {
         const context = { ...selectionContext, text }
         await runWithSelectionContext(prompt, context)
       }
     },
-    [selectionContext, setCapturedText, setPanelOpen, closeToolbar, runWithSelectionContext]
+    [selectionContext, setCapturedText, setPanelOpen, closeToolbar, runWithSelectionContext, resetMessages]
   )
 
   // Handle built-in action
@@ -157,14 +159,7 @@ function App() {
           capturedText={capturedText}
           messages={messages}
           requestState={requestState.status}
-          customActions={customActions}
           onCapturedTextChange={setCapturedText}
-          onBuiltInAction={(action, text) => {
-            void handleBuiltInAction(action, text)
-          }}
-          onCustomAction={(template, text) => {
-            void handleCustomAction(template, text)
-          }}
           onSend={(input) => {
             void handleFollowupSend(input)
           }}

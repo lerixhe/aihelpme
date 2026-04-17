@@ -2,16 +2,13 @@ import { useEffect, useRef, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiTypography, uiLayer } from "~/shared/ui/tokens"
-import type { BuiltInActionId, ChatMessage, CustomActionTemplate } from "~/shared/types"
+import type { ChatMessage } from "~/shared/types"
 
 interface Props {
   capturedText: string
   messages: ChatMessage[]
   requestState: "idle" | "streaming" | "cancelled" | "failed"
-  customActions: CustomActionTemplate[]
   onCapturedTextChange: (text: string) => void
-  onBuiltInAction: (action: BuiltInActionId, text: string) => void
-  onCustomAction: (template: string, text: string) => void
   onSend: (input: string) => void
   onStop: () => void
   onClose: () => void
@@ -136,10 +133,7 @@ export default function UnifiedPanel({
   capturedText,
   messages,
   requestState,
-  customActions,
   onCapturedTextChange,
-  onBuiltInAction,
-  onCustomAction,
   onSend,
   onStop,
   onClose
@@ -171,22 +165,6 @@ export default function UnifiedPanel({
 
     container.scrollTop = container.scrollHeight
   }, [messages, requestState])
-
-  const actionButtonStyle = (id: string): React.CSSProperties => ({
-    border: `1px solid ${hovered === id ? theme.border.default : theme.border.subtle}`,
-    borderRadius: uiRadius.pill,
-    padding: `${uiSpace[4]}px ${uiSpace[12]}px`,
-    fontSize: uiTypography.fontSize.sm,
-    fontWeight: uiTypography.fontWeight.medium,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    color: theme.text.primary,
-    background: hovered === id ? theme.brand.secondaryHover : theme.brand.secondary,
-    outline: "none",
-    boxShadow:
-      focused === id ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-  })
 
   const sendButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none"
 
@@ -423,50 +401,7 @@ export default function UnifiedPanel({
           </div>
         )}
 
-        {/* Action buttons */}
-        {hasCapturedText && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: uiSpace[8],
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-              flexWrap: "wrap",
-              borderBottom: `1px solid ${theme.border.subtle}`,
-              flexShrink: 0
-            }}>
-            <button
-              style={actionButtonStyle("built-in-explain")}
-              onMouseEnter={() => setHovered("built-in-explain")}
-              onMouseLeave={() => setHovered(null)}
-              onFocus={() => setFocused("built-in-explain")}
-              onBlur={() => setFocused(null)}
-              onClick={() => onBuiltInAction("explain", capturedText)}>
-              解释
-            </button>
-            <button
-              style={actionButtonStyle("built-in-translate")}
-              onMouseEnter={() => setHovered("built-in-translate")}
-              onMouseLeave={() => setHovered(null)}
-              onFocus={() => setFocused("built-in-translate")}
-              onBlur={() => setFocused(null)}
-              onClick={() => onBuiltInAction("translate", capturedText)}>
-              翻译
-            </button>
-            {customActions.map((item) => (
-              <button
-                key={item.id}
-                style={actionButtonStyle(item.id)}
-                onMouseEnter={() => setHovered(item.id)}
-                onMouseLeave={() => setHovered(null)}
-                onFocus={() => setFocused(item.id)}
-                onBlur={() => setFocused(null)}
-                onClick={() => onCustomAction(item.template, capturedText)}>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
+
 
         {/* Messages area */}
         <div

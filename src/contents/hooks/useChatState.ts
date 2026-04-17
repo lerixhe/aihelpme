@@ -181,6 +181,13 @@ export function useChatState() {
     setCapturedText("")
   }, [syncMessages])
 
+  // Reset messages only (keep panel open)
+  const resetMessages = useCallback(() => {
+    activeStreamAbortRef.current?.abort()
+    syncMessages([])
+    setRequestState({ status: "idle" })
+  }, [syncMessages])
+
   return {
     messages,
     requestState,
@@ -190,6 +197,7 @@ export function useChatState() {
     setCapturedText,
     sendPrompt,
     stopStreaming,
-    clearChat
+    clearChat,
+    resetMessages
   }
 }
