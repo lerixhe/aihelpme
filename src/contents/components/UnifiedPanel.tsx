@@ -142,19 +142,11 @@ export default function UnifiedPanel({
   const [input, setInput] = useState("")
   const [focused, setFocused] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
-  const [capturedTextCollapsed, setCapturedTextCollapsed] = useState(false)
   const messagesContainerRef = useRef<HTMLDivElement | null>(null)
 
   const isStreaming = requestState === "streaming"
   const sendDisabled = isStreaming || !input.trim()
   const hasCapturedText = capturedText.length > 0
-
-  // Auto-expand captured text when it first appears
-  useEffect(() => {
-    if (capturedText) {
-      setCapturedTextCollapsed(false)
-    }
-  }, [capturedText])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -325,68 +317,35 @@ export default function UnifiedPanel({
         {hasCapturedText && (
           <div
             style={{
+              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
               borderBottom: `1px solid ${theme.border.subtle}`,
               flexShrink: 0
             }}>
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setCapturedTextCollapsed((prev) => !prev)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault()
-                  setCapturedTextCollapsed((prev) => !prev)
-                }
-              }}
+            <textarea
+              value={capturedText}
+              onChange={(event) => onCapturedTextChange(event.target.value)}
+              onFocus={() => setFocused("captured")}
+              onBlur={() => setFocused(null)}
+              rows={3}
+              aria-label="已捕获的选区文本"
+              placeholder="选中文本将显示在这里..."
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: `${uiSpace[6]}px ${uiSpace[12]}px`,
-                cursor: "pointer",
-                color: theme.text.secondary,
-                fontSize: uiTypography.fontSize.sm,
-                userSelect: "none"
-              }}>
-              <span>选中文本</span>
-              <span
-                style={{
-                  transform: capturedTextCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                  transition: `transform ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-                  fontSize: 10
-                }}>
-                ▼
-              </span>
-            </div>
-            {!capturedTextCollapsed && (
-              <div style={{ padding: `0 ${uiSpace[12]}px ${uiSpace[8]}px` }}>
-                <textarea
-                  value={capturedText}
-                  onChange={(event) => onCapturedTextChange(event.target.value)}
-                  onFocus={() => setFocused("captured")}
-                  onBlur={() => setFocused(null)}
-                  rows={3}
-                  aria-label="已捕获的选区文本"
-                  placeholder="选中文本将显示在这里..."
-                  style={{
-                    width: "100%",
-                    resize: "vertical",
-                    border: `1px solid ${focused === "captured" ? theme.brand.primary : theme.border.default}`,
-                    background: theme.bg.surfaceAlt,
-                    color: theme.text.primary,
-                    borderRadius: uiRadius.md,
-                    padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                    boxShadow: focused === "captured" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-                    outline: "none",
-                    fontSize: uiTypography.fontSize.sm,
-                    fontFamily: "inherit",
-                    lineHeight: 1.5,
-                    transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-                    boxSizing: "border-box"
-                  }}
-                />
-              </div>
-            )}
+                width: "100%",
+                resize: "vertical",
+                border: `1px solid ${focused === "captured" ? theme.brand.primary : theme.border.default}`,
+                background: theme.bg.surfaceAlt,
+                color: theme.text.primary,
+                borderRadius: uiRadius.md,
+                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                boxShadow: focused === "captured" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+                outline: "none",
+                fontSize: uiTypography.fontSize.md,
+                fontFamily: "inherit",
+                lineHeight: 1.5,
+                transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+                boxSizing: "border-box"
+              }}
+            />
           </div>
         )}
 
