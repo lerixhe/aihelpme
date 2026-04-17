@@ -62,6 +62,22 @@ Three runtime contexts communicate via `chrome.runtime.onMessage`:
 
 See `docs/design-system.md` and `docs/ui-design-guidelines.md` for UI design standards, theming, and component conventions used in this project.
 
+## UI 模块命名
+
+沟通中使用以下名称指代各 UI 模块（详见 `docs/design-system.md` 第 0 节）：
+
+| 昵称 | 组件 | 解释 |
+|------|------|--------|
+| 选区泡泡 | `SelectionToolbar` 折叠态 | 选中文本后出现的圆形按钮 |
+| 选区面板 | `SelectionToolbar` 展开态 | 展开后的操作卡片 |
+| 对话窗 | `ChatPanel` | 浮动聊天窗口 |
+| 消息流 | `ChatPanel` 内部 | 消息气泡滚动区域 |
+| 输入栏 | `ChatPanel` 底部 | 文本输入 + 发送/停止 |
+| 设置台 | `OptionsPage` | Chrome 选项页 |
+| 主题卡 | `OptionsPage` 子区 | Auto/Light/Dark 切换 |
+| 连接卡 | `OptionsPage` 子区 | API 配置 |
+| 动作卡 | `OptionsPage` 子区 | 自定义动作管理 |
+
 ## Development Approach
 
 - For product- or architecture-shaping work, ask clarifying questions before editing.

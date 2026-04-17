@@ -113,9 +113,9 @@ export default function OptionsPage() {
             fontSize: uiTypography.fontSize.sm,
             marginBottom: uiSpace[12]
           }}>
-          简洁主题配置台
+          设置台
         </div>
-        <h1 style={{ margin: `0 0 ${uiSpace[8]}px`, fontSize: 30 }}>AI Help Me 设置</h1>
+        <h1 style={{ margin: `0 0 ${uiSpace[8]}px`, fontSize: 30 }}>AI Help Me 设置台</h1>
         <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.lg, lineHeight: 1.6 }}>
           配置 OpenAI 兼容接口、翻译语言和自定义动作模板，保持扩展交互简单、清晰、易读。
         </p>
@@ -123,7 +123,7 @@ export default function OptionsPage() {
 
       <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
         <div style={{ marginBottom: uiSpace[12] }}>
-          <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>外观主题</h2>
+          <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>主题卡</h2>
           <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>选择界面配色方案，切换即时生效。</p>
         </div>
         <div style={{ display: "flex", gap: uiSpace[8] }}>
@@ -187,8 +187,8 @@ export default function OptionsPage() {
 
       <section style={cardStyle}>
         <div style={{ marginBottom: uiSpace[16] }}>
-          <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>基础连接</h2>
-          <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>先完成模型接口与翻译语言设置。</p>
+          <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>连接卡</h2>
+          <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>完成模型接口与翻译语言设置。</p>
         </div>
         <label style={fieldStyle}>
           <span>API Base URL</span>
@@ -251,8 +251,8 @@ export default function OptionsPage() {
       <section style={{ ...cardStyle, marginTop: uiSpace[16] }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: uiSpace[12] }}>
           <div>
-            <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>自定义动作按钮</h2>
-            <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>让常用指令直接出现在选中文本后的工具栏中。</p>
+            <h2 style={{ margin: `0 0 ${uiSpace[4]}px`, fontSize: 18, fontWeight: uiTypography.fontWeight.semibold }}>动作卡</h2>
+            <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>让常用指令直接出现在选区面板中。</p>
           </div>
           <button
             onClick={() => {

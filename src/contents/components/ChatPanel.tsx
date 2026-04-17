@@ -153,7 +153,7 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
           onMouseLeave={() => setHovered(null)}
           onFocus={() => setFocused("close")}
           onBlur={() => setFocused(null)}
-          aria-label="关闭聊天面板"
+          aria-label="关闭对话窗"
           style={{
             border: "none",
             background: hovered === "close" ? theme.bg.page : "transparent",
@@ -275,7 +275,7 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
             onSend(value)
             setInput("")
           }}
-          aria-label="继续提问"
+          aria-label="在对话窗中继续提问"
           placeholder="继续提问（Enter 发送，Shift+Enter 换行）"
           style={{
             flex: 1,

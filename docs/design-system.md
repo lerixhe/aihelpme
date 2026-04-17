@@ -6,6 +6,7 @@
 
 ## 目录
 
+0. [UI 模块命名表](#0-ui-模块命名表)
 1. [品牌色系统](#1-品牌色系统)
 2. [语义颜色系统](#2-语义颜色系统)
 3. [字体系统](#3-字体系统)
@@ -15,6 +16,24 @@
 7. [动画系统](#7-动画系统)
 8. [组件规范](#8-组件规范)
 9. [可访问性](#9-可访问性)
+
+---
+
+## 0. UI 模块命名表
+
+> 日常沟通和文档中统一使用以下中文昵称和英文代号指代各 UI 模块。
+
+| 中文名称 | 英文名场 | 组件 | 说明 |
+|----------|----------|------|------|
+| **选区泡泡** | Selection Bubble | `SelectionToolbar`（折叠态） | 选中文本后出现的圆形渐变按钮，带发光脉冲动画 |
+| **选区面板** | Selection Panel | `SelectionToolbar`（展开态） | 展开后的操作卡片：选中文本编辑区、内置/自定义动作按钮、自由输入 |
+| **对话窗** | Chat Window | `ChatPanel` | 浮动聊天窗口，可拖拽，含标题栏、消息流、输入栏 |
+| **消息流** | Message Stream | `ChatPanel` 内部 | 对话窗中上下滚动的消息气泡区域，含用户/AI 双方消息 |
+| **输入栏** | Chat Input | `ChatPanel` 底部 | 文本输入框 + 发送/停止按钮，Enter 发送、Shift+Enter 换行 |
+| **设置台** | Settings Console | `OptionsPage` | Chrome 扩展选项页，含主题卡、连接卡、动作卡 |
+| **主题卡** | Theme Card | `OptionsPage` 子区 | 设置台中 Auto / Light / Dark 主题切换 |
+| **连接卡** | Connection Card | `OptionsPage` 子区 | 设置台中 API 地址、Key、模型、翻译语言配置 |
+| **动作卡** | Actions Card | `OptionsPage` 子区 | 设置台中自定义动作按钮模板的增删编辑 |
 
 ---
 

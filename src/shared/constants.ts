@@ -16,7 +16,7 @@ export const STREAM_EVENTS = {
 
 // Error messages
 export const ERROR_MESSAGES = {
-  NO_API_KEY: "请先在设置页填写 API Key。",
+  NO_API_KEY: "请先在设置台填写 API Key。",
   STREAM_DISCONNECTED: "流式连接已断开",
   REQUEST_FAILED: "请求失败",
   UNKNOWN_ERROR: "未知错误",

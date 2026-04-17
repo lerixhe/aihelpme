@@ -103,7 +103,7 @@ export default function SelectionToolbar({
 
   const currentText = capturedText
 
-  // Reset captured text when toolbar reopens with new selection
+  // Reset captured text when selection bubble reopens with new selection
   useEffect(() => {
     if (visible && selectionText) {
       setCapturedText(selectionText)
@@ -156,7 +156,7 @@ export default function SelectionToolbar({
       <div
         role="button"
         tabIndex={0}
-        aria-label="展开 AI 助手"
+        aria-label="展开选区面板"
         onMouseEnter={handleTriggerEnter}
         onClick={() => setExpanded((prev) => !prev)}
         onFocus={handleTriggerEnter}
@@ -275,7 +275,7 @@ export default function SelectionToolbar({
               onClick={() => {
                 setExpanded(false)
               }}
-              aria-label="收起工具栏"
+              aria-label="收起选区面板"
               style={{
                 border: "none",
                 background: "transparent",
@@ -313,7 +313,7 @@ export default function SelectionToolbar({
               onFocus={() => setFocused("captured")}
               onBlur={() => setFocused(null)}
               rows={3}
-              aria-label="已捕获的选中文本"
+              aria-label="选区面板已捕获的文本"
               placeholder="选中文本将显示在这里..."
               style={{
                 width: "100%",
@@ -399,7 +399,7 @@ export default function SelectionToolbar({
                 onFreeSubmit(value, currentText)
                 setFreeInput("")
               }}
-              aria-label="输入自定义需求"
+              aria-label="在选区面板中输入自定义需求"
               placeholder="输入需求后回车"
               style={{
                 flex: 1,
