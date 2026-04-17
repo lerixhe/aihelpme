@@ -43,7 +43,8 @@ function updateMessageContent(messages: ChatMessage[], id: string, content: stri
 export function useChatState() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [requestState, setRequestState] = useState<ChatRequestState>({ status: "idle" })
-  const [chatVisible, setChatVisible] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [capturedText, setCapturedText] = useState("")
 
   const messagesRef = useRef<ChatMessage[]>([])
   const activeStreamAbortRef = useRef<AbortController | null>(null)
@@ -74,7 +75,6 @@ export function useChatState() {
       const nextMessages = [...messagesRef.current, userMessage, assistantMessage]
 
       syncMessages(nextMessages)
-      setChatVisible(true)
       setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
 
       try {
@@ -162,14 +162,17 @@ export function useChatState() {
     activeStreamAbortRef.current?.abort()
     syncMessages([])
     setRequestState({ status: "idle" })
-    setChatVisible(false)
+    setPanelOpen(false)
+    setCapturedText("")
   }, [syncMessages])
 
   return {
     messages,
     requestState,
-    chatVisible,
-    setChatVisible,
+    panelOpen,
+    setPanelOpen,
+    capturedText,
+    setCapturedText,
     sendPrompt,
     stopStreaming,
     clearChat

@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
-import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiSpace, uiTypography } from "~/shared/ui/tokens"
+import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
 import type { BuiltInActionId, CustomActionTemplate, SelectionAnchor } from "~/shared/types"
 
 interface Props {
   visible: boolean
   anchor: SelectionAnchor | null
-  selectionText: string
   customActions: CustomActionTemplate[]
   onBuiltInAction: (action: BuiltInActionId, text: string) => void
   onCustomAction: (template: string, text: string) => void
-  onFreeSubmit: (input: string, text: string) => void
   onClose: () => void
 }
 
@@ -46,20 +44,6 @@ function SparkleIcon({ size, color }: { size: number; color: string }) {
   )
 }
 
-function SendIcon({ color }: { color: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M2 8L14 2L8 14L7 9L2 8Z"
-        fill={color}
-        stroke={color}
-        strokeWidth={1}
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 type RingAction =
   | { id: string; label: string; type: "built-in"; actionId: BuiltInActionId }
   | { id: string; label: string; type: "custom"; template: string }
@@ -75,22 +59,14 @@ function getRingPosition(slotIndex: number) {
 export default function SelectionToolbar({
   visible,
   anchor,
-  selectionText,
   customActions,
   onBuiltInAction,
   onCustomAction,
-  onFreeSubmit,
   onClose
 }: Props) {
   const theme = useUiTheme()
-  const [expanded, setExpanded] = useState(false)
-  const [capturedText, setCapturedText] = useState("")
-  const [freeInput, setFreeInput] = useState("")
-  const [focused, setFocused] = useState<string | null>(null)
-  const [hovered, setHovered] = useState<string | null>(null)
   const [ringOpen, setRingOpen] = useState(false)
   const [ringHovered, setRingHovered] = useState<string | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
   const ringCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const allActions: RingAction[] = useMemo(() => [
@@ -114,16 +90,13 @@ export default function SelectionToolbar({
     const minLeft = uiLayout.edgeInset
     const maxLeft = Math.max(minLeft, viewportWidth - TRIGGER_SIZE - uiLayout.edgeInset)
 
-    // Default: upper-right of mouse cursor
     let top = anchor.mouseY - TRIGGER_SIZE - OFFSET_Y
     let left = anchor.mouseX + OFFSET_X
 
-    // Flip to upper-left if overflowing right edge
     if (left + TRIGGER_SIZE > viewportWidth - uiLayout.edgeInset) {
       left = anchor.mouseX - TRIGGER_SIZE - OFFSET_X
     }
 
-    // Clamp to viewport bounds
     top = Math.min(Math.max(minTop, top), maxTop)
     left = Math.min(Math.max(minLeft, left), maxLeft)
 
@@ -155,36 +128,20 @@ export default function SelectionToolbar({
   const handleRingActionHover = (action: RingAction) => {
     setRingOpen(false)
     setRingHovered(null)
-    setExpanded(true)
     if (action.type === "built-in") {
-      onBuiltInAction(action.actionId, currentText)
+      onBuiltInAction(action.actionId, "")
     } else {
-      onCustomAction(action.template, currentText)
+      onCustomAction(action.template, "")
     }
   }
 
-  const currentText = capturedText
-
-  // Reset captured text and collapsed state when toolbar reopens
+  // Reset ring state when toolbar is dismissed
   useEffect(() => {
-    if (visible && selectionText) {
-      setCapturedText(selectionText)
-    }
     if (!visible) {
-      setExpanded(false)
-      setRingOpen(false)
-      setRingHovered(null)
-      setFreeInput("")
-    }
-  }, [visible, selectionText])
-
-  // Close ring when panel opens
-  useEffect(() => {
-    if (expanded) {
       setRingOpen(false)
       setRingHovered(null)
     }
-  }, [expanded])
+  }, [visible])
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -198,22 +155,6 @@ export default function SelectionToolbar({
   if (!visible || !anchor) {
     return null
   }
-
-  const actionButtonStyle = (id: string): React.CSSProperties => ({
-    border: `1px solid ${hovered === id ? theme.border.default : theme.border.subtle}`,
-    borderRadius: uiRadius.pill,
-    padding: `${uiSpace[4]}px ${uiSpace[12]}px`,
-    fontSize: uiTypography.fontSize.sm,
-    fontWeight: uiTypography.fontWeight.medium,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    color: theme.text.primary,
-    background: hovered === id ? theme.brand.secondaryHover : theme.brand.secondary,
-    outline: "none",
-    boxShadow:
-      focused === id ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-  })
 
   const ringButtonStyle = (action: RingAction, pos: { x: number; y: number }): React.CSSProperties => {
     const isHovered = ringHovered === action.id
@@ -277,7 +218,7 @@ export default function SelectionToolbar({
       <div
         role="button"
         tabIndex={0}
-        aria-label={ringOpen ? "收起环形菜单" : "展开选区面板"}
+        aria-label={ringOpen ? "收起环形菜单" : "展开环形菜单"}
         onMouseEnter={handleTriggerEnter}
         onMouseLeave={scheduleRingClose}
         onClick={() => {
@@ -317,14 +258,14 @@ export default function SelectionToolbar({
           border: "none",
           padding: 0,
           outline: "none",
-          animation: (expanded || ringOpen) ? "none" : "ai-help-me-glow 2s ease-in-out infinite",
+          animation: ringOpen ? "none" : "ai-help-me-glow 2s ease-in-out infinite",
           transition: `transform ${uiMotion.durationNormal} ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationNormal} ${uiMotion.easingStandard}`,
-          transform: ringOpen ? "scale(1.15) rotate(15deg)" : expanded ? "scale(1.1)" : undefined
+          transform: ringOpen ? "scale(1.15) rotate(15deg)" : undefined
         }}>
         <SparkleIcon size={18} color={theme.text.inverse} />
       </div>
 
-      {ringOpen && !expanded && (
+      {ringOpen && (
         <div
           onMouseEnter={cancelRingClose}
           onMouseLeave={scheduleRingClose}
@@ -368,269 +309,6 @@ export default function SelectionToolbar({
               </div>
             )
           })}
-        </div>
-      )}
-
-      {expanded && (
-        <div
-          ref={containerRef}
-          onKeyDownCapture={(event) => {
-            if (event.key !== "Escape") {
-              return
-            }
-
-            event.preventDefault()
-            event.stopPropagation()
-            setExpanded(false)
-          }}
-          style={{
-            position: "absolute",
-            top: TRIGGER_SIZE + 4,
-            left: 0,
-            minWidth: 340,
-            maxWidth: "min(460px, calc(100vw - 24px))",
-            background: theme.bg.surface,
-            color: theme.text.primary,
-            borderRadius: uiRadius.lg,
-            border: `1px solid ${theme.border.default}`,
-            boxShadow: uiShadow.lg,
-            overflow: "hidden",
-            backdropFilter: "blur(16px)",
-            transformOrigin: "0 0",
-            animation: `toolbar-enter 0.35s ${uiMotion.easingSpring} forwards`
-          }}>
-          <style>{`
-            @keyframes toolbar-enter {
-              from {
-                opacity: 0;
-                transform: scale(0.9) translateY(8px);
-              }
-              to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-              }
-            }
-          `}</style>
-
-          <div
-            style={{
-              height: 3,
-              background: theme.brand.primary,
-              borderRadius: `${uiRadius.lg}px ${uiRadius.lg}px 0 0`
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-              borderBottom: `1px solid ${theme.border.subtle}`
-            }}>
-            <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8] }}>
-              <div
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${theme.brand.primary}, ${theme.brand.primaryHover})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0
-                }}>
-                <SparkleIcon size={14} color={theme.text.inverse} />
-              </div>
-              <span
-                style={{
-                  fontWeight: uiTypography.fontWeight.bold,
-                  fontSize: uiTypography.fontSize.md,
-                  letterSpacing: "-0.01em",
-                  color: theme.brand.primary
-                }}>
-                AI Help Me
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                setExpanded(false)
-              }}
-              aria-label="收起选区面板"
-              style={{
-                border: "none",
-                background: "transparent",
-                color: theme.text.secondary,
-                cursor: "pointer",
-                width: 24,
-                height: 24,
-                borderRadius: uiRadius.sm,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 16,
-                lineHeight: 1,
-                padding: 0,
-                outline: "none",
-                transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.background = theme.bg.surfaceMuted
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = "transparent"
-              }}>
-              ×
-            </button>
-          </div>
-
-          <div
-            style={{
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`
-            }}>
-            <textarea
-              value={capturedText}
-              onChange={(event) => setCapturedText(event.target.value)}
-              onFocus={() => setFocused("captured")}
-              onBlur={() => setFocused(null)}
-              rows={3}
-              aria-label="选区面板已捕获的文本"
-              placeholder="选中文本将显示在这里..."
-              style={{
-                width: "100%",
-                resize: "vertical",
-                border: `1px solid ${focused === "captured" ? theme.brand.primary : theme.border.default}`,
-                background: theme.bg.surfaceAlt,
-                color: theme.text.primary,
-                borderRadius: uiRadius.md,
-                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                boxShadow: focused === "captured" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-                outline: "none",
-                fontSize: uiTypography.fontSize.sm,
-                fontFamily: "inherit",
-                lineHeight: 1.5,
-                transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-                boxSizing: "border-box"
-              }}
-            />
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: uiSpace[8],
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-              flexWrap: "wrap"
-            }}>
-            <button
-              style={actionButtonStyle("built-in-explain")}
-              onMouseEnter={() => setHovered("built-in-explain")}
-              onMouseLeave={() => setHovered(null)}
-              onFocus={() => setFocused("built-in-explain")}
-              onBlur={() => setFocused(null)}
-              onClick={() => onBuiltInAction("explain", currentText)}>
-              解释
-            </button>
-            <button
-              style={actionButtonStyle("built-in-translate")}
-              onMouseEnter={() => setHovered("built-in-translate")}
-              onMouseLeave={() => setHovered(null)}
-              onFocus={() => setFocused("built-in-translate")}
-              onBlur={() => setFocused(null)}
-              onClick={() => onBuiltInAction("translate", currentText)}>
-              翻译
-            </button>
-            {customActions.map((item) => (
-              <button
-                key={item.id}
-                style={actionButtonStyle(item.id)}
-                onMouseEnter={() => setHovered(item.id)}
-                onMouseLeave={() => setHovered(null)}
-                onFocus={() => setFocused(item.id)}
-                onBlur={() => setFocused(null)}
-                onClick={() => onCustomAction(item.template, currentText)}>
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: uiSpace[8],
-              padding: `0 ${uiSpace[12]}px ${uiSpace[12]}px`
-            }}>
-            <input
-              value={freeInput}
-              onChange={(event) => setFreeInput(event.target.value)}
-              onFocus={() => setFocused("input")}
-              onBlur={() => setFocused(null)}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter") {
-                  return
-                }
-
-                const value = freeInput.trim()
-                if (!value) {
-                  return
-                }
-
-                onFreeSubmit(value, currentText)
-                setFreeInput("")
-              }}
-              aria-label="在选区面板中输入自定义需求"
-              placeholder="输入需求后回车"
-              style={{
-                flex: 1,
-                border: `1px solid ${focused === "input" ? theme.brand.primary : theme.border.default}`,
-                background: theme.bg.surfaceAlt,
-                color: theme.text.primary,
-                borderRadius: uiRadius.pill,
-                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                boxShadow: focused === "input" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-                outline: "none",
-                minWidth: 140,
-                fontSize: uiTypography.fontSize.sm,
-                fontFamily: "inherit",
-                transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-              }}
-            />
-            <button
-              onClick={() => {
-                const value = freeInput.trim()
-                if (!value) {
-                  return
-                }
-
-                onFreeSubmit(value, currentText)
-                setFreeInput("")
-              }}
-              disabled={!freeInput.trim()}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                border: "none",
-                background: freeInput.trim()
-                  ? `linear-gradient(135deg, ${theme.brand.primary}, ${theme.brand.primaryHover})`
-                  : theme.bg.surfaceMuted,
-                color: freeInput.trim() ? theme.text.inverse : theme.text.secondary,
-                cursor: freeInput.trim() ? "pointer" : "not-allowed",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-                flexShrink: 0,
-                outline: "none",
-                opacity: freeInput.trim() ? 1 : 0.5,
-                transition: `all ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-              }}
-              aria-label="发送">
-              <SendIcon color={freeInput.trim() ? theme.text.inverse : theme.text.secondary} />
-            </button>
-          </div>
         </div>
       )}
     </div>

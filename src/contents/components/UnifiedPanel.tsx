@@ -1,0 +1,527 @@
+import { useEffect, useRef, useState } from "react"
+
+import { useUiTheme } from "~/shared/ui/theme"
+import { uiMotion, uiRadius, uiShadow, uiSpace, uiTypography, uiLayer } from "~/shared/ui/tokens"
+import type { BuiltInActionId, ChatMessage, CustomActionTemplate } from "~/shared/types"
+
+interface Props {
+  capturedText: string
+  messages: ChatMessage[]
+  requestState: "idle" | "streaming" | "cancelled" | "failed"
+  customActions: CustomActionTemplate[]
+  onCapturedTextChange: (text: string) => void
+  onBuiltInAction: (action: BuiltInActionId, text: string) => void
+  onCustomAction: (template: string, text: string) => void
+  onSend: (input: string) => void
+  onStop: () => void
+  onClose: () => void
+}
+
+const SPARKLE_PATHS = [
+  "M12 2C12.5523 2 13 2.44772 13 3V4.20051C13 4.61472 13.2632 4.98551 13.6558 5.12582L14.5673 5.45293C15.1189 5.64711 15.3536 6.30719 15.0133 6.77472L14.4048 7.60849C14.1673 7.9349 14.1673 8.37937 14.4048 8.70578L15.0133 9.53955C15.3536 10.0071 15.1189 10.6672 14.5673 10.8613L13.6558 11.1885C13.2632 11.3288 13 11.6996 13 12.1138V13.3143C13 13.7285 12.7368 14.0993 12.3442 14.2396L11.4327 14.5667C10.8811 14.7609 10.6464 15.421 10.9867 15.8885L11.5952 16.7223C11.8327 17.0487 11.8327 17.4932 11.5952 17.8196L10.9867 18.6534C10.6464 19.1209 10.8811 19.781 11.4327 19.9752L12.3442 20.3023C12.7368 20.4426 13 20.8134 13 21.2276V22.4281C13 22.8423 12.7368 23.2131 12.3442 23.3534L11.4327 23.6805C10.8811 23.8747 10.6464 24.5348 10.9867 25.0023L11.5952 25.8361C11.8327 26.1625 11.8327 26.607 11.5952 26.9334L10.9867 27.7672C10.6464 28.2347 10.8811 28.8948 11.4327 29.089L12.3442 29.4161C12.7368 29.5564 13 29.9272 13 30.3414V31",
+  "M12 7L13.2 10.8H17L14 13L15.2 16.8L12 14.6L8.8 16.8L10 13L7 10.8H10.8L12 7Z"
+]
+
+function SparkleIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {SPARKLE_PATHS.map((d, i) => (
+        <path
+          key={i}
+          d={d}
+          stroke={color}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill={i === 1 ? color : undefined}
+          fillOpacity={i === 1 ? 0.15 : undefined}
+        />
+      ))}
+      <circle cx="18" cy="6" r="2.5" fill={color} fillOpacity={0.6} />
+    </svg>
+  )
+}
+
+export default function UnifiedPanel({
+  capturedText,
+  messages,
+  requestState,
+  customActions,
+  onCapturedTextChange,
+  onBuiltInAction,
+  onCustomAction,
+  onSend,
+  onStop,
+  onClose
+}: Props) {
+  const theme = useUiTheme()
+  const [input, setInput] = useState("")
+  const [focused, setFocused] = useState<string | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [capturedTextCollapsed, setCapturedTextCollapsed] = useState(false)
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
+
+  const isStreaming = requestState === "streaming"
+  const sendDisabled = isStreaming || !input.trim()
+  const hasCapturedText = capturedText.length > 0
+
+  // Auto-expand captured text when it first appears
+  useEffect(() => {
+    if (capturedText) {
+      setCapturedTextCollapsed(false)
+    }
+  }, [capturedText])
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) {
+      return
+    }
+
+    container.scrollTop = container.scrollHeight
+  }, [messages, requestState])
+
+  const actionButtonStyle = (id: string): React.CSSProperties => ({
+    border: `1px solid ${hovered === id ? theme.border.default : theme.border.subtle}`,
+    borderRadius: uiRadius.pill,
+    padding: `${uiSpace[4]}px ${uiSpace[12]}px`,
+    fontSize: uiTypography.fontSize.sm,
+    fontWeight: uiTypography.fontWeight.medium,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    color: theme.text.primary,
+    background: hovered === id ? theme.brand.secondaryHover : theme.brand.secondary,
+    outline: "none",
+    boxShadow:
+      focused === id ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+  })
+
+  const sendButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none"
+
+  return (
+    <div
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape") {
+          return
+        }
+
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+      }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: uiLayer.overlay,
+        pointerEvents: "auto",
+        background: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: uiTypography.fontFamily,
+        animation: "unified-overlay-enter 0.25s ease-out forwards"
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}>
+      <style>{`
+        @keyframes unified-overlay-enter {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes unified-panel-enter {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes message-enter {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
+      <div
+        onClick={(event) => {
+          event.stopPropagation()
+        }}
+        style={{
+          width: 560,
+          maxWidth: "calc(100vw - 32px)",
+          maxHeight: "min(70vh, calc(100vh - 32px))",
+          display: "flex",
+          flexDirection: "column",
+          background: theme.bg.surface,
+          borderRadius: uiRadius.lg,
+          border: `1px solid ${theme.border.default}`,
+          boxShadow: uiShadow.lg,
+          overflow: "hidden",
+          animation: `unified-panel-enter 0.3s ${uiMotion.easingSpring} forwards`
+        }}>
+
+        {/* Brand accent bar */}
+        <div
+          style={{
+            height: 3,
+            background: theme.brand.primary,
+            borderRadius: `${uiRadius.lg}px ${uiRadius.lg}px 0 0`,
+            flexShrink: 0
+          }}
+        />
+
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+            borderBottom: `1px solid ${theme.border.subtle}`,
+            flexShrink: 0
+          }}>
+          <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8] }}>
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                background: `linear-gradient(135deg, ${theme.brand.primary}, ${theme.brand.primaryHover})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+              <SparkleIcon size={14} color={theme.text.inverse} />
+            </div>
+            <span
+              style={{
+                fontWeight: uiTypography.fontWeight.bold,
+                fontSize: uiTypography.fontSize.md,
+                letterSpacing: "-0.01em",
+                color: theme.brand.primary
+              }}>
+              AI Help Me
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="关闭对话面板"
+            style={{
+              border: "none",
+              background: "transparent",
+              color: theme.text.secondary,
+              cursor: "pointer",
+              width: 24,
+              height: 24,
+              borderRadius: uiRadius.sm,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 16,
+              lineHeight: 1,
+              padding: 0,
+              outline: "none",
+              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+            }}
+            onMouseEnter={(event) => {
+              event.currentTarget.style.background = theme.bg.surfaceMuted
+            }}
+            onMouseLeave={(event) => {
+              event.currentTarget.style.background = "transparent"
+            }}>
+            ×
+          </button>
+        </div>
+
+        {/* Captured text section */}
+        {hasCapturedText && (
+          <div
+            style={{
+              borderBottom: `1px solid ${theme.border.subtle}`,
+              flexShrink: 0
+            }}>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setCapturedTextCollapsed((prev) => !prev)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault()
+                  setCapturedTextCollapsed((prev) => !prev)
+                }
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: `${uiSpace[6]}px ${uiSpace[12]}px`,
+                cursor: "pointer",
+                color: theme.text.secondary,
+                fontSize: uiTypography.fontSize.sm,
+                userSelect: "none"
+              }}>
+              <span>选中文本</span>
+              <span
+                style={{
+                  transform: capturedTextCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                  transition: `transform ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+                  fontSize: 10
+                }}>
+                ▼
+              </span>
+            </div>
+            {!capturedTextCollapsed && (
+              <div style={{ padding: `0 ${uiSpace[12]}px ${uiSpace[8]}px` }}>
+                <textarea
+                  value={capturedText}
+                  onChange={(event) => onCapturedTextChange(event.target.value)}
+                  onFocus={() => setFocused("captured")}
+                  onBlur={() => setFocused(null)}
+                  rows={3}
+                  aria-label="已捕获的选区文本"
+                  placeholder="选中文本将显示在这里..."
+                  style={{
+                    width: "100%",
+                    resize: "vertical",
+                    border: `1px solid ${focused === "captured" ? theme.brand.primary : theme.border.default}`,
+                    background: theme.bg.surfaceAlt,
+                    color: theme.text.primary,
+                    borderRadius: uiRadius.md,
+                    padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                    boxShadow: focused === "captured" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+                    outline: "none",
+                    fontSize: uiTypography.fontSize.sm,
+                    fontFamily: "inherit",
+                    lineHeight: 1.5,
+                    transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+                    boxSizing: "border-box"
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {hasCapturedText && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: uiSpace[8],
+              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+              flexWrap: "wrap",
+              borderBottom: `1px solid ${theme.border.subtle}`,
+              flexShrink: 0
+            }}>
+            <button
+              style={actionButtonStyle("built-in-explain")}
+              onMouseEnter={() => setHovered("built-in-explain")}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setFocused("built-in-explain")}
+              onBlur={() => setFocused(null)}
+              onClick={() => onBuiltInAction("explain", capturedText)}>
+              解释
+            </button>
+            <button
+              style={actionButtonStyle("built-in-translate")}
+              onMouseEnter={() => setHovered("built-in-translate")}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setFocused("built-in-translate")}
+              onBlur={() => setFocused(null)}
+              onClick={() => onBuiltInAction("translate", capturedText)}>
+              翻译
+            </button>
+            {customActions.map((item) => (
+              <button
+                key={item.id}
+                style={actionButtonStyle(item.id)}
+                onMouseEnter={() => setHovered(item.id)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setFocused(item.id)}
+                onBlur={() => setFocused(null)}
+                onClick={() => onCustomAction(item.template, capturedText)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Messages area */}
+        <div
+          ref={messagesContainerRef}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: uiSpace[12],
+            display: "flex",
+            flexDirection: "column",
+            gap: uiSpace[12],
+            background: theme.bg.surfaceAlt,
+            minHeight: 0
+          }}>
+          {messages.length === 0 ? (
+            <div
+              style={{
+                color: theme.text.secondary,
+                fontSize: uiTypography.fontSize.md,
+                border: `1px dashed ${theme.border.default}`,
+                borderRadius: uiRadius.md,
+                background: theme.bg.surface,
+                padding: uiSpace[16]
+              }}>
+              {hasCapturedText
+                ? "选中文本已捕获，点击动作按钮开始对话。"
+                : "请选择动作，或直接输入一个问题开始对话。"}
+            </div>
+          ) : null}
+
+          {messages.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                alignSelf: item.role === "user" ? "flex-end" : "flex-start",
+                maxWidth: "85%",
+                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                borderRadius: uiRadius.md,
+                lineHeight: 1.5,
+                fontSize: uiTypography.fontSize.md,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                background: item.role === "user" ? theme.brand.primary : theme.bg.surface,
+                color: item.role === "user" ? theme.text.inverse : theme.text.primary,
+                border: item.role === "user" ? "none" : `1px solid ${theme.border.default}`,
+                boxShadow: item.role === "user" ? "none" : uiShadow.sm,
+                animation: `message-enter 0.3s ${uiMotion.easingEnter} forwards`
+              }}>
+              {item.content}
+            </div>
+          ))}
+
+          {isStreaming ? (
+            <div
+              style={{
+                color: theme.text.secondary,
+                fontSize: uiTypography.fontSize.sm,
+                alignSelf: "flex-start",
+                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                borderRadius: uiRadius.md,
+                background: theme.bg.surface,
+                border: `1px solid ${theme.border.default}`
+              }}>
+              AI 正在生成中...
+            </div>
+          ) : null}
+        </div>
+
+        {/* Input area */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr auto",
+            gap: uiSpace[8],
+            padding: uiSpace[12],
+            borderTop: `1px solid ${theme.border.default}`,
+            background: theme.bg.surface,
+            flexShrink: 0
+          }}>
+          <textarea
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onFocus={() => setFocused("input")}
+            onBlur={() => setFocused(null)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.shiftKey) {
+                return
+              }
+
+              event.preventDefault()
+
+              const value = input.trim()
+              if (!value || isStreaming) {
+                return
+              }
+
+              onSend(value)
+              setInput("")
+            }}
+            aria-label="在对话面板中继续提问"
+            placeholder="继续提问（Enter 发送，Shift+Enter 换行）"
+            style={{
+              flex: 1,
+              minHeight: 56,
+              resize: "none",
+              borderRadius: uiRadius.sm,
+              border: `1px solid ${focused === "input" ? theme.brand.primary : theme.border.default}`,
+              background: theme.bg.surfaceAlt,
+              color: theme.text.primary,
+              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+              fontSize: uiTypography.fontSize.md,
+              fontFamily: "inherit",
+              lineHeight: 1.45,
+              outline: "none",
+              boxShadow: focused === "input" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+              transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+            }}
+          />
+          <button
+            onClick={() => {
+              if (isStreaming) {
+                onStop()
+                return
+              }
+
+              const value = input.trim()
+              if (!value) {
+                return
+              }
+
+              onSend(value)
+              setInput("")
+            }}
+            onMouseEnter={() => setHovered("send")}
+            onMouseLeave={() => setHovered(null)}
+            onFocus={() => setFocused("send")}
+            onBlur={() => setFocused(null)}
+            disabled={sendDisabled && !isStreaming}
+            style={{
+              width: 96,
+              border: "none",
+              borderRadius: uiRadius.sm,
+              background: isStreaming
+                ? hovered === "send"
+                  ? theme.bg.page
+                  : theme.bg.surfaceMuted
+                : sendDisabled
+                  ? theme.state.disabled
+                  : hovered === "send"
+                    ? theme.brand.primaryHover
+                    : theme.brand.primary,
+              color: theme.text.inverse,
+              fontWeight: uiTypography.fontWeight.semibold,
+              cursor: isStreaming ? "pointer" : sendDisabled ? "not-allowed" : "pointer",
+              opacity: sendDisabled && !isStreaming ? 0.72 : 1,
+              boxShadow: sendButtonShadow,
+              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+            }}>
+            {isStreaming ? "停止" : "发送"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react"
 
-import ChatPanel from "~/contents/components/ChatPanel"
 import SelectionToolbar from "~/contents/components/SelectionToolbar"
+import UnifiedPanel from "~/contents/components/UnifiedPanel"
 import { useChatState } from "~/contents/hooks/useChatState"
 import { useSelectionDetection } from "~/contents/hooks/useSelectionDetection"
 import { useToolbarState } from "~/contents/hooks/useToolbarState"
@@ -28,18 +28,31 @@ function App() {
   } = useToolbarState()
 
   // Use chat state hook
-  const { messages, requestState, chatVisible, setChatVisible, sendPrompt, stopStreaming } = useChatState()
+  const {
+    messages,
+    requestState,
+    panelOpen,
+    setPanelOpen,
+    capturedText,
+    setCapturedText,
+    sendPrompt,
+    stopStreaming
+  } = useChatState()
 
-  // Handle selection change
+  // Handle selection change — suppress while panel is open
   const handleSelectionChange = useCallback(
     (context: SelectionContext | null, anchor: SelectionAnchor | null) => {
+      if (panelOpen) {
+        return
+      }
+
       if (context && anchor) {
         openToolbar(context, anchor)
       } else {
         closeToolbar()
       }
     },
-    [openToolbar, closeToolbar]
+    [openToolbar, closeToolbar, panelOpen]
   )
 
   // Use selection detection hook
@@ -51,17 +64,26 @@ function App() {
 
   // Run prompt with selection context
   const runWithSelectionContext = useCallback(
-    async (rawPrompt: string) => {
-      const context = selectionContext
-      if (!context) {
-        return
-      }
-
+    async (rawPrompt: string, context: SelectionContext) => {
       const finalPrompt = appendPageContext(rawPrompt, context)
       await sendPrompt(finalPrompt)
-      closeToolbar()
     },
-    [selectionContext, sendPrompt, closeToolbar]
+    [sendPrompt]
+  )
+
+  // Open unified panel with selection text and fire action
+  const openPanelWithAction = useCallback(
+    async (text: string, prompt: string) => {
+      setCapturedText(text)
+      setPanelOpen(true)
+      closeToolbar()
+
+      if (selectionContext) {
+        const context = { ...selectionContext, text }
+        await runWithSelectionContext(prompt, context)
+      }
+    },
+    [selectionContext, setCapturedText, setPanelOpen, closeToolbar, runWithSelectionContext]
   )
 
   // Handle built-in action
@@ -74,9 +96,9 @@ function App() {
       const settings = await getSettings()
       const context = { ...selectionContext, text }
       const prompt = formatBuiltInPrompt(action, context, settings.translationLanguage)
-      await runWithSelectionContext(prompt)
+      await openPanelWithAction(text, prompt)
     },
-    [selectionContext, runWithSelectionContext]
+    [selectionContext, openPanelWithAction]
   )
 
   // Handle custom action
@@ -87,12 +109,12 @@ function App() {
       }
 
       const prompt = formatCustomPrompt(template, text)
-      await runWithSelectionContext(prompt)
+      await openPanelWithAction(text, prompt)
     },
-    [selectionContext, runWithSelectionContext]
+    [selectionContext, openPanelWithAction]
   )
 
-  // Handle free submit
+  // Handle free submit from panel captured text
   const handleFreeSubmit = useCallback(
     async (input: string, text: string) => {
       if (!selectionContext) {
@@ -100,12 +122,12 @@ function App() {
       }
 
       const prompt = formatFreeInputPrompt(input, text)
-      await runWithSelectionContext(prompt)
+      await openPanelWithAction(text, prompt)
     },
-    [selectionContext, runWithSelectionContext]
+    [selectionContext, openPanelWithAction]
   )
 
-  // Handle followup send
+  // Handle followup send from panel input
   const handleFollowupSend = useCallback(
     async (input: string) => {
       await sendPrompt(input)
@@ -118,34 +140,41 @@ function App() {
       <SelectionToolbar
         visible={toolbarVisible}
         anchor={toolbarAnchor}
-        selectionText={selectionContext?.text ?? ""}
         customActions={customActions}
         onBuiltInAction={(action, text) => {
-          void handleBuiltInAction(action, text)
+          void handleBuiltInAction(action, selectionContext?.text ?? text)
         }}
         onCustomAction={(template, text) => {
-          void handleCustomAction(template, text)
-        }}
-        onFreeSubmit={(input, text) => {
-          void handleFreeSubmit(input, text)
+          void handleCustomAction(template, selectionContext?.text ?? text)
         }}
         onClose={() => {
           closeToolbar()
         }}
       />
 
-      <ChatPanel
-        visible={chatVisible}
-        messages={messages}
-        requestState={requestState.status}
-        onStop={stopStreaming}
-        onSend={(input) => {
-          void handleFollowupSend(input)
-        }}
-        onClose={() => {
-          setChatVisible(false)
-        }}
-      />
+      {panelOpen && (
+        <UnifiedPanel
+          capturedText={capturedText}
+          messages={messages}
+          requestState={requestState.status}
+          customActions={customActions}
+          onCapturedTextChange={setCapturedText}
+          onBuiltInAction={(action, text) => {
+            void handleBuiltInAction(action, text)
+          }}
+          onCustomAction={(template, text) => {
+            void handleCustomAction(template, text)
+          }}
+          onSend={(input) => {
+            void handleFollowupSend(input)
+          }}
+          onStop={stopStreaming}
+          onClose={() => {
+            setPanelOpen(false)
+            setCapturedText("")
+          }}
+        />
+      )}
     </div>
   )
 }
