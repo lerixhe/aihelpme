@@ -252,21 +252,10 @@ export default function UnifiedPanel({
           flexDirection: "column",
           background: theme.bg.surface,
           borderRadius: uiRadius.lg,
-          border: `1px solid ${theme.border.default}`,
           boxShadow: uiShadow.lg,
           overflow: "hidden",
           animation: `unified-panel-enter 0.3s ${uiMotion.easingSpring} forwards`
         }}>
-
-        {/* Brand accent bar */}
-        <div
-          style={{
-            height: 3,
-            background: theme.brand.primary,
-            borderRadius: `${uiRadius.lg}px ${uiRadius.lg}px 0 0`,
-            flexShrink: 0
-          }}
-        />
 
         {/* Header */}
         <div
