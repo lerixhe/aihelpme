@@ -42,6 +42,96 @@ function SparkleIcon({ size, color }: { size: number; color: string }) {
   )
 }
 
+interface ThinkingTheme {
+  text: { secondary: string; primary: string }
+  bg: { surfaceMuted: string; surface: string }
+  border: { subtle: string }
+  brand: { primary: string }
+}
+
+function ThinkingBlock({
+  reasoning,
+  isStreaming,
+  theme
+}: {
+  reasoning: string
+  isStreaming: boolean
+  theme: ThinkingTheme
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div
+      style={{
+        borderBottom: `1px solid ${theme.border.subtle}`,
+        fontSize: uiTypography.fontSize.sm
+      }}>
+      <button
+        onClick={() => setExpanded((prev) => !prev)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: uiSpace[6],
+          width: "100%",
+          padding: `${uiSpace[6]}px ${uiSpace[12]}px`,
+          border: "none",
+          background: "transparent",
+          color: theme.text.secondary,
+          cursor: "pointer",
+          fontFamily: uiTypography.fontFamily,
+          fontSize: uiTypography.fontSize.sm,
+          fontWeight: uiTypography.fontWeight.medium,
+          textAlign: "left"
+        }}>
+        <span
+          style={{
+            display: "inline-block",
+            transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+            transition: `transform ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+            fontSize: 10
+          }}>
+          ▶
+        </span>
+        {isStreaming ? "思考中..." : "思考过程"}
+        {isStreaming ? (
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: theme.brand.primary,
+              animation: "thinking-pulse 1s ease-in-out infinite",
+              display: "inline-block"
+            }}
+          />
+        ) : null}
+      </button>
+      {expanded ? (
+        <div
+          style={{
+            padding: `0 ${uiSpace[12]}px ${uiSpace[8]}px`,
+            color: theme.text.secondary,
+            lineHeight: 1.5,
+            fontSize: uiTypography.fontSize.sm,
+            borderLeft: `2px solid ${theme.brand.primary}`,
+            marginLeft: uiSpace[12],
+            marginRight: uiSpace[4],
+            marginBottom: uiSpace[4],
+            opacity: 0.85
+          }}>
+          {reasoning}
+        </div>
+      ) : null}
+      <style>{`
+        @keyframes thinking-pulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 export default function UnifiedPanel({
   capturedText,
   messages,
@@ -396,7 +486,6 @@ export default function UnifiedPanel({
               style={{
                 alignSelf: item.role === "user" ? "flex-end" : "flex-start",
                 maxWidth: "85%",
-                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
                 borderRadius: uiRadius.md,
                 lineHeight: 1.5,
                 fontSize: uiTypography.fontSize.md,
@@ -406,9 +495,26 @@ export default function UnifiedPanel({
                 color: item.role === "user" ? theme.text.inverse : theme.text.primary,
                 border: item.role === "user" ? "none" : `1px solid ${theme.border.default}`,
                 boxShadow: item.role === "user" ? "none" : uiShadow.sm,
-                animation: `message-enter 0.3s ${uiMotion.easingEnter} forwards`
+                animation: `message-enter 0.3s ${uiMotion.easingEnter} forwards`,
+                overflow: "hidden"
               }}>
-              {item.content}
+              {item.role === "assistant" && item.reasoning_content ? (
+                <ThinkingBlock
+                  reasoning={item.reasoning_content}
+                  isStreaming={isStreaming && !item.content}
+                  theme={theme}
+                />
+              ) : null}
+              {item.content ? (
+                <div style={{ padding: `${uiSpace[8]}px ${uiSpace[12]}px` }}>
+                  {item.content}
+                </div>
+              ) : null}
+              {item.role === "user" ? (
+                <div style={{ padding: `${uiSpace[8]}px ${uiSpace[12]}px` }}>
+                  {item.content}
+                </div>
+              ) : null}
             </div>
           ))}
 

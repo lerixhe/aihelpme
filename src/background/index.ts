@@ -3,7 +3,9 @@ import type {
   ChatStreamEvent,
   ChatStreamRequest,
   ChatStreamStartRequest,
-  ChatMessage
+  ChatMessage,
+  ApiTestRequest,
+  ApiTestResponse
 } from "~/shared/types"
 import { MESSAGE_TYPES, ERROR_MESSAGES } from "~/shared/constants"
 import { formatApiError, getErrorMessage, isAbortError } from "~/shared/errors"
@@ -38,24 +40,44 @@ function normalizeAssistantContent(content: unknown): string {
   return ""
 }
 
-function getStreamChunkContent(chunk: unknown): string {
+interface StreamChunkFields {
+  content: string
+  reasoning_content: string
+}
+
+function getStreamChunkContent(chunk: unknown): StreamChunkFields {
+  const empty: StreamChunkFields = { content: "", reasoning_content: "" }
+
   if (!chunk || typeof chunk !== "object") {
-    return ""
+    return empty
   }
 
   const choices = "choices" in chunk ? chunk.choices : undefined
   if (!Array.isArray(choices) || choices.length === 0) {
-    return ""
+    return empty
   }
 
-  const delta = choices[0] && typeof choices[0] === "object" && "delta" in choices[0] ? choices[0].delta : undefined
+  const choice = choices[0]
+  if (!choice || typeof choice !== "object") {
+    return empty
+  }
+
+  const delta = "delta" in choice ? choice.delta : undefined
 
   if (!delta || typeof delta !== "object") {
-    return ""
+    return empty
   }
 
   const content = "content" in delta ? delta.content : undefined
-  return normalizeAssistantContent(content)
+  // Some providers (Ollama) may use "think" or "reasoning_content" for chain-of-thought
+  const reasoning =
+    ("reasoning_content" in delta ? delta.reasoning_content : undefined) ??
+    ("think" in delta ? delta.think : undefined)
+
+  return {
+    content: normalizeAssistantContent(content),
+    reasoning_content: normalizeAssistantContent(reasoning)
+  }
 }
 
 async function streamOpenAiCompatible(
@@ -115,63 +137,81 @@ async function streamOpenAiCompatible(
   let buffer = ""
   let hasContent = false
 
-  while (true) {
-    const { done, value } = await reader.read()
-    buffer += decoder.decode(value || new Uint8Array(), { stream: !done })
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done })
 
-    const events = buffer.split("\n\n")
-    buffer = events.pop() || ""
+      const events = buffer.split("\n\n")
+      buffer = events.pop() || ""
 
-    for (const event of events) {
-      const lines = event
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.startsWith("data:"))
+      for (const event of events) {
+        const lines = event
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.startsWith("data:"))
 
-      for (const line of lines) {
-        const data = line.slice(5).trim()
+        for (const line of lines) {
+          const data = line.slice(5).trim()
 
-        if (!data) {
-          continue
-        }
+          if (!data) {
+            continue
+          }
 
-        if (data === "[DONE]") {
-          if (!hasContent) {
-            onEvent({
-              type: "failed",
-              error: ERROR_MESSAGES.NO_VALID_CONTENT
-            })
+          if (data === "[DONE]") {
+            if (!hasContent) {
+              onEvent({
+                type: "failed",
+                error: ERROR_MESSAGES.NO_VALID_CONTENT
+              })
+              return
+            }
+
+            onEvent({ type: "completed" })
             return
           }
 
-          onEvent({ type: "completed" })
-          return
+          let parsed: unknown
+
+          try {
+            parsed = JSON.parse(data)
+          } catch {
+            continue
+          }
+
+          const { content, reasoning_content } = getStreamChunkContent(parsed)
+          if (!content && !reasoning_content) {
+            continue
+          }
+
+          hasContent = true
+          onEvent({
+            type: "chunk",
+            content,
+            ...(reasoning_content ? { reasoning_content } : {})
+          })
         }
+      }
 
-        let parsed: unknown
-
-        try {
-          parsed = JSON.parse(data)
-        } catch {
-          continue
-        }
-
-        const content = getStreamChunkContent(parsed)
-        if (!content) {
-          continue
-        }
-
-        hasContent = true
-        onEvent({
-          type: "chunk",
-          content
-        })
+      if (done) {
+        break
       }
     }
-
-    if (done) {
-      break
+  } catch (streamError: unknown) {
+    if (signal.aborted) {
+      throw streamError
     }
+
+    if (!hasContent) {
+      onEvent({
+        type: "failed",
+        error: `${ERROR_MESSAGES.REQUEST_FAILED}：${getErrorMessage(streamError)}`
+      })
+      return
+    }
+
+    onEvent({ type: "completed" })
+    return
   }
 
   if (!hasContent) {
@@ -243,3 +283,115 @@ export function setupBackgroundMessageHandler(): void {
 }
 
 setupBackgroundMessageHandler()
+
+chrome.runtime.onMessage.addListener((request: ApiTestRequest, _sender, sendResponse) => {
+  if (request?.type !== MESSAGE_TYPES.API_TEST_REQUEST) {
+    return false
+  }
+
+  const { apiBaseUrl, apiKey, model } = request.payload
+
+  if (!apiBaseUrl?.trim() || !apiKey?.trim() || !model?.trim()) {
+    sendResponse({ success: false, error: ERROR_MESSAGES.API_TEST_MISSING_FIELDS } satisfies ApiTestResponse)
+    return false
+  }
+
+  const startTime = performance.now()
+
+  fetch(`${normalizeBaseUrl(apiBaseUrl.trim())}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey.trim()}`
+    },
+    body: JSON.stringify({
+      model: model.trim(),
+      stream: false,
+      max_tokens: 5,
+      messages: [{ role: "user", content: "Hi" }]
+    })
+  })
+    .then(async (response) => {
+      const latencyMs = Math.round(performance.now() - startTime)
+      if (!response.ok) {
+        const rawError = await response.text()
+        sendResponse({
+          success: false,
+          error: formatApiError(response.status, rawError),
+          latencyMs
+        } satisfies ApiTestResponse)
+        return
+      }
+      const body = await response.json()
+      if (!body.choices || !Array.isArray(body.choices) || body.choices.length === 0) {
+        sendResponse({
+          success: false,
+          error: ERROR_MESSAGES.NO_VALID_CONTENT,
+          latencyMs
+        } satisfies ApiTestResponse)
+        return
+      }
+      sendResponse({ success: true, latencyMs } satisfies ApiTestResponse)
+    })
+    .catch((error: unknown) => {
+      const latencyMs = Math.round(performance.now() - startTime)
+      sendResponse({
+        success: false,
+        error: `${ERROR_MESSAGES.REQUEST_FAILED}：${getErrorMessage(error)}`,
+        latencyMs
+      } satisfies ApiTestResponse)
+    })
+
+  return true
+})
+
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request?.type !== MESSAGE_TYPES.FETCH_MODELS_REQUEST) {
+    return false
+  }
+
+  const { apiBaseUrl, apiKey } = request.payload as { apiBaseUrl: string; apiKey: string }
+
+  if (!apiBaseUrl?.trim()) {
+    sendResponse({ success: false, error: ERROR_MESSAGES.FETCH_MODELS_MISSING_URL })
+    return false
+  }
+
+  const headers: Record<string, string> = {}
+  if (apiKey?.trim()) {
+    headers.Authorization = `Bearer ${apiKey.trim()}`
+  }
+
+  fetch(`${normalizeBaseUrl(apiBaseUrl.trim())}/models`, { headers })
+    .then(async (response) => {
+      if (!response.ok) {
+        const rawError = await response.text()
+        sendResponse({
+          success: false,
+          error: `${ERROR_MESSAGES.FETCH_MODELS_FAILED}：${formatApiError(response.status, rawError)}`
+        })
+        return
+      }
+
+      const body = await response.json()
+      const rawList: unknown[] = Array.isArray(body?.data) ? body.data : []
+      const models = rawList
+        .map((item) => (item && typeof item === "object" && "id" in item ? String(item.id) : ""))
+        .filter((id) => id.length > 0)
+
+      if (models.length === 0) {
+        sendResponse({ success: false, error: ERROR_MESSAGES.FETCH_MODELS_EMPTY })
+        return
+      }
+
+      sendResponse({ success: true, models })
+    })
+    .catch((error: unknown) => {
+      sendResponse({
+        success: false,
+        error: `${ERROR_MESSAGES.FETCH_MODELS_FAILED}：${getErrorMessage(error)}`
+      })
+    })
+
+  return true
+})

@@ -4,7 +4,8 @@ import { hasTextPlaceholder } from "~/shared/prompt"
 import { DEFAULT_SETTINGS, getSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
-import type { CustomActionTemplate, ExtensionSettings, ThemePreference } from "~/shared/types"
+import type { CustomActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse } from "~/shared/types"
+import { MESSAGE_TYPES } from "~/shared/constants"
 
 export default function OptionsPage() {
   const themeName = useUiThemeName()
@@ -13,6 +14,11 @@ export default function OptionsPage() {
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<string>("")
   const [focusedField, setFocusedField] = useState<string | null>(null)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [models, setModels] = useState<string[]>([])
+  const [fetchingModels, setFetchingModels] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     void getSettings().then((loaded) => {
@@ -42,6 +48,90 @@ export default function OptionsPage() {
           : item
       )
     }))
+  }
+
+  const handleTestConnection = () => {
+    const trimmedUrl = settings.apiBaseUrl.trim()
+    const trimmedKey = settings.apiKey.trim()
+    const trimmedModel = settings.model.trim()
+
+    if (!trimmedUrl || !trimmedKey || !trimmedModel) {
+      setTestResult({ success: false, message: "请填写 API Base URL、API Key 和 Model 后再测试。" })
+      return
+    }
+
+    setTesting(true)
+    setTestResult(null)
+
+    chrome.runtime.sendMessage(
+      {
+        type: MESSAGE_TYPES.API_TEST_REQUEST,
+        payload: {
+          apiBaseUrl: trimmedUrl,
+          apiKey: trimmedKey,
+          model: trimmedModel
+        }
+      },
+      (response: ApiTestResponse | undefined) => {
+        setTesting(false)
+        if (chrome.runtime.lastError) {
+          setTestResult({ success: false, message: `扩展通信失败：${chrome.runtime.lastError.message}` })
+          return
+        }
+        if (!response) {
+          setTestResult({ success: false, message: "后台未返回响应。" })
+          return
+        }
+        const latencyInfo = response.latencyMs != null ? ` (${response.latencyMs}ms)` : ""
+        if (response.success) {
+          setTestResult({ success: true, message: `连接成功${latencyInfo}` })
+        } else {
+          setTestResult({ success: false, message: response.error ?? "测试失败" })
+        }
+      }
+    )
+  }
+
+  const handleFetchModels = () => {
+    const trimmedUrl = settings.apiBaseUrl.trim()
+    if (!trimmedUrl) {
+      setFetchError("请先填写 API Base URL")
+      return
+    }
+
+    setFetchingModels(true)
+    setFetchError(null)
+    setModels([])
+
+    chrome.runtime.sendMessage(
+      {
+        type: MESSAGE_TYPES.FETCH_MODELS_REQUEST,
+        payload: {
+          apiBaseUrl: trimmedUrl,
+          apiKey: settings.apiKey.trim()
+        }
+      },
+      (response: FetchModelsResponse | undefined) => {
+        setFetchingModels(false)
+        if (chrome.runtime.lastError) {
+          setFetchError(`通信失败：${chrome.runtime.lastError.message}`)
+          return
+        }
+        if (!response) {
+          setFetchError("后台未返回响应。")
+          return
+        }
+        if (response.success && response.models && response.models.length > 0) {
+          setModels(response.models)
+          setFetchError(null)
+          if (!settings.model.trim() || !response.models.includes(settings.model.trim())) {
+            setSettings((current) => ({ ...current, model: response.models![0] }))
+          }
+        } else {
+          setFetchError(response.error ?? "未找到可用模型")
+        }
+      }
+    )
   }
 
   const cardStyle: CSSProperties = {
@@ -220,18 +310,113 @@ export default function OptionsPage() {
         </label>
 
         <label style={fieldStyle}>
-          <span>Model</span>
-          <input
-            value={settings.model}
-            onFocus={() => setFocusedField("model")}
-            onBlur={() => setFocusedField(null)}
-            onChange={(event) => {
-              setSettings((current) => ({ ...current, model: event.target.value }))
-            }}
-            placeholder="gpt-4o-mini"
-            style={createInputStyle("model")}
-          />
+          <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>Model</span>
+            <button
+              type="button"
+              onClick={handleFetchModels}
+              disabled={fetchingModels}
+              style={{
+                border: `1px solid ${theme.border.default}`,
+                borderRadius: uiRadius.sm,
+                padding: `${uiSpace[4]}px ${uiSpace[8]}px`,
+                background: theme.bg.surfaceAlt,
+                color: theme.text.primary,
+                cursor: fetchingModels ? "not-allowed" : "pointer",
+                opacity: fetchingModels ? 0.55 : 1,
+                fontSize: uiTypography.fontSize.sm,
+                fontFamily: uiTypography.fontFamily,
+                transition: `all ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              }}>
+              {fetchingModels ? "获取中..." : "获取模型"}
+            </button>
+          </span>
+          {models.length > 0 ? (
+            <div style={{ display: "flex", gap: uiSpace[6] }}>
+              <select
+                value={settings.model}
+                onChange={(event) => {
+                  setSettings((current) => ({ ...current, model: event.target.value }))
+                }}
+                style={{ ...createInputStyle("model"), flex: 1, cursor: "pointer" }}>
+                {models.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setModels([])}
+                style={{
+                  border: `1px solid ${theme.border.default}`,
+                  borderRadius: uiRadius.sm,
+                  padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                  background: "transparent",
+                  color: theme.text.secondary,
+                  cursor: "pointer",
+                  fontSize: uiTypography.fontSize.sm,
+                  fontFamily: uiTypography.fontFamily,
+                  whiteSpace: "nowrap"
+                }}>
+                手动输入
+              </button>
+            </div>
+          ) : (
+            <input
+              value={settings.model}
+              onFocus={() => setFocusedField("model")}
+              onBlur={() => setFocusedField(null)}
+              onChange={(event) => {
+                setSettings((current) => ({ ...current, model: event.target.value }))
+              }}
+              placeholder="gpt-4o-mini"
+              style={createInputStyle("model")}
+            />
+          )}
+          {fetchError ? (
+            <span
+              style={{
+                fontSize: uiTypography.fontSize.sm,
+                color: theme.state.error,
+                background: theme.state.errorBg,
+                padding: `${uiSpace[4]}px ${uiSpace[8]}px`,
+                borderRadius: uiRadius.sm
+              }}>
+              {fetchError}
+            </span>
+          ) : null}
         </label>
+
+        <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], marginBottom: uiSpace[12] }}>
+          <button
+            disabled={testing}
+            onClick={handleTestConnection}
+            style={{
+              ...buttonStyle,
+              opacity: testing ? 0.55 : 1,
+              cursor: testing ? "not-allowed" : "pointer",
+              background: testing ? theme.state.disabled : theme.brand.primary,
+              fontSize: uiTypography.fontSize.sm,
+              padding: `${uiSpace[6]}px ${uiSpace[12]}px`,
+              transition: `all ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+            }}>
+            {testing ? "测试中..." : "测试连接"}
+          </button>
+          {testResult ? (
+            <span
+              style={{
+                fontSize: uiTypography.fontSize.sm,
+                color: testResult.success ? theme.state.success : theme.state.error,
+                background: testResult.success ? theme.state.successBg : theme.state.errorBg,
+                padding: `${uiSpace[4]}px ${uiSpace[8]}px`,
+                borderRadius: uiRadius.sm,
+                lineHeight: 1.5
+              }}>
+              {testResult.message}
+            </span>
+          ) : null}
+        </div>
 
         <label style={{ ...fieldStyle, marginBottom: 0 }}>
           <span>翻译目标语言</span>

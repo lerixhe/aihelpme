@@ -25,14 +25,20 @@ function createMessage(role: ChatMessage["role"], content: string): ChatMessage 
 /**
  * Update message content by ID
  */
-function updateMessageContent(messages: ChatMessage[], id: string, content: string): ChatMessage[] {
+function updateMessageContent(
+  messages: ChatMessage[],
+  id: string,
+  content: string,
+  reasoning_content?: string
+): ChatMessage[] {
   return messages.map((message) => {
     if (message.id !== id) {
       return message
     }
     return {
       ...message,
-      content
+      content,
+      ...(reasoning_content !== undefined ? { reasoning_content } : {})
     }
   })
 }
@@ -79,6 +85,7 @@ export function useChatState() {
 
       try {
         let streamedContent = ""
+        let streamedReasoning = ""
         let terminalState: "completed" | "cancelled" | "failed" | null = null
 
         await streamChat(nextMessages, {
@@ -95,8 +102,16 @@ export function useChatState() {
 
             if (event.type === "chunk") {
               streamedContent += event.content
+              if (event.reasoning_content) {
+                streamedReasoning += event.reasoning_content
+              }
 
-              const updatedMessages = updateMessageContent(messagesRef.current, assistantMessage.id, streamedContent)
+              const updatedMessages = updateMessageContent(
+                messagesRef.current,
+                assistantMessage.id,
+                streamedContent,
+                streamedReasoning || undefined
+              )
               messagesRef.current = updatedMessages
               setMessages(updatedMessages)
               return

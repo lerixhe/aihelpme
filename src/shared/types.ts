@@ -27,6 +27,7 @@ export interface ChatMessage {
   id: string
   role: "user" | "assistant" | "system"
   content: string
+  reasoning_content?: string
 }
 
 export interface ChatStreamStartRequest {
@@ -47,6 +48,7 @@ export interface ChatStreamStartedEvent {
 export interface ChatStreamChunkEvent {
   type: "chunk"
   content: string
+  reasoning_content?: string
 }
 
 export interface ChatStreamCompletedEvent {
@@ -98,4 +100,35 @@ export type ChatRequestState =
 export interface StreamChatOptions {
   onEvent: (event: ChatStreamEvent) => void
   signal?: AbortSignal
+}
+
+// API test connection types
+export interface ApiTestRequest {
+  type: "AI_HELP_ME_API_TEST_REQUEST"
+  payload: {
+    apiBaseUrl: string
+    apiKey: string
+    model: string
+  }
+}
+
+export interface ApiTestResponse {
+  success: boolean
+  error?: string
+  latencyMs?: number
+}
+
+// Fetch models types
+export interface FetchModelsRequest {
+  type: "AI_HELP_ME_FETCH_MODELS_REQUEST"
+  payload: {
+    apiBaseUrl: string
+    apiKey: string
+  }
+}
+
+export interface FetchModelsResponse {
+  success: boolean
+  models?: string[]
+  error?: string
 }
