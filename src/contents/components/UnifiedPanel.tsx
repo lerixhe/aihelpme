@@ -56,6 +56,15 @@ function ThinkingBlock({
   theme: ThinkingTheme
 }) {
   const [expanded, setExpanded] = useState(false)
+  const autoExpandedRef = useRef(false)
+
+  // Auto-expand when streaming starts so user can see thinking in real-time
+  useEffect(() => {
+    if (isStreaming && !autoExpandedRef.current) {
+      autoExpandedRef.current = true
+      setExpanded(true)
+    }
+  }, [isStreaming])
 
   return (
     <div
@@ -114,7 +123,9 @@ function ThinkingBlock({
             marginLeft: uiSpace[12],
             marginRight: uiSpace[4],
             marginBottom: uiSpace[4],
-            opacity: 0.85
+            opacity: 0.85,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word"
           }}>
           {reasoning}
         </div>

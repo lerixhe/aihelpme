@@ -142,7 +142,7 @@ export function useChatState() {
           }
         })
 
-        if (terminalState === "completed" && !streamedContent) {
+        if (terminalState === "completed" && !streamedContent && !streamedReasoning) {
           const afterEmpty = updateMessageContent(messagesRef.current, assistantMessage.id, UI_MESSAGES.EMPTY_CHAT)
           messagesRef.current = afterEmpty
           setMessages(afterEmpty)
