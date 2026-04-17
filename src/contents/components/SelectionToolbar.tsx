@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiSpace, uiTypography } from "~/shared/ui/tokens"
@@ -7,10 +7,11 @@ import type { BuiltInActionId, CustomActionTemplate, SelectionAnchor } from "~/s
 interface Props {
   visible: boolean
   anchor: SelectionAnchor | null
+  selectionText: string
   customActions: CustomActionTemplate[]
-  onBuiltInAction: (action: BuiltInActionId) => void
-  onCustomAction: (template: string) => void
-  onFreeSubmit: (input: string) => void
+  onBuiltInAction: (action: BuiltInActionId, text: string) => void
+  onCustomAction: (template: string, text: string) => void
+  onFreeSubmit: (input: string, text: string) => void
   onClose: () => void
 }
 
@@ -58,6 +59,7 @@ function SendIcon({ color }: { color: string }) {
 export default function SelectionToolbar({
   visible,
   anchor,
+  selectionText,
   customActions,
   onBuiltInAction,
   onCustomAction,
@@ -66,11 +68,11 @@ export default function SelectionToolbar({
 }: Props) {
   const theme = useUiTheme()
   const [expanded, setExpanded] = useState(false)
+  const [capturedText, setCapturedText] = useState("")
   const [freeInput, setFreeInput] = useState("")
   const [focused, setFocused] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
-  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const toolbarRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const position = useMemo(() => {
     if (!anchor) {
@@ -94,33 +96,19 @@ export default function SelectionToolbar({
     return { top, left }
   }, [anchor])
 
-  const cancelCollapse = () => {
-    if (collapseTimerRef.current !== null) {
-      clearTimeout(collapseTimerRef.current)
-      collapseTimerRef.current = null
-    }
-  }
-
-  const scheduleCollapse = () => {
-    cancelCollapse()
-    collapseTimerRef.current = setTimeout(() => {
-      setExpanded(false)
-      collapseTimerRef.current = null
-    }, 300)
-  }
-
   const handleTriggerEnter = () => {
-    cancelCollapse()
     setExpanded(true)
+    window.getSelection()?.removeAllRanges()
   }
 
-  const handleToolbarEnter = () => {
-    cancelCollapse()
-  }
+  const currentText = capturedText
 
-  const handleToolbarLeave = () => {
-    scheduleCollapse()
-  }
+  // Reset captured text when toolbar reopens with new selection
+  useEffect(() => {
+    if (visible && selectionText) {
+      setCapturedText(selectionText)
+    }
+  }, [visible, selectionText])
 
   if (!visible || !anchor) {
     return null
@@ -170,9 +158,8 @@ export default function SelectionToolbar({
         tabIndex={0}
         aria-label="展开 AI 助手"
         onMouseEnter={handleTriggerEnter}
-        onMouseLeave={scheduleCollapse}
+        onClick={() => setExpanded((prev) => !prev)}
         onFocus={handleTriggerEnter}
-        onBlur={scheduleCollapse}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault()
@@ -205,9 +192,7 @@ export default function SelectionToolbar({
 
       {expanded && (
         <div
-          ref={toolbarRef}
-          onMouseEnter={handleToolbarEnter}
-          onMouseLeave={handleToolbarLeave}
+          ref={containerRef}
           onKeyDownCapture={(event) => {
             if (event.key !== "Escape") {
               return
@@ -320,6 +305,37 @@ export default function SelectionToolbar({
 
           <div
             style={{
+              padding: `${uiSpace[8]}px ${uiSpace[12]}px`
+            }}>
+            <textarea
+              value={capturedText}
+              onChange={(event) => setCapturedText(event.target.value)}
+              onFocus={() => setFocused("captured")}
+              onBlur={() => setFocused(null)}
+              rows={3}
+              aria-label="已捕获的选中文本"
+              placeholder="选中文本将显示在这里..."
+              style={{
+                width: "100%",
+                resize: "vertical",
+                border: `1px solid ${focused === "captured" ? theme.brand.primary : theme.border.default}`,
+                background: theme.bg.surfaceAlt,
+                color: theme.text.primary,
+                borderRadius: uiRadius.md,
+                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                boxShadow: focused === "captured" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+                outline: "none",
+                fontSize: uiTypography.fontSize.sm,
+                fontFamily: "inherit",
+                lineHeight: 1.5,
+                transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+                boxSizing: "border-box"
+              }}
+            />
+          </div>
+
+          <div
+            style={{
               display: "flex",
               alignItems: "center",
               gap: uiSpace[8],
@@ -332,7 +348,7 @@ export default function SelectionToolbar({
               onMouseLeave={() => setHovered(null)}
               onFocus={() => setFocused("built-in-explain")}
               onBlur={() => setFocused(null)}
-              onClick={() => onBuiltInAction("explain")}>
+              onClick={() => onBuiltInAction("explain", currentText)}>
               解释
             </button>
             <button
@@ -341,7 +357,7 @@ export default function SelectionToolbar({
               onMouseLeave={() => setHovered(null)}
               onFocus={() => setFocused("built-in-translate")}
               onBlur={() => setFocused(null)}
-              onClick={() => onBuiltInAction("translate")}>
+              onClick={() => onBuiltInAction("translate", currentText)}>
               翻译
             </button>
             {customActions.map((item) => (
@@ -352,7 +368,7 @@ export default function SelectionToolbar({
                 onMouseLeave={() => setHovered(null)}
                 onFocus={() => setFocused(item.id)}
                 onBlur={() => setFocused(null)}
-                onClick={() => onCustomAction(item.template)}>
+                onClick={() => onCustomAction(item.template, currentText)}>
                 {item.label}
               </button>
             ))}
@@ -380,7 +396,7 @@ export default function SelectionToolbar({
                   return
                 }
 
-                onFreeSubmit(value)
+                onFreeSubmit(value, currentText)
                 setFreeInput("")
               }}
               aria-label="输入自定义需求"
@@ -407,7 +423,7 @@ export default function SelectionToolbar({
                   return
                 }
 
-                onFreeSubmit(value)
+                onFreeSubmit(value, currentText)
                 setFreeInput("")
               }}
               disabled={!freeInput.trim()}

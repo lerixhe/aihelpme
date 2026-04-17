@@ -12,8 +12,7 @@ import {
 interface UseSelectionDetectionOptions {
   extensionRootRef: React.RefObject<HTMLElement | null>
   onSelectionChange: (context: SelectionContext | null, anchor: SelectionAnchor | null) => void
-  hasCapturedPageSelection: () => boolean
-  shouldPreserveToolbar: (target: EventTarget | null) => boolean
+  isToolbarVisible: () => boolean
 }
 
 /**
@@ -22,21 +21,10 @@ interface UseSelectionDetectionOptions {
 export function useSelectionDetection({
   extensionRootRef,
   onSelectionChange,
-  hasCapturedPageSelection,
-  shouldPreserveToolbar
+  isToolbarVisible
 }: UseSelectionDetectionOptions) {
   const rafIdRef = useRef<number | null>(null)
   const lastAnchorRef = useRef<SelectionAnchor | null>(null)
-  const extensionInteractionRef = useRef(false)
-
-  const readSelectionText = useCallback(() => {
-    if (isExtensionUiFocused(extensionRootRef.current) || hasSelectionInsideExtensionUi(extensionRootRef.current)) {
-      return ""
-    }
-
-    const snapshot = getSelectionSnapshot(null)
-    return snapshot?.context.text.trim() ?? ""
-  }, [extensionRootRef])
 
   const updateSelection = useCallback(
     (event?: Event) => {
@@ -59,10 +47,6 @@ export function useSelectionDetection({
         const snapshot = getSelectionSnapshot(target)
 
         if (!snapshot) {
-          if (shouldPreserveToolbar(target)) {
-            return
-          }
-
           onSelectionChange(null, null)
           return
         }
@@ -90,12 +74,23 @@ export function useSelectionDetection({
         onSelectionChange(snapshot.context, anchor)
       })
     },
-    [extensionRootRef, onSelectionChange, shouldPreserveToolbar]
+    [extensionRootRef, onSelectionChange]
   )
 
   useEffect(() => {
+    const isInsideExtension = (event: Event) =>
+      isInsideExtensionEvent(event, extensionRootRef.current)
+
+    const readSelectionText = () => {
+      if (isExtensionUiFocused(extensionRootRef.current) || hasSelectionInsideExtensionUi(extensionRootRef.current)) {
+        return ""
+      }
+      const snapshot = getSelectionSnapshot(null)
+      return snapshot?.context.text.trim() ?? ""
+    }
+
     const onPointerUp = (event: PointerEvent) => {
-      if (isInsideExtensionEvent(event, extensionRootRef.current)) {
+      if (isInsideExtension(event)) {
         return
       }
 
@@ -103,7 +98,8 @@ export function useSelectionDetection({
     }
 
     const handleSelectionChangeEvent = (event: Event) => {
-      if (extensionInteractionRef.current) {
+      // When toolbar is visible, ignore all selection changes — the editor is the source of truth
+      if (isToolbarVisible()) {
         return
       }
 
@@ -112,10 +108,6 @@ export function useSelectionDetection({
       }
 
       if (!readSelectionText()) {
-        if (hasCapturedPageSelection()) {
-          return
-        }
-
         onSelectionChange(null, null)
         return
       }
@@ -124,7 +116,7 @@ export function useSelectionDetection({
     }
 
     const onKeyUp = (event: KeyboardEvent) => {
-      if (isInsideExtensionEvent(event, extensionRootRef.current)) {
+      if (isInsideExtension(event)) {
         return
       }
 
@@ -136,31 +128,28 @@ export function useSelectionDetection({
     }
 
     const onFocusIn = (event: FocusEvent) => {
-      if (isInsideExtensionEvent(event, extensionRootRef.current)) {
-        return
-      }
-
-      if (hasCapturedPageSelection() && !readSelectionText()) {
+      if (isInsideExtension(event)) {
         return
       }
 
       updateSelection(event)
     }
 
-    const onDocumentMouseDown = (event: MouseEvent) => {
-      if (isInsideExtensionEvent(event, extensionRootRef.current)) {
-        extensionInteractionRef.current = true
+    // Unified click-outside: any pointerdown outside the extension UI closes everything
+    const onDocumentPointerDown = (event: PointerEvent) => {
+      if (isInsideExtension(event)) {
         return
       }
 
-      extensionInteractionRef.current = false
+      // Click outside extension UI → close toolbar
+      onSelectionChange(null, null)
     }
 
     document.addEventListener("pointerup", onPointerUp, true)
     document.addEventListener("selectionchange", handleSelectionChangeEvent, true)
     document.addEventListener("keyup", onKeyUp, true)
     document.addEventListener("focusin", onFocusIn, true)
-    document.addEventListener("mousedown", onDocumentMouseDown, true)
+    document.addEventListener("pointerdown", onDocumentPointerDown, true)
 
     return () => {
       if (rafIdRef.current != null) {
@@ -171,11 +160,9 @@ export function useSelectionDetection({
       document.removeEventListener("selectionchange", handleSelectionChangeEvent, true)
       document.removeEventListener("keyup", onKeyUp, true)
       document.removeEventListener("focusin", onFocusIn, true)
-      document.removeEventListener("mousedown", onDocumentMouseDown, true)
+      document.removeEventListener("pointerdown", onDocumentPointerDown, true)
     }
-  }, [extensionRootRef, updateSelection, readSelectionText, hasCapturedPageSelection, onSelectionChange])
+  }, [extensionRootRef, updateSelection, isToolbarVisible, onSelectionChange])
 
-  return {
-    extensionInteractionRef
-  }
+  return {}
 }

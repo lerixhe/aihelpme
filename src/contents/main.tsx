@@ -5,7 +5,6 @@ import SelectionToolbar from "~/contents/components/SelectionToolbar"
 import { useChatState } from "~/contents/hooks/useChatState"
 import { useSelectionDetection } from "~/contents/hooks/useSelectionDetection"
 import { useToolbarState } from "~/contents/hooks/useToolbarState"
-import { isExtensionUiFocused, isInsideExtensionRoot } from "~/contents/utils/domUtils"
 import { appendPageContext, formatBuiltInPrompt, formatCustomPrompt, formatFreeInputPrompt } from "~/shared/prompt"
 import { getSettings } from "~/shared/storage"
 import type { BuiltInActionId, SelectionAnchor, SelectionContext } from "~/shared/types"
@@ -25,7 +24,7 @@ function App() {
     customActions,
     closeToolbar,
     openToolbar,
-    hasCapturedPageSelection
+    toolbarVisibleRef
   } = useToolbarState()
 
   // Use chat state hook
@@ -43,22 +42,11 @@ function App() {
     [openToolbar, closeToolbar]
   )
 
-  // Check if toolbar should be preserved
-  const shouldPreserveToolbar = useCallback(
-    (target: EventTarget | null) => {
-      const isInside = isInsideExtensionRoot(target, extensionRootRef.current)
-      const isFocused = isExtensionUiFocused(extensionRootRef.current)
-      return hasCapturedPageSelection() && (isInside || isFocused)
-    },
-    [hasCapturedPageSelection]
-  )
-
   // Use selection detection hook
-  const { extensionInteractionRef } = useSelectionDetection({
+  useSelectionDetection({
     extensionRootRef,
     onSelectionChange: handleSelectionChange,
-    hasCapturedPageSelection,
-    shouldPreserveToolbar
+    isToolbarVisible: () => toolbarVisibleRef.current
   })
 
   // Run prompt with selection context
@@ -78,13 +66,14 @@ function App() {
 
   // Handle built-in action
   const handleBuiltInAction = useCallback(
-    async (action: BuiltInActionId) => {
+    async (action: BuiltInActionId, text: string) => {
       if (!selectionContext) {
         return
       }
 
       const settings = await getSettings()
-      const prompt = formatBuiltInPrompt(action, selectionContext, settings.translationLanguage)
+      const context = { ...selectionContext, text }
+      const prompt = formatBuiltInPrompt(action, context, settings.translationLanguage)
       await runWithSelectionContext(prompt)
     },
     [selectionContext, runWithSelectionContext]
@@ -92,12 +81,12 @@ function App() {
 
   // Handle custom action
   const handleCustomAction = useCallback(
-    async (template: string) => {
+    async (template: string, text: string) => {
       if (!selectionContext) {
         return
       }
 
-      const prompt = formatCustomPrompt(template, selectionContext.text)
+      const prompt = formatCustomPrompt(template, text)
       await runWithSelectionContext(prompt)
     },
     [selectionContext, runWithSelectionContext]
@@ -105,12 +94,12 @@ function App() {
 
   // Handle free submit
   const handleFreeSubmit = useCallback(
-    async (input: string) => {
+    async (input: string, text: string) => {
       if (!selectionContext) {
         return
       }
 
-      const prompt = formatFreeInputPrompt(input, selectionContext.text)
+      const prompt = formatFreeInputPrompt(input, text)
       await runWithSelectionContext(prompt)
     },
     [selectionContext, runWithSelectionContext]
@@ -129,15 +118,16 @@ function App() {
       <SelectionToolbar
         visible={toolbarVisible}
         anchor={toolbarAnchor}
+        selectionText={selectionContext?.text ?? ""}
         customActions={customActions}
-        onBuiltInAction={(action) => {
-          void handleBuiltInAction(action)
+        onBuiltInAction={(action, text) => {
+          void handleBuiltInAction(action, text)
         }}
-        onCustomAction={(template) => {
-          void handleCustomAction(template)
+        onCustomAction={(template, text) => {
+          void handleCustomAction(template, text)
         }}
-        onFreeSubmit={(input) => {
-          void handleFreeSubmit(input)
+        onFreeSubmit={(input, text) => {
+          void handleFreeSubmit(input, text)
         }}
         onClose={() => {
           closeToolbar()
