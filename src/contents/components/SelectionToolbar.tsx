@@ -156,13 +156,15 @@ export default function SelectionToolbar({
     return null
   }
 
+  const RING_BTN_HEIGHT = 32
+  const RING_BTN_PAD_X = 14
+
   const ringButtonStyle = (action: RingAction, pos: { x: number; y: number }): React.CSSProperties => {
     const isHovered = ringHovered === action.id
     return {
       position: "absolute",
-      width: TRIGGER_SIZE,
-      height: TRIGGER_SIZE,
-      borderRadius: "50%",
+      height: RING_BTN_HEIGHT,
+      borderRadius: uiRadius.pill,
       border: `1.5px solid ${isHovered ? theme.border.default : theme.border.subtle}`,
       background: isHovered ? theme.brand.secondaryHover : theme.bg.surface,
       color: isHovered ? theme.brand.primary : theme.text.primary,
@@ -173,13 +175,14 @@ export default function SelectionToolbar({
       fontSize: uiTypography.fontSize.sm,
       fontWeight: uiTypography.fontWeight.semibold,
       fontFamily: uiTypography.fontFamily,
+      whiteSpace: "nowrap",
       outline: "none",
-      padding: 0,
+      padding: `0 ${RING_BTN_PAD_X}px`,
       boxShadow: isHovered ? uiShadow.md : uiShadow.sm,
       zIndex: uiLayer.overlay,
       left: pos.x,
       top: pos.y,
-      transform: `translate(-50%, -50%) scale(${isHovered ? 1.2 : 1})`,
+      transform: `translate(-50%, -50%) scale(${isHovered ? 1.08 : 1})`,
       transition: `transform 250ms ${uiMotion.easingSpring}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
     }
   }
@@ -305,7 +308,7 @@ export default function SelectionToolbar({
                   animation: `ring-item-enter 250ms ${uiMotion.easingStandard} ${i * 50}ms both`,
                   pointerEvents: "auto"
                 }}>
-                {action.label.slice(0, 2)}
+                {action.label}
               </div>
             )
           })}
