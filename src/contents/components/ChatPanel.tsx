@@ -88,8 +88,8 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
 
   const isStreaming = requestState === "streaming"
   const sendDisabled = isStreaming || !input.trim()
-  const actionButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
-  const closeButtonShadow = focused === "close" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.border.strong}` : "none"
+  const actionButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none"
+  const closeButtonShadow = focused === "close" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none"
 
   return (
     <div
@@ -282,7 +282,7 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
             minHeight: 56,
             resize: "none",
             borderRadius: uiRadius.sm,
-            border: `1px solid ${focused === "input" ? theme.border.strong : theme.border.default}`,
+            border: `1px solid ${focused === "input" ? theme.brand.primary : theme.border.default}`,
             background: theme.bg.surfaceAlt,
             color: theme.text.primary,
             padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
@@ -290,7 +290,7 @@ export default function ChatPanel({ visible, messages, requestState, onSend, onS
             fontFamily: "inherit",
             lineHeight: 1.45,
             outline: "none",
-            boxShadow: focused === "input" ? `0 0 0 3px ${theme.bg.overlay}` : "none",
+            boxShadow: focused === "input" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
             transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
           }}
         />
