@@ -288,11 +288,9 @@ export default function SelectionToolbar({
                 tabIndex={0}
                 title={action.label}
                 aria-label={action.label}
-                onMouseEnter={() => {
-                  setRingHovered(action.id)
-                  handleRingActionHover(action)
-                }}
+                onMouseEnter={() => setRingHovered(action.id)}
                 onMouseLeave={() => setRingHovered(null)}
+                onClick={() => handleRingActionHover(action)}
                 onFocus={() => setRingHovered(action.id)}
                 onBlur={() => setRingHovered(null)}
                 onKeyDown={(event) => {
