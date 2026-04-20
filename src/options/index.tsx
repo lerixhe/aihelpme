@@ -83,6 +83,7 @@ export default function OptionsPage() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [pressedBtn, setPressedBtn] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<Section>("appearance")
+  const [loaded, setLoaded] = useState(false)
   const [hoveredNav, setHoveredNav] = useState<string | null>(null)
   const [confirmRestoreSection, setConfirmRestoreSection] = useState<Section | null>(null)
 
@@ -90,7 +91,20 @@ export default function OptionsPage() {
     void getSettings().then((loaded) => {
       setSettings(loaded)
     })
+    void chrome.storage.local.get("optionsActiveSection").then((result) => {
+      const saved = result.optionsActiveSection as Section | undefined
+      if (saved && ["appearance", "connection", "actions"].includes(saved)) {
+        setActiveSection(saved)
+      }
+      setLoaded(true)
+    })
   }, [])
+
+  useEffect(() => {
+    if (loaded) {
+      void chrome.storage.local.set({ optionsActiveSection: activeSection })
+    }
+  }, [activeSection, loaded])
 
   useEffect(() => {
     document.documentElement.style.margin = "0"
