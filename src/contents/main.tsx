@@ -5,7 +5,7 @@ import UnifiedPanel from "~/contents/components/UnifiedPanel"
 import { useChatState } from "~/contents/hooks/useChatState"
 import { useSelectionDetection } from "~/contents/hooks/useSelectionDetection"
 import { useToolbarState } from "~/contents/hooks/useToolbarState"
-import { appendPageContext, resolveActionTemplate, formatFreeInputPrompt } from "~/shared/prompt"
+import { resolveActionTemplate, formatFreeInputPrompt } from "~/shared/prompt"
 import { getSettings } from "~/shared/storage"
 import type { SelectionAnchor, SelectionContext } from "~/shared/types"
 
@@ -35,6 +35,7 @@ function App() {
     setPanelOpen,
     capturedText,
     setCapturedText,
+    setContext,
     sendPrompt,
     stopStreaming,
     resetMessages
@@ -65,9 +66,8 @@ function App() {
 
   // Run prompt with selection context
   const runWithSelectionContext = useCallback(
-    async (rawPrompt: string, context: SelectionContext) => {
-      const finalPrompt = appendPageContext(rawPrompt, context)
-      await sendPrompt(finalPrompt)
+    async (rawPrompt: string, ctx: SelectionContext) => {
+      await sendPrompt(rawPrompt, ctx)
     },
     [sendPrompt]
   )
@@ -81,11 +81,12 @@ function App() {
       resetMessages()
 
       if (selectionContext) {
-        const context = { ...selectionContext, text }
-        await runWithSelectionContext(prompt, context)
+        const ctx = { ...selectionContext, text }
+        setContext(ctx)
+        await runWithSelectionContext(prompt, ctx)
       }
     },
-    [selectionContext, setCapturedText, setPanelOpen, closeToolbar, runWithSelectionContext, resetMessages]
+    [selectionContext, setCapturedText, setPanelOpen, closeToolbar, setContext, runWithSelectionContext, resetMessages]
   )
 
   // Handle action
@@ -151,6 +152,7 @@ function App() {
           onClose={() => {
             setPanelOpen(false)
             setCapturedText("")
+            setContext(null)
           }}
         />
       )}

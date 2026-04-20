@@ -2,12 +2,65 @@ import type { SelectionContext, SelectionAnchor, SelectionSnapshot } from "~/sha
 
 type TextControl = HTMLInputElement | HTMLTextAreaElement
 
-function createSelectionContext(text: string): SelectionContext {
-  return {
+const BLOCK_TAGS = new Set([
+  "P", "DIV", "LI", "TD", "TH", "BLOCKQUOTE", "PRE",
+  "H1", "H2", "H3", "H4", "H5", "H6", "ARTICLE", "SECTION",
+  "MAIN", "ASIDE", "NAV", "HEADER", "FOOTER", "FIGURE", "FIGCAPTION",
+  "DETAILS", "SUMMARY", "DD", "DT"
+])
+
+const MAX_SURROUND_LENGTH = 500
+
+function getPageMeta(): { description?: string } {
+  const metaDesc = document.querySelector('meta[name="description"]')
+  const description = metaDesc?.getAttribute("content")?.trim()
+  return description ? { description } : {}
+}
+
+function getSurroundingBlock(range: Range): string | undefined {
+  let node: Node | null = range.commonAncestorContainer
+
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    node = node.parentElement
+  }
+
+  while (node instanceof Element) {
+    if (BLOCK_TAGS.has(node.tagName)) {
+      const text = node.textContent?.trim() || ""
+      if (!text) {
+        return undefined
+      }
+      if (text.length > MAX_SURROUND_LENGTH) {
+        return text.slice(0, MAX_SURROUND_LENGTH) + "..."
+      }
+      return text
+    }
+    node = node.parentElement
+  }
+
+  return undefined
+}
+
+function createSelectionContext(
+  text: string,
+  options?: { surround?: string }
+): SelectionContext {
+  const context: SelectionContext = {
     text,
     title: document.title || "",
     url: window.location.href
   }
+
+  if (options?.surround && options.surround !== text) {
+    context.surround = options.surround
+  }
+
+  const meta = getPageMeta()
+  if (meta.description) {
+    context.meta = meta
+  }
+
+  return context
 }
 
 function getRangeAnchor(selection: Selection | null): SelectionAnchor | null {
@@ -135,8 +188,11 @@ function getTextControlSnapshot(target: EventTarget | null): SelectionSnapshot |
     return null
   }
 
+  const fullValue = control.value.trim()
+  const surround = fullValue !== text ? fullValue : undefined
+
   return {
-    context: createSelectionContext(text),
+    context: createSelectionContext(text, { surround }),
     anchor: getElementAnchor(control)
   }
 }
@@ -154,8 +210,14 @@ function getRangeSelectionSnapshot(target: EventTarget | null): SelectionSnapsho
     return null
   }
 
+  let surround: string | undefined
+  if (rangeSelection.rangeCount > 0) {
+    const range = rangeSelection.getRangeAt(0)
+    surround = getSurroundingBlock(range)
+  }
+
   return {
-    context: createSelectionContext(text),
+    context: createSelectionContext(text, { surround }),
     anchor: getRangeAnchor(rangeSelection)
   }
 }

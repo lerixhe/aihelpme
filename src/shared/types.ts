@@ -18,6 +18,10 @@ export interface SelectionContext {
   text: string
   title: string
   url: string
+  surround?: string
+  meta?: {
+    description?: string
+  }
 }
 
 export interface ChatMessage {

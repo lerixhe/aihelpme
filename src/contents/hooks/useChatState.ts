@@ -2,7 +2,8 @@ import { useCallback, useRef, useState } from "react"
 
 import { UI_MESSAGES } from "~/shared/constants"
 import { streamChat } from "~/shared/messaging"
-import type { ChatMessage, ChatRequestState } from "~/shared/types"
+import { buildContextSystemMessage } from "~/shared/prompt"
+import type { ChatMessage, ChatRequestState, SelectionContext } from "~/shared/types"
 
 /**
  * Generate unique message ID
@@ -51,6 +52,7 @@ export function useChatState() {
   const [requestState, setRequestState] = useState<ChatRequestState>({ status: "idle" })
   const [panelOpen, setPanelOpen] = useState(false)
   const [capturedText, setCapturedText] = useState("")
+  const [context, setContext] = useState<SelectionContext | null>(null)
 
   const messagesRef = useRef<ChatMessage[]>([])
   const activeStreamAbortRef = useRef<AbortController | null>(null)
@@ -68,7 +70,7 @@ export function useChatState() {
 
   // Send prompt
   const sendPrompt = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, overrideContext?: SelectionContext | null) => {
       activeStreamAbortRef.current?.abort()
 
       const abortController = new AbortController()
@@ -80,6 +82,17 @@ export function useChatState() {
       const assistantMessage = createMessage("assistant", "")
       const nextMessages = [...messagesRef.current, userMessage, assistantMessage]
 
+      // Use overrideContext if provided, otherwise fall back to stored context
+      const ctx = overrideContext !== undefined ? overrideContext : context
+
+      // Build API messages with system context prepended
+      let apiMessages = nextMessages
+      if (ctx) {
+        const systemContent = buildContextSystemMessage(ctx)
+        const systemMessage = createMessage("system", systemContent)
+        apiMessages = [systemMessage, ...nextMessages]
+      }
+
       syncMessages(nextMessages)
       setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
 
@@ -88,7 +101,7 @@ export function useChatState() {
         let streamedReasoning = ""
         let terminalState: "completed" | "cancelled" | "failed" | null = null
 
-        await streamChat(nextMessages, {
+        await streamChat(apiMessages, {
           signal: abortController.signal,
           onEvent: (event) => {
             if (!isCurrentRequest()) {
@@ -169,7 +182,7 @@ export function useChatState() {
         )
       }
     },
-    [syncMessages]
+    [syncMessages, context]
   )
 
   // Clear chat
@@ -195,6 +208,8 @@ export function useChatState() {
     setPanelOpen,
     capturedText,
     setCapturedText,
+    context,
+    setContext,
     sendPrompt,
     stopStreaming,
     clearChat,
