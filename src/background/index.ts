@@ -69,20 +69,14 @@ function getStreamChunkContent(chunk: unknown): StreamChunkFields {
   }
 
   const content = "content" in delta ? delta.content : undefined
-  // Providers use different field names for chain-of-thought:
-  // - OpenAI o1/o3: reasoning_content
-  // - DeepSeek R1: reasoning_content
-  // - Ollama: think
-  // - Qwen, others: reasoning or thought
-  const reasoning =
+  // OpenAI o1/o3 uses "reasoning_content", Ollama compatible mode uses "reasoning"
+  const reasoning_content =
     ("reasoning_content" in delta ? delta.reasoning_content : undefined) ??
-    ("think" in delta ? delta.think : undefined) ??
-    ("reasoning" in delta ? delta.reasoning : undefined) ??
-    ("thought" in delta ? delta.thought : undefined)
+    ("reasoning" in delta ? delta.reasoning : undefined)
 
   return {
     content: normalizeAssistantContent(content),
-    reasoning_content: normalizeAssistantContent(reasoning)
+    reasoning_content: normalizeAssistantContent(reasoning_content)
   }
 }
 
