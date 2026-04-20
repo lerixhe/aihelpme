@@ -6,9 +6,9 @@
 
 ## 1. Design Principles
 
-1. **现代极简**：减少装饰性元素，优先信息层级和可读性。
-2. **低干扰浮层**：内容页 UI 不应压制宿主网页，强调“可用但克制”。
-3. **状态清晰**：hover/focus/active/disabled/loading 必须可辨识。
+1. **Apple 风格极简**：参考 Apple HIG 设计语言，使用 SF Pro 系统字体、毛玻璃效果、多层阴影、发丝边框。
+2. **低干扰浮层**：内容页 UI 不应压制宿主网页，强调"可用但克制"。遮罩使用毛玻璃而非纯色。
+3. **状态清晰**：hover/focus/active/disabled/loading 必须可辨识，按压缩放反馈。
 4. **跨页面一致**：内容页与 Options 使用同一视觉语言（颜色、圆角、间距、字体）。
 5. **可访问性优先**：在深浅主题下都要保证对比度、键盘可达和可见焦点。
 
@@ -105,34 +105,37 @@
 
 ## 3. Typography
 
-- 字体：`-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
-- 字号层级：`12 / 13 / 14 / 16`
+- 字体：`-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif`
+- 字号层级：`11 / 12 / 14 / 16 / 18 / 22 / 28`
 - 字重层级：
   - 400：正文
-  - 500：标签/次级强调
+  - 500：标签/按钮
   - 600：按钮/小标题
-- 行高：正文建议 1.45–1.6，避免拥挤。
+  - 700：大标题
+- 字间距：标题 `-0.02em`，正文 `0em`，标签 `0.02em`
+- 行高：正文建议 1.5–1.55，避免拥挤。
 
 ## 4. Spacing, Radius, Elevation
 
 ### 4.1 Spacing Rhythm
 
-统一使用节奏：`4 / 8 / 12 / 16 / 20`。
+统一使用节奏：`4 / 8 / 10 / 12 / 14 / 16 / 20 / 24 / 28 / 32`。
 
 ### 4.2 Radius
 
-- `radius.sm = 10`：输入框、小按钮
-- `radius.md = 14`：消息气泡
-- `radius.lg = 18`：卡片/面板
-- `radius.pill = 999`：胶囊按钮/工具条
+- `radius.sm = 8`：输入框、小按钮
+- `radius.md = 12`：消息气泡、卡片
+- `radius.lg = 16`：面板、大容器
+- `radius.xl = 20`：对话窗外框
+- `radius.pill = 999`：胶囊按钮、发送按钮
 
 ### 4.3 Elevation
 
-- `shadow.sm`：`0 1px 2px rgba(0, 0, 0, 0.05)` - 轻提示层
-- `shadow.md`：`0 4px 12px rgba(0, 0, 0, 0.08)` - 卡片/工具条
-- `shadow.lg`：`0 8px 24px rgba(0, 0, 0, 0.12)` - 聊天面板
-- `shadow.glow`：`0 0 20px rgba(13, 148, 136, 0.3)` - 品牌发光效果
-- `shadow.glowStrong`：`0 0 30px rgba(13, 148, 136, 0.5)` - 强品牌发光效果
+Apple 风格多层阴影：
+- `shadow.sm`：`0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)` - 卡片
+- `shadow.md`：`0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04)` - 按钮/工具条
+- `shadow.lg`：`0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)` - 触发按钮
+- `shadow.xl`：`0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)` - 对话窗
 
 ### 4.4 Layering
 
@@ -146,30 +149,32 @@
 - `durationFast`：`150ms` - 微交互（hover、focus）
 - `durationNormal`：`220ms` - 状态切换
 - `durationExpanded`：`300ms` - 展开/折叠
-- `durationSlow`：`400ms` - 复杂动画
+- `durationSlow`：`350ms` - 复杂动画
 
 ### 5.2 Easing Functions
 
-- `easingStandard`：`cubic-bezier(0.2, 0, 0, 1)` - 标准过渡
-- `easingSpring`：`cubic-bezier(0.34, 1.56, 0.64, 1)` - 弹性效果（工具栏展开）
-- `easingEnter`：`cubic-bezier(0, 0, 0.2, 1)` - 元素进入
-- `easingExit`：`cubic-bezier(0.4, 0, 1, 1)` - 元素退出
+- `easingStandard`：`cubic-bezier(0.25, 0.1, 0.25, 1.0)` - 标准过渡（Apple 默认）
+- `easingSpring`：`cubic-bezier(0.34, 1.56, 0.64, 1.0)` - 弹性效果
+- `easingDecelerate`：`cubic-bezier(0, 0, 0.2, 1)` - 元素进入（减速）
+- `easingAccelerate`：`cubic-bezier(0.4, 0, 1, 1)` - 元素退出（加速）
 
 ### 5.3 Component Animations
 
 **SelectionToolbar：**
-- 触发按钮：品牌色发光脉冲动画（2s 循环）
-- 工具栏展开：缩放 + 位移（`scale(0.9) translateY(8px)` → `scale(1) translateY(0)`）
-- 顶部渐变条：品牌色到强调色的渐变
+- 触发按钮：静态优雅，点击缩放反馈 `scale(0.92)` → `scale(1)` 弹簧过渡
+- 动作栏：毛玻璃容器从下方滑入（`scale(0.96) translateY(6px)` → `scale(1) translateY(0)`）
+- 药丸按钮：30ms 延迟依次入场
 
 **ChatPanel：**
-- 面板进入：缩放 + 位移（`scale(0.95) translateY(16px)` → `scale(1) translateY(0)`）
-- 消息气泡：淡入 + 上移（`opacity: 0; translateY(8px)` → `opacity: 1; translateY(0)`）
+- 遮罩：毛玻璃 `backdrop-filter: blur(8px)` + 淡入 250ms
+- 面板进入：弹簧缩放（`scale(0.92) translateY(20px)` → `scale(1) translateY(0)` 350ms）
+- 消息气泡：淡入 + 上移（`opacity: 0; translateY(8px)` → `opacity: 1; translateY(0)` 300ms）
 
 **通用原则：**
-- 所有动画时长控制在 150-400ms
+- 所有动画时长控制在 150-350ms
 - 优先使用 `transform` 和 `opacity`，避免动画化 `width/height/top/left`
 - 支持 `prefers-reduced-motion` 媒体查询，禁用或弱化动画
+- 所有可交互元素添加按压缩放反馈（scale 0.92–0.97）
 
 ## 6. Interaction States
 

@@ -14,27 +14,51 @@ interface Props {
   onClose: () => void
 }
 
-const SPARKLE_PATHS = [
-  "M12 2C12.5523 2 13 2.44772 13 3V4.20051C13 4.61472 13.2632 4.98551 13.6558 5.12582L14.5673 5.45293C15.1189 5.64711 15.3536 6.30719 15.0133 6.77472L14.4048 7.60849C14.1673 7.9349 14.1673 8.37937 14.4048 8.70578L15.0133 9.53955C15.3536 10.0071 15.1189 10.6672 14.5673 10.8613L13.6558 11.1885C13.2632 11.3288 13 11.6996 13 12.1138V13.3143C13 13.7285 12.7368 14.0993 12.3442 14.2396L11.4327 14.5667C10.8811 14.7609 10.6464 15.421 10.9867 15.8885L11.5952 16.7223C11.8327 17.0487 11.8327 17.4932 11.5952 17.8196L10.9867 18.6534C10.6464 19.1209 10.8811 19.781 11.4327 19.9752L12.3442 20.3023C12.7368 20.4426 13 20.8134 13 21.2276V22.4281C13 22.8423 12.7368 23.2131 12.3442 23.3534L11.4327 23.6805C10.8811 23.8747 10.6464 24.5348 10.9867 25.0023L11.5952 25.8361C11.8327 26.1625 11.8327 26.607 11.5952 26.9334L10.9867 27.7672C10.6464 28.2347 10.8811 28.8948 11.4327 29.089L12.3442 29.4161C12.7368 29.5564 13 29.9272 13 30.3414V31",
-  "M12 7L13.2 10.8H17L14 13L15.2 16.8L12 14.6L8.8 16.8L10 13L7 10.8H10.8L12 7Z"
-]
-
 function SparkleIcon({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {SPARKLE_PATHS.map((d, i) => (
-        <path
-          key={i}
-          d={d}
-          stroke={color}
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill={i === 1 ? color : undefined}
-          fillOpacity={i === 1 ? 0.15 : undefined}
-        />
-      ))}
-      <circle cx="18" cy="6" r="2.5" fill={color} fillOpacity={0.6} />
+      <path
+        d="M12 2L13.5 9.5L21 12L13.5 14.5L12 22L10.5 14.5L3 12L10.5 9.5L12 2Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={color}
+        fillOpacity={0.15}
+      />
+      <circle cx="18" cy="5" r="1.5" fill={color} fillOpacity={0.5} />
+    </svg>
+  )
+}
+
+function ChevronIcon({ expanded, color }: { expanded: boolean; color: string }) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      aria-hidden="true"
+      style={{
+        transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+        transition: `transform ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+        flexShrink: 0
+      }}>
+      <path
+        d="M3.5 1.5L7 5L3.5 8.5"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function CloseIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M4 4L12 12M12 4L4 12" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     </svg>
   )
 }
@@ -58,7 +82,6 @@ function ThinkingBlock({
   const [expanded, setExpanded] = useState(false)
   const autoExpandedRef = useRef(false)
 
-  // Auto-expand when streaming starts so user can see thinking in real-time
   useEffect(() => {
     if (isStreaming && !autoExpandedRef.current) {
       autoExpandedRef.current = true
@@ -79,7 +102,7 @@ function ThinkingBlock({
           alignItems: "center",
           gap: uiSpace[6],
           width: "100%",
-          padding: `${uiSpace[6]}px ${uiSpace[12]}px`,
+          padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
           border: "none",
           background: "transparent",
           color: theme.text.secondary,
@@ -89,15 +112,7 @@ function ThinkingBlock({
           fontWeight: uiTypography.fontWeight.medium,
           textAlign: "left"
         }}>
-        <span
-          style={{
-            display: "inline-block",
-            transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-            transition: `transform ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-            fontSize: 10
-          }}>
-          ▶
-        </span>
+        <ChevronIcon expanded={expanded} color={theme.text.secondary} />
         {isStreaming ? "思考中…" : "思考过程"}
         {isStreaming ? (
           <span
@@ -117,7 +132,7 @@ function ThinkingBlock({
           style={{
             padding: `0 ${uiSpace[12]}px ${uiSpace[8]}px`,
             color: theme.text.secondary,
-            lineHeight: 1.5,
+            lineHeight: 1.55,
             fontSize: uiTypography.fontSize.sm,
             borderLeft: `2px solid ${theme.brand.primary}`,
             marginLeft: uiSpace[12],
@@ -153,13 +168,14 @@ export default function UnifiedPanel({
   const [input, setInput] = useState("")
   const [focused, setFocused] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
+  const [closePressed, setClosePressed] = useState(false)
+  const [sendPressed, setSendPressed] = useState(false)
   const messagesContainerRef = useRef<HTMLDivElement | null>(null)
 
   const isStreaming = requestState === "streaming"
   const sendDisabled = isStreaming || !input.trim()
   const hasCapturedText = capturedText.length > 0
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     const container = messagesContainerRef.current
     if (!container) {
@@ -169,7 +185,8 @@ export default function UnifiedPanel({
     container.scrollTop = container.scrollHeight
   }, [messages, requestState])
 
-  const sendButtonShadow = focused === "send" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none"
+  const focusRing = (state: string | null, target: string) =>
+    focused === target ? `0 0 0 3px ${theme.accent.primary}33` : "none"
 
   return (
     <div
@@ -187,12 +204,14 @@ export default function UnifiedPanel({
         inset: 0,
         zIndex: uiLayer.overlay,
         pointerEvents: "auto",
-        background: "rgba(0, 0, 0, 0.5)",
+        background: theme.bg.overlay,
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontFamily: uiTypography.fontFamily,
-        animation: "unified-overlay-enter 0.25s ease-out forwards"
+        animation: `unified-overlay-enter 250ms ${uiMotion.easingDecelerate} forwards`
       }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
@@ -207,11 +226,11 @@ export default function UnifiedPanel({
         @keyframes unified-panel-enter {
           from {
             opacity: 0;
-            transform: scale(0.95);
+            transform: scale(0.92) translateY(20px);
           }
           to {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1) translateY(0);
           }
         }
         @keyframes message-enter {
@@ -231,11 +250,11 @@ export default function UnifiedPanel({
           background: transparent;
         }
         [data-messages-scroll]::-webkit-scrollbar-thumb {
-          background-color: rgba(0, 0, 0, 0.15);
+          background-color: rgba(0, 0, 0, 0.12);
           border-radius: 3px;
         }
         [data-messages-scroll]::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(0, 0, 0, 0.25);
+          background-color: rgba(0, 0, 0, 0.2);
         }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after {
@@ -246,12 +265,12 @@ export default function UnifiedPanel({
         }
       `}</style>
 
+      {/* Panel */}
       <div
         onClick={(event) => {
           event.stopPropagation()
         }}
         onWheel={(event) => {
-          // Prevent wheel events from leaking to the host page
           event.stopPropagation()
         }}
         style={{
@@ -261,10 +280,11 @@ export default function UnifiedPanel({
           display: "flex",
           flexDirection: "column",
           background: theme.bg.surface,
-          borderRadius: uiRadius.lg,
-          boxShadow: uiShadow.lg,
+          borderRadius: uiRadius.xl,
+          border: `0.5px solid ${theme.border.hairline}`,
+          boxShadow: uiShadow.xl,
           overflow: "hidden",
-          animation: `unified-panel-enter 0.3s ${uiMotion.easingSpring} forwards`
+          animation: `unified-panel-enter 350ms ${uiMotion.easingSpring} forwards`
         }}>
 
         {/* Header */}
@@ -273,64 +293,64 @@ export default function UnifiedPanel({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-            borderBottom: `1px solid ${theme.border.subtle}`,
+            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
+            borderBottom: `0.5px solid ${theme.border.hairline}`,
             flexShrink: 0
           }}>
-          <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8] }}>
+          <div style={{ display: "flex", alignItems: "center", gap: uiSpace[10] }}>
             <div
               style={{
-                width: 24,
-                height: 24,
+                width: 28,
+                height: 28,
                 borderRadius: "50%",
-                background: `linear-gradient(135deg, ${theme.brand.primary}, ${theme.brand.primaryHover})`,
+                background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.brand.primary})`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0
               }}>
-              <SparkleIcon size={14} color={theme.text.inverse} />
+              <SparkleIcon size={16} color={theme.text.inverse} />
             </div>
             <span
               style={{
-                fontWeight: uiTypography.fontWeight.bold,
-                fontSize: uiTypography.fontSize.md,
-                letterSpacing: "-0.01em",
-                color: theme.brand.primary
+                fontWeight: uiTypography.fontWeight.semibold,
+                fontSize: uiTypography.fontSize.xxl,
+                letterSpacing: uiTypography.letterSpacing.tight,
+                color: theme.text.primary
               }}>
               AI Help Me
             </span>
           </div>
           <button
             onClick={onClose}
+            onMouseDown={() => setClosePressed(true)}
+            onMouseUp={() => setClosePressed(false)}
             onFocus={() => setFocused("close")}
             onBlur={() => setFocused(null)}
             aria-label="关闭对话面板"
             style={{
               border: "none",
-              background: "transparent",
+              background: hovered === "close" ? theme.bg.surfaceMuted : "transparent",
               color: theme.text.secondary,
               cursor: "pointer",
-              width: 24,
-              height: 24,
-              borderRadius: uiRadius.sm,
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 16,
-              lineHeight: 1,
               padding: 0,
               outline: "none",
-              boxShadow: focused === "close" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              transform: closePressed ? "scale(0.9)" : "scale(1)",
+              boxShadow: focused === "close" ? `0 0 0 3px ${theme.accent.primary}33` : "none",
+              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
             }}
-            onMouseEnter={(event) => {
-              event.currentTarget.style.background = theme.bg.surfaceMuted
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.background = "transparent"
+            onMouseEnter={() => setHovered("close")}
+            onMouseLeave={() => {
+              setHovered(null)
+              setClosePressed(false)
             }}>
-            ×
+            <CloseIcon size={14} color={theme.text.secondary} />
           </button>
         </div>
 
@@ -338,10 +358,21 @@ export default function UnifiedPanel({
         {hasCapturedText && (
           <div
             style={{
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-              borderBottom: `1px solid ${theme.border.subtle}`,
+              padding: `${uiSpace[10]}px ${uiSpace[16]}px`,
+              borderBottom: `0.5px solid ${theme.border.hairline}`,
               flexShrink: 0
             }}>
+            <div
+              style={{
+                fontSize: uiTypography.fontSize.xs,
+                fontWeight: uiTypography.fontWeight.medium,
+                color: theme.text.secondary,
+                marginBottom: uiSpace[6],
+                letterSpacing: uiTypography.letterSpacing.wide,
+                textTransform: "uppercase"
+              }}>
+              选中文本
+            </div>
             <textarea
               value={capturedText}
               onChange={(event) => onCapturedTextChange(event.target.value)}
@@ -353,24 +384,22 @@ export default function UnifiedPanel({
               style={{
                 width: "100%",
                 resize: "vertical",
-                border: `1px solid ${focused === "captured" ? theme.brand.primary : theme.border.default}`,
-                background: theme.bg.surfaceAlt,
+                border: "none",
+                background: theme.bg.surfaceMuted,
                 color: theme.text.primary,
-                borderRadius: uiRadius.md,
+                borderRadius: uiRadius.sm,
                 padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                boxShadow: focused === "captured" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
+                boxShadow: focusRing(focused, "captured"),
                 outline: "none",
                 fontSize: uiTypography.fontSize.md,
                 fontFamily: "inherit",
-                lineHeight: 1.5,
-                transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+                lineHeight: 1.55,
+                transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
                 boxSizing: "border-box"
               }}
             />
           </div>
         )}
-
-
 
         {/* Messages area */}
         <div
@@ -380,7 +409,7 @@ export default function UnifiedPanel({
             flex: 1,
             overflowY: "auto",
             overscrollBehavior: "contain",
-            padding: uiSpace[12],
+            padding: uiSpace[16],
             display: "block",
             background: theme.bg.surfaceAlt,
             minHeight: 0
@@ -393,7 +422,9 @@ export default function UnifiedPanel({
                 border: `1px dashed ${theme.border.default}`,
                 borderRadius: uiRadius.md,
                 background: theme.bg.surface,
-                padding: uiSpace[16]
+                padding: `${uiSpace[16]}px ${uiSpace[20]}px`,
+                textAlign: "center",
+                lineHeight: 1.55
               }}>
               {hasCapturedText
                 ? "选中文本已捕获，点击动作按钮开始对话。"
@@ -410,15 +441,15 @@ export default function UnifiedPanel({
                 maxWidth: "85%",
                 marginBottom: uiSpace[12],
                 borderRadius: uiRadius.md,
-                lineHeight: 1.5,
+                lineHeight: 1.55,
                 fontSize: uiTypography.fontSize.md,
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
-                background: item.role === "user" ? theme.brand.primary : theme.bg.surface,
+                background: item.role === "user" ? theme.accent.primary : theme.bg.surface,
                 color: item.role === "user" ? theme.text.inverse : theme.text.primary,
-                border: item.role === "user" ? "none" : `1px solid ${theme.border.default}`,
-                boxShadow: item.role === "user" ? "none" : uiShadow.sm,
-                animation: `message-enter 0.3s ${uiMotion.easingEnter} forwards`,
+                border: item.role === "user" ? "none" : `0.5px solid ${theme.border.hairline}`,
+                boxShadow: item.role === "user" ? uiShadow.sm : uiShadow.sm,
+                animation: `message-enter 300ms ${uiMotion.easingDecelerate} forwards`,
                 overflow: "hidden"
               }}>
               {item.role === "assistant" && item.reasoning_content ? (
@@ -431,7 +462,7 @@ export default function UnifiedPanel({
               {item.content ? (
                 <div
                   style={{
-                    padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                    padding: `${uiSpace[10]}px ${uiSpace[14]}px`,
                     overflowWrap: "break-word",
                     wordBreak: "break-word"
                   }}>
@@ -446,11 +477,24 @@ export default function UnifiedPanel({
               style={{
                 color: theme.text.secondary,
                 fontSize: uiTypography.fontSize.sm,
-                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                padding: `${uiSpace[8]}px ${uiSpace[14]}px`,
                 borderRadius: uiRadius.md,
                 background: theme.bg.surface,
-                border: `1px solid ${theme.border.default}`
+                border: `0.5px solid ${theme.border.hairline}`,
+                display: "flex",
+                alignItems: "center",
+                gap: uiSpace[8]
               }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: theme.accent.primary,
+                  animation: "thinking-pulse 1s ease-in-out infinite",
+                  display: "inline-block"
+                }}
+              />
               AI 正在生成中…
             </div>
           ) : null}
@@ -461,9 +505,9 @@ export default function UnifiedPanel({
           style={{
             display: "grid",
             gridTemplateColumns: "1fr auto",
-            gap: uiSpace[8],
-            padding: uiSpace[12],
-            borderTop: `1px solid ${theme.border.default}`,
+            gap: uiSpace[10],
+            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
+            borderTop: `0.5px solid ${theme.border.hairline}`,
             background: theme.bg.surface,
             flexShrink: 0
           }}>
@@ -493,17 +537,17 @@ export default function UnifiedPanel({
               flex: 1,
               minHeight: 56,
               resize: "none",
-              borderRadius: uiRadius.sm,
-              border: `1px solid ${focused === "input" ? theme.brand.primary : theme.border.default}`,
-              background: theme.bg.surfaceAlt,
+              borderRadius: uiRadius.md,
+              border: "none",
+              background: theme.bg.surfaceMuted,
               color: theme.text.primary,
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+              padding: `${uiSpace[10]}px ${uiSpace[14]}px`,
               fontSize: uiTypography.fontSize.md,
               fontFamily: "inherit",
-              lineHeight: 1.45,
+              lineHeight: 1.5,
               outline: "none",
-              boxShadow: focused === "input" ? `0 0 0 2px ${theme.bg.surface}, 0 0 0 4px ${theme.brand.primary}` : "none",
-              transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              boxShadow: focusRing(focused, "input"),
+              transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
             }}
           />
           <button
@@ -522,29 +566,38 @@ export default function UnifiedPanel({
               setInput("")
             }}
             onMouseEnter={() => setHovered("send")}
-            onMouseLeave={() => setHovered(null)}
+            onMouseLeave={() => {
+              setHovered(null)
+              setSendPressed(false)
+            }}
+            onMouseDown={() => setSendPressed(true)}
+            onMouseUp={() => setSendPressed(false)}
             onFocus={() => setFocused("send")}
             onBlur={() => setFocused(null)}
             disabled={sendDisabled && !isStreaming}
             style={{
-              width: 96,
+              height: 36,
+              minWidth: 72,
+              alignSelf: "flex-end",
               border: "none",
-              borderRadius: uiRadius.sm,
+              borderRadius: uiRadius.pill,
               background: isStreaming
-                ? hovered === "send"
-                  ? theme.bg.page
-                  : theme.bg.surfaceMuted
+                ? theme.bg.surfaceMuted
                 : sendDisabled
                   ? theme.state.disabled
                   : hovered === "send"
-                    ? theme.brand.primaryHover
-                    : theme.brand.primary,
-              color: theme.text.inverse,
+                    ? theme.accent.primaryHover
+                    : theme.accent.primary,
+              color: isStreaming ? theme.text.primary : theme.text.inverse,
               fontWeight: uiTypography.fontWeight.semibold,
+              fontSize: uiTypography.fontSize.md,
+              fontFamily: uiTypography.fontFamily,
               cursor: isStreaming ? "pointer" : sendDisabled ? "not-allowed" : "pointer",
-              opacity: sendDisabled && !isStreaming ? 0.72 : 1,
-              boxShadow: sendButtonShadow,
-              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              opacity: sendDisabled && !isStreaming ? 0.5 : 1,
+              transform: sendPressed ? "scale(0.95)" : "scale(1)",
+              boxShadow: focused === "send" ? `0 0 0 3px ${theme.accent.primary}33` : "none",
+              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+              padding: `0 ${uiSpace[16]}px`
             }}>
             {isStreaming ? "停止" : "发送"}
           </button>
