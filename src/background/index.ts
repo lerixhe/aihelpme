@@ -296,51 +296,62 @@ chrome.runtime.onMessage.addListener((request: ApiTestRequest, _sender, sendResp
     return false
   }
 
-  const startTime = performance.now()
+  const baseUrl = normalizeBaseUrl(apiBaseUrl.trim())
 
-  fetch(`${normalizeBaseUrl(apiBaseUrl.trim())}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey.trim()}`
-    },
-    body: JSON.stringify({
-      model: model.trim(),
-      stream: false,
-      max_tokens: 5,
-      messages: [{ role: "user", content: "Hi" }]
+  const doActualTest = () => {
+    const startTime = performance.now()
+
+    fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.trim()}`
+      },
+      body: JSON.stringify({
+        model: model.trim(),
+        stream: false,
+        max_tokens: 5,
+        messages: [{ role: "user", content: "Hi" }]
+      })
     })
+      .then(async (response) => {
+        const latencyMs = Math.round(performance.now() - startTime)
+        if (!response.ok) {
+          const rawError = await response.text()
+          sendResponse({
+            success: false,
+            error: formatApiError(response.status, rawError),
+            latencyMs
+          } satisfies ApiTestResponse)
+          return
+        }
+        const body = await response.json()
+        if (!body.choices || !Array.isArray(body.choices) || body.choices.length === 0) {
+          sendResponse({
+            success: false,
+            error: ERROR_MESSAGES.NO_VALID_CONTENT,
+            latencyMs
+          } satisfies ApiTestResponse)
+          return
+        }
+        sendResponse({ success: true, latencyMs } satisfies ApiTestResponse)
+      })
+      .catch((error: unknown) => {
+        const latencyMs = Math.round(performance.now() - startTime)
+        sendResponse({
+          success: false,
+          error: `${ERROR_MESSAGES.REQUEST_FAILED}：${getErrorMessage(error)}`,
+          latencyMs
+        } satisfies ApiTestResponse)
+      })
+  }
+
+  fetch(`${baseUrl}/models`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${apiKey.trim()}` }
   })
-    .then(async (response) => {
-      const latencyMs = Math.round(performance.now() - startTime)
-      if (!response.ok) {
-        const rawError = await response.text()
-        sendResponse({
-          success: false,
-          error: formatApiError(response.status, rawError),
-          latencyMs
-        } satisfies ApiTestResponse)
-        return
-      }
-      const body = await response.json()
-      if (!body.choices || !Array.isArray(body.choices) || body.choices.length === 0) {
-        sendResponse({
-          success: false,
-          error: ERROR_MESSAGES.NO_VALID_CONTENT,
-          latencyMs
-        } satisfies ApiTestResponse)
-        return
-      }
-      sendResponse({ success: true, latencyMs } satisfies ApiTestResponse)
-    })
-    .catch((error: unknown) => {
-      const latencyMs = Math.round(performance.now() - startTime)
-      sendResponse({
-        success: false,
-        error: `${ERROR_MESSAGES.REQUEST_FAILED}：${getErrorMessage(error)}`,
-        latencyMs
-      } satisfies ApiTestResponse)
-    })
+    .then(() => doActualTest())
+    .catch(() => doActualTest())
 
   return true
 })
