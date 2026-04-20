@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { getSettings } from "~/shared/storage"
-import type { CustomActionTemplate, SelectionAnchor, SelectionContext } from "~/shared/types"
+import type { ActionTemplate, SelectionAnchor, SelectionContext } from "~/shared/types"
 
 /**
  * Hook for managing toolbar state and custom actions
@@ -10,7 +10,7 @@ export function useToolbarState() {
   const [toolbarVisible, setToolbarVisible] = useState(false)
   const [toolbarAnchor, setToolbarAnchor] = useState<SelectionAnchor | null>(null)
   const [selectionContext, setSelectionContext] = useState<SelectionContext | null>(null)
-  const [customActions, setCustomActions] = useState<CustomActionTemplate[]>([])
+  const [actions, setActions] = useState<ActionTemplate[]>([])
 
   const toolbarVisibleRef = useRef(false)
   const selectionContextRef = useRef<SelectionContext | null>(null)
@@ -24,10 +24,10 @@ export function useToolbarState() {
     selectionContextRef.current = selectionContext
   }, [selectionContext])
 
-  // Load custom actions from settings
+  // Load actions from settings
   useEffect(() => {
     void getSettings().then((settings) => {
-      setCustomActions(settings.customActions)
+      setActions(settings.actions)
     })
 
     const onStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (_changes, areaName) => {
@@ -36,7 +36,7 @@ export function useToolbarState() {
       }
 
       void getSettings().then((settings) => {
-        setCustomActions(settings.customActions)
+        setActions(settings.actions)
       })
     }
 
@@ -75,7 +75,7 @@ export function useToolbarState() {
     toolbarVisible,
     toolbarAnchor,
     selectionContext,
-    customActions,
+    actions,
     toolbarVisibleRef,
     selectionContextRef,
     closeToolbar,

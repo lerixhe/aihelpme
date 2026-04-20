@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
-import type { BuiltInActionId, CustomActionTemplate, SelectionAnchor } from "~/shared/types"
+import type { ActionTemplate, SelectionAnchor } from "~/shared/types"
 
 interface Props {
   visible: boolean
   anchor: SelectionAnchor | null
-  customActions: CustomActionTemplate[]
-  onBuiltInAction: (action: BuiltInActionId, text: string) => void
-  onCustomAction: (template: string, text: string) => void
+  actions: ActionTemplate[]
+  onAction: (template: string, text: string) => void
   onClose: () => void
 }
 
@@ -40,16 +39,13 @@ function estimateWidth(label: string) {
   return label.length * CHAR_WIDTH + PILL_PAD_X * 2
 }
 
-type RingAction =
-  | { id: string; label: string; type: "built-in"; actionId: BuiltInActionId }
-  | { id: string; label: string; type: "custom"; template: string }
+type RingAction = { id: string; label: string; template: string }
 
 export default function SelectionToolbar({
   visible,
   anchor,
-  customActions,
-  onBuiltInAction,
-  onCustomAction,
+  actions,
+  onAction,
   onClose
 }: Props) {
   const theme = useUiTheme()
@@ -57,11 +53,9 @@ export default function SelectionToolbar({
   const [ringHovered, setRingHovered] = useState<string | null>(null)
   const [triggerPressed, setTriggerPressed] = useState(false)
 
-  const allActions: RingAction[] = useMemo(() => [
-    { id: "built-in-explain", label: "解释", type: "built-in", actionId: "explain" },
-    { id: "built-in-translate", label: "翻译", type: "built-in", actionId: "translate" },
-    ...customActions.map((a) => ({ id: a.id, label: a.label, type: "custom" as const, template: a.template }))
-  ], [customActions])
+  const allActions: RingAction[] = useMemo(() =>
+    actions.map((a) => ({ id: a.id, label: a.label, template: a.template }))
+  , [actions])
 
   const position = useMemo(() => {
     if (!anchor) {
@@ -104,11 +98,7 @@ export default function SelectionToolbar({
   const handleActionClick = (action: RingAction) => {
     setRingOpen(false)
     setRingHovered(null)
-    if (action.type === "built-in") {
-      onBuiltInAction(action.actionId, "")
-    } else {
-      onCustomAction(action.template, "")
-    }
+    onAction(action.template, "")
   }
 
   useEffect(() => {

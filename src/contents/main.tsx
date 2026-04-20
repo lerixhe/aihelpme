@@ -5,9 +5,9 @@ import UnifiedPanel from "~/contents/components/UnifiedPanel"
 import { useChatState } from "~/contents/hooks/useChatState"
 import { useSelectionDetection } from "~/contents/hooks/useSelectionDetection"
 import { useToolbarState } from "~/contents/hooks/useToolbarState"
-import { appendPageContext, formatBuiltInPrompt, formatCustomPrompt, formatFreeInputPrompt } from "~/shared/prompt"
+import { appendPageContext, resolveActionTemplate, formatFreeInputPrompt } from "~/shared/prompt"
 import { getSettings } from "~/shared/storage"
-import type { BuiltInActionId, SelectionAnchor, SelectionContext } from "~/shared/types"
+import type { SelectionAnchor, SelectionContext } from "~/shared/types"
 
 export const config = {
   matches: ["<all_urls>"]
@@ -21,7 +21,7 @@ function App() {
     toolbarVisible,
     toolbarAnchor,
     selectionContext,
-    customActions,
+    actions,
     closeToolbar,
     openToolbar,
     toolbarVisibleRef
@@ -88,29 +88,16 @@ function App() {
     [selectionContext, setCapturedText, setPanelOpen, closeToolbar, runWithSelectionContext, resetMessages]
   )
 
-  // Handle built-in action
-  const handleBuiltInAction = useCallback(
-    async (action: BuiltInActionId, text: string) => {
+  // Handle action
+  const handleAction = useCallback(
+    async (template: string, text: string) => {
       if (!selectionContext) {
         return
       }
 
       const settings = await getSettings()
       const context = { ...selectionContext, text }
-      const prompt = formatBuiltInPrompt(action, context, settings.translationLanguage)
-      await openPanelWithAction(text, prompt)
-    },
-    [selectionContext, openPanelWithAction]
-  )
-
-  // Handle custom action
-  const handleCustomAction = useCallback(
-    async (template: string, text: string) => {
-      if (!selectionContext) {
-        return
-      }
-
-      const prompt = formatCustomPrompt(template, text)
+      const prompt = resolveActionTemplate(template, context, settings)
       await openPanelWithAction(text, prompt)
     },
     [selectionContext, openPanelWithAction]
@@ -142,12 +129,9 @@ function App() {
       <SelectionToolbar
         visible={toolbarVisible}
         anchor={toolbarAnchor}
-        customActions={customActions}
-        onBuiltInAction={(action, text) => {
-          void handleBuiltInAction(action, selectionContext?.text ?? text)
-        }}
-        onCustomAction={(template, text) => {
-          void handleCustomAction(template, selectionContext?.text ?? text)
+        actions={actions}
+        onAction={(template, text) => {
+          void handleAction(template, selectionContext?.text ?? text)
         }}
         onClose={() => {
           closeToolbar()

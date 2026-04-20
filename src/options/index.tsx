@@ -4,7 +4,7 @@ import { hasTextPlaceholder } from "~/shared/prompt"
 import { DEFAULT_SETTINGS, getSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
-import type { CustomActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse } from "~/shared/types"
+import type { ActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 
 type Section = "appearance" | "connection" | "actions"
@@ -64,7 +64,7 @@ function ActionsIcon({ size, color }: { size: number; color: string }) {
 const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] = [
   { key: "appearance", label: "外观", icon: AppearanceIcon },
   { key: "connection", label: "连接", icon: ConnectionIcon },
-  { key: "actions", label: "自定义动作", icon: ActionsIcon }
+  { key: "actions", label: "动作", icon: ActionsIcon }
 ]
 
 export default function OptionsPage() {
@@ -99,8 +99,8 @@ export default function OptionsPage() {
   }, [])
 
   const hasInvalidCustomTemplate = useMemo(() => {
-    return settings.customActions.some((item) => !hasTextPlaceholder(item.template))
-  }, [settings.customActions])
+    return settings.actions.some((item) => !hasTextPlaceholder(item.template))
+  }, [settings.actions])
 
   const canSave =
     Boolean(settings.apiBaseUrl.trim()) &&
@@ -108,10 +108,10 @@ export default function OptionsPage() {
     Boolean(settings.translationLanguage.trim()) &&
     !hasInvalidCustomTemplate
 
-  const updateCustomAction = (index: number, patch: Partial<CustomActionTemplate>) => {
+  const updateCustomAction = (index: number, patch: Partial<ActionTemplate>) => {
     setSettings((current) => ({
       ...current,
-      customActions: current.customActions.map((item, itemIndex) =>
+      actions: current.actions.map((item, itemIndex) =>
         itemIndex === index
           ? {
               ...item,
@@ -508,7 +508,7 @@ export default function OptionsPage() {
               fontWeight: uiTypography.fontWeight.semibold,
               letterSpacing: uiTypography.letterSpacing.tight
             }}>
-            自定义动作
+            动作
           </h2>
           <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>
             让常用指令直接出现在选区面板中。
@@ -518,8 +518,8 @@ export default function OptionsPage() {
           onClick={() => {
             setSettings((current) => ({
               ...current,
-              customActions: [
-                ...current.customActions,
+              actions: [
+                ...current.actions,
                 {
                   id: `custom-${Date.now()}`,
                   label: "新动作",
@@ -547,7 +547,7 @@ export default function OptionsPage() {
         模板必须包含 <code style={{ background: theme.bg.surfaceMuted, padding: "2px 6px", borderRadius: 4, fontSize: uiTypography.fontSize.xs }}>{"{text}"}</code> 占位符，用来注入用户选中的文本。
       </p>
 
-      {settings.customActions.map((item, index) => {
+      {settings.actions.map((item, index) => {
         const invalid = !hasTextPlaceholder(item.template)
 
         return (
@@ -587,7 +587,7 @@ export default function OptionsPage() {
                 onClick={() => {
                   setSettings((current) => ({
                     ...current,
-                    customActions: current.customActions.filter((action) => action.id !== item.id)
+                    actions: current.actions.filter((action) => action.id !== item.id)
                   }))
                 }}
                 onMouseDown={() => setPressedBtn(`delete-${item.id}`)}
@@ -627,7 +627,7 @@ export default function OptionsPage() {
         )
       })}
 
-      {settings.customActions.length === 0 ? (
+      {settings.actions.length === 0 ? (
         <div
           style={{
             textAlign: "center",
@@ -637,7 +637,7 @@ export default function OptionsPage() {
             border: `1px dashed ${theme.border.default}`,
             borderRadius: uiRadius.md
           }}>
-          还没有自定义动作，点击上方「新增动作」开始创建。
+          还没有动作，点击上方「新增动作」开始创建。
         </div>
       ) : null}
     </section>

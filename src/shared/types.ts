@@ -1,8 +1,6 @@
-export type BuiltInActionId = "explain" | "translate"
-
 export type ThemePreference = "auto" | "light" | "dark"
 
-export interface CustomActionTemplate {
+export interface ActionTemplate {
   id: string
   label: string
   template: string
@@ -14,7 +12,7 @@ export interface ExtensionSettings {
   model: string
   translationLanguage: string
   theme: ThemePreference
-  customActions: CustomActionTemplate[]
+  actions: ActionTemplate[]
 }
 
 export interface SelectionContext {

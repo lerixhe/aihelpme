@@ -1,19 +1,13 @@
-import type { BuiltInActionId, SelectionContext } from "~/shared/types"
+import type { ExtensionSettings, SelectionContext } from "~/shared/types"
 
-export function formatBuiltInPrompt(
-  action: BuiltInActionId,
+export function resolveActionTemplate(
+  template: string,
   context: SelectionContext,
-  translationLanguage: string
+  settings: ExtensionSettings
 ): string {
-  if (action === "explain") {
-    return `帮我解释选中内容「${context.text}」`
-  }
-
-  return `请将以下内容翻译为${translationLanguage}：\n${context.text}`
-}
-
-export function formatCustomPrompt(template: string, text: string): string {
-  return template.replaceAll("{text}", text)
+  return template
+    .replaceAll("{text}", context.text)
+    .replaceAll("{translationLanguage}", settings.translationLanguage)
 }
 
 export function formatFreeInputPrompt(input: string, text: string): string {
