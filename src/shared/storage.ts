@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from "~/shared/config"
+import { DEFAULT_SETTINGS } from "~/shared/defaults"
 import type { ExtensionSettings, ThemePreference } from "~/shared/types"
 
 export { DEFAULT_SETTINGS }

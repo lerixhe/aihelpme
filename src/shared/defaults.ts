@@ -26,3 +26,20 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   theme: "auto",
   actions: DEFAULT_ACTIONS
 }
+
+type SectionKey = "appearance" | "connection" | "actions"
+
+export const SECTION_DEFAULTS: Record<SectionKey, Partial<ExtensionSettings>> = {
+  appearance: {
+    theme: DEFAULT_SETTINGS.theme
+  },
+  connection: {
+    apiBaseUrl: DEFAULT_SETTINGS.apiBaseUrl,
+    apiKey: DEFAULT_SETTINGS.apiKey,
+    model: DEFAULT_SETTINGS.model,
+    translationLanguage: DEFAULT_SETTINGS.translationLanguage
+  },
+  actions: {
+    actions: DEFAULT_SETTINGS.actions
+  }
+}

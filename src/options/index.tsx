@@ -1,11 +1,13 @@
 import { type JSX, useEffect, useMemo, useState, type CSSProperties } from "react"
 
 import { hasTextPlaceholder } from "~/shared/prompt"
-import { DEFAULT_SETTINGS, getSettings, saveSettings } from "~/shared/storage"
+import { DEFAULT_SETTINGS, SECTION_DEFAULTS } from "~/shared/defaults"
+import { getSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import type { ActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
+import { ConfirmDialog } from "~/options/ConfirmDialog"
 
 type Section = "appearance" | "connection" | "actions"
 
@@ -82,6 +84,7 @@ export default function OptionsPage() {
   const [pressedBtn, setPressedBtn] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<Section>("appearance")
   const [hoveredNav, setHoveredNav] = useState<string | null>(null)
+  const [confirmRestoreSection, setConfirmRestoreSection] = useState<Section | null>(null)
 
   useEffect(() => {
     void getSettings().then((loaded) => {
@@ -120,6 +123,15 @@ export default function OptionsPage() {
           : item
       )
     }))
+  }
+
+  const restoreSection = (section: Section) => {
+    const defaults = SECTION_DEFAULTS[section]
+    setSettings((prev) => ({ ...prev, ...defaults }))
+    if (section === "appearance") {
+      void saveSettings({ ...settings, ...defaults })
+    }
+    setConfirmRestoreSection(null)
   }
 
   const handleTestConnection = () => {
@@ -327,6 +339,23 @@ export default function OptionsPage() {
           )
         })}
       </div>
+
+      <div style={{ marginTop: uiSpace[20] }}>
+        <button
+          onClick={() => setConfirmRestoreSection("appearance")}
+          onMouseDown={() => setPressedBtn("restore-appearance")}
+          onMouseUp={() => setPressedBtn(null)}
+          onMouseLeave={() => setPressedBtn(null)}
+          style={{
+            ...secondaryBtnStyle,
+            color: theme.state.error,
+            borderColor: theme.state.error,
+            opacity: 0.8,
+            transform: pressedBtn === "restore-appearance" ? "scale(0.96)" : "scale(1)"
+          }}>
+          恢复默认
+        </button>
+      </div>
     </section>
   )
 
@@ -494,6 +523,23 @@ export default function OptionsPage() {
           style={createInputStyle("translationLanguage")}
         />
       </div>
+
+      <div style={{ marginTop: uiSpace[20] }}>
+        <button
+          onClick={() => setConfirmRestoreSection("connection")}
+          onMouseDown={() => setPressedBtn("restore-connection")}
+          onMouseUp={() => setPressedBtn(null)}
+          onMouseLeave={() => setPressedBtn(null)}
+          style={{
+            ...secondaryBtnStyle,
+            color: theme.state.error,
+            borderColor: theme.state.error,
+            opacity: 0.8,
+            transform: pressedBtn === "restore-connection" ? "scale(0.96)" : "scale(1)"
+          }}>
+          恢复默认
+        </button>
+      </div>
     </section>
   )
 
@@ -640,6 +686,23 @@ export default function OptionsPage() {
           还没有动作，点击上方「新增动作」开始创建。
         </div>
       ) : null}
+
+      <div style={{ marginTop: uiSpace[20] }}>
+        <button
+          onClick={() => setConfirmRestoreSection("actions")}
+          onMouseDown={() => setPressedBtn("restore-actions")}
+          onMouseUp={() => setPressedBtn(null)}
+          onMouseLeave={() => setPressedBtn(null)}
+          style={{
+            ...secondaryBtnStyle,
+            color: theme.state.error,
+            borderColor: theme.state.error,
+            opacity: 0.8,
+            transform: pressedBtn === "restore-actions" ? "scale(0.96)" : "scale(1)"
+          }}>
+          恢复默认
+        </button>
+      </div>
     </section>
   )
 
@@ -813,6 +876,17 @@ export default function OptionsPage() {
 
           {/* Section content */}
           {sectionContent[activeSection]()}
+
+          {confirmRestoreSection ? (
+            <ConfirmDialog
+              title="恢复默认设置"
+              message={`确定将「${sections.find((s) => s.key === confirmRestoreSection)?.label}」页面的所有设置恢复为默认值吗？此操作不可撤销。`}
+              confirmLabel="恢复默认"
+              onConfirm={() => restoreSection(confirmRestoreSection)}
+              onCancel={() => setConfirmRestoreSection(null)}
+              themeName={themeName}
+            />
+          ) : null}
 
           {/* Save area — always visible at bottom */}
           <div
