@@ -10,7 +10,6 @@ export interface ExtensionSettings {
   apiBaseUrl: string
   apiKey: string
   model: string
-  translationLanguage: string
   theme: ThemePreference
   actions: ActionTemplate[]
 }

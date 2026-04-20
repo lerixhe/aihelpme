@@ -108,7 +108,6 @@ export default function OptionsPage() {
   const canSave =
     Boolean(settings.apiBaseUrl.trim()) &&
     Boolean(settings.model.trim()) &&
-    Boolean(settings.translationLanguage.trim()) &&
     !hasInvalidCustomTemplate
 
   const updateCustomAction = (index: number, patch: Partial<ActionTemplate>) => {
@@ -290,7 +289,7 @@ export default function OptionsPage() {
           fontWeight: uiTypography.fontWeight.semibold,
           letterSpacing: uiTypography.letterSpacing.tight
         }}>
-        外观
+        主题配色
       </h2>
       <p
         style={{
@@ -298,7 +297,7 @@ export default function OptionsPage() {
           color: theme.text.secondary,
           fontSize: uiTypography.fontSize.md
         }}>
-        选择界面配色方案，切换即时生效。
+        选择浅色、深色或跟随系统主题
       </p>
 
       <div
@@ -368,7 +367,7 @@ export default function OptionsPage() {
           fontWeight: uiTypography.fontWeight.semibold,
           letterSpacing: uiTypography.letterSpacing.tight
         }}>
-        连接
+        API配置
       </h2>
       <p
         style={{
@@ -376,7 +375,7 @@ export default function OptionsPage() {
           color: theme.text.secondary,
           fontSize: uiTypography.fontSize.md
         }}>
-        完成模型接口与翻译语言设置。
+        配置模型接口
       </p>
 
       <div style={{ marginBottom: uiSpace[16] }}>
@@ -510,19 +509,7 @@ export default function OptionsPage() {
         ) : null}
       </div>
 
-      <div>
-        <div style={{ ...fieldLabelStyle, marginBottom: uiSpace[6] }}>翻译目标语言</div>
-        <input
-          value={settings.translationLanguage}
-          onFocus={() => setFocusedField("translationLanguage")}
-          onBlur={() => setFocusedField(null)}
-          onChange={(event) => {
-            setSettings((current) => ({ ...current, translationLanguage: event.target.value }))
-          }}
-          placeholder="简体中文"
-          style={createInputStyle("translationLanguage")}
-        />
-      </div>
+
 
       <div style={{ marginTop: uiSpace[20] }}>
         <button
@@ -554,10 +541,10 @@ export default function OptionsPage() {
               fontWeight: uiTypography.fontWeight.semibold,
               letterSpacing: uiTypography.letterSpacing.tight
             }}>
-            动作
+            指令模板
           </h2>
           <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>
-            让常用指令直接出现在选区面板中。
+            自定义选区操作指令
           </p>
         </div>
         <button
@@ -861,17 +848,6 @@ export default function OptionsPage() {
               }}>
               {sections.find((s) => s.key === activeSection)?.label}
             </h1>
-            <p
-              style={{
-                margin: `${uiSpace[6]}px 0 0`,
-                color: theme.text.secondary,
-                fontSize: uiTypography.fontSize.lg,
-                lineHeight: 1.55
-              }}>
-              {activeSection === "appearance" && "选择界面配色方案，切换即时生效。"}
-              {activeSection === "connection" && "完成模型接口与翻译语言设置。"}
-              {activeSection === "actions" && "让常用指令直接出现在选区面板中。"}
-            </p>
           </div>
 
           {/* Section content */}
@@ -913,8 +889,7 @@ export default function OptionsPage() {
                   ...settings,
                   apiBaseUrl: settings.apiBaseUrl.trim(),
                   apiKey: settings.apiKey.trim(),
-                  model: settings.model.trim(),
-                  translationLanguage: settings.translationLanguage.trim()
+                  model: settings.model.trim()
                 })
                   .then(() => {
                     setStatus("保存成功")

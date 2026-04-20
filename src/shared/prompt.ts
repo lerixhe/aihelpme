@@ -7,7 +7,6 @@ export function resolveActionTemplate(
 ): string {
   return template
     .replaceAll("{text}", context.text)
-    .replaceAll("{translationLanguage}", settings.translationLanguage)
 }
 
 export function formatFreeInputPrompt(input: string, text: string): string {
