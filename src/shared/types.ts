@@ -6,12 +6,21 @@ export interface ActionTemplate {
   template: string
 }
 
+export interface ModelParams {
+  maxTokens: number
+  temperature: number
+  topP: number
+  presencePenalty: number
+  frequencyPenalty: number
+}
+
 export interface ExtensionSettings {
   apiBaseUrl: string
   apiKey: string
   model: string
   theme: ThemePreference
   actions: ActionTemplate[]
+  modelParams: ModelParams
 }
 
 export interface SelectionContext {

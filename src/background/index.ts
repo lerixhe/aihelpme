@@ -108,6 +108,11 @@ async function streamOpenAiCompatible(
     body: JSON.stringify({
       model: settings.model,
       stream: true,
+      max_tokens: settings.modelParams.maxTokens,
+      temperature: settings.modelParams.temperature,
+      top_p: settings.modelParams.topP,
+      presence_penalty: settings.modelParams.presencePenalty,
+      frequency_penalty: settings.modelParams.frequencyPenalty,
       messages: messages.map((item) => ({
         role: item.role,
         content: item.content

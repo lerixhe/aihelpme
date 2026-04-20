@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS, SECTION_DEFAULTS } from "~/shared/defaults"
 import { getSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
-import type { ActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse } from "~/shared/types"
+import type { ActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse, ModelParams } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
 
@@ -523,7 +523,68 @@ export default function OptionsPage() {
         ) : null}
       </div>
 
+      <div style={{ borderTop: `0.5px solid ${theme.border.hairline}`, paddingTop: uiSpace[20], marginTop: uiSpace[4] }}>
+        <h3
+          style={{
+            margin: `0 0 ${uiSpace[4]}px`,
+            fontSize: uiTypography.fontSize.md,
+            fontWeight: uiTypography.fontWeight.semibold,
+            letterSpacing: uiTypography.letterSpacing.tight
+          }}>
+          模型参数
+        </h3>
+        <p
+          style={{
+            margin: `0 0 ${uiSpace[16]}px`,
+            color: theme.text.secondary,
+            fontSize: uiTypography.fontSize.sm
+          }}>
+          适用于解释、翻译等文本处理场景的采样参数
+        </p>
 
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: `${uiSpace[12]}px ${uiSpace[16]}px`
+          }}>
+          {(
+            [
+              { key: "maxTokens" as const, label: "Max Tokens", placeholder: "1024", min: 1, max: 128000, step: 1, desc: "最大输出 token 数" },
+              { key: "temperature" as const, label: "Temperature", placeholder: "0.3", min: 0, max: 2, step: 0.1, desc: "采样温度，越低越确定" },
+              { key: "topP" as const, label: "Top P", placeholder: "0.9", min: 0, max: 1, step: 0.05, desc: "核采样概率阈值" },
+              { key: "presencePenalty" as const, label: "Presence Penalty", placeholder: "0", min: -2, max: 2, step: 0.1, desc: "存在惩罚" },
+              { key: "frequencyPenalty" as const, label: "Frequency Penalty", placeholder: "0", min: -2, max: 2, step: 0.1, desc: "频率惩罚" }
+            ]
+          ).map((param) => (
+            <div key={param.key}>
+              <div style={{ ...fieldLabelStyle, marginBottom: uiSpace[4] }}>{param.label}</div>
+              <div style={{ fontSize: uiTypography.fontSize.xs, color: theme.text.secondary, marginBottom: uiSpace[6] }}>
+                {param.desc}
+              </div>
+              <input
+                type="number"
+                value={settings.modelParams[param.key]}
+                min={param.min}
+                max={param.max}
+                step={param.step}
+                onFocus={() => setFocusedField(`modelParams-${param.key}`)}
+                onBlur={() => setFocusedField(null)}
+                onChange={(event) => {
+                  const raw = event.target.value
+                  const value = raw === "" ? DEFAULT_SETTINGS.modelParams[param.key] : Number(raw)
+                  setSettings((current) => ({
+                    ...current,
+                    modelParams: { ...current.modelParams, [param.key]: value }
+                  }))
+                }}
+                placeholder={param.placeholder}
+                style={createInputStyle(`modelParams-${param.key}`)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div style={{ marginTop: uiSpace[20] }}>
         <button
