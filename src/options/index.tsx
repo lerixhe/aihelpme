@@ -89,6 +89,15 @@ export default function OptionsPage() {
     })
   }, [])
 
+  useEffect(() => {
+    document.documentElement.style.margin = "0"
+    document.documentElement.style.padding = "0"
+    document.documentElement.style.height = "100%"
+    document.body.style.margin = "0"
+    document.body.style.padding = "0"
+    document.body.style.height = "100%"
+  }, [])
+
   const hasInvalidCustomTemplate = useMemo(() => {
     return settings.customActions.some((item) => !hasTextPlaceholder(item.template))
   }, [settings.customActions])
