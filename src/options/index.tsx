@@ -76,7 +76,7 @@ function BackupIcon({ size, color }: { size: number; color: string }) {
 
 const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] = [
   { key: "appearance", label: "外观", icon: AppearanceIcon },
-  { key: "connection", label: "大模型配置", icon: ConnectionIcon },
+  { key: "connection", label: "AI大模型", icon: ConnectionIcon },
   { key: "actions", label: "动作指令", icon: ActionsIcon },
   { key: "backup", label: "备份与迁移", icon: BackupIcon }
 ]
