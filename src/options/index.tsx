@@ -1,16 +1,15 @@
 import { type JSX, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { hasTextPlaceholder } from "~/shared/prompt"
-import { DEFAULT_SETTINGS, SECTION_DEFAULTS } from "~/shared/defaults"
+import { DEFAULT_CUSTOM_MODEL_SERVICE, DEFAULT_SETTINGS } from "~/shared/defaults"
 import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
-import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, ApiTestResponse, FetchModelsResponse, ModelParams } from "~/shared/types"
+import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, ApiTestResponse, FetchModelsResponse, ModelServiceConfig } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
 
 type Section = "appearance" | "connection" | "actions" | "backup"
-type RestorableSection = Exclude<Section, "backup">
 
 function PlusIcon({ size, color }: { size: number; color: string }) {
   return (
@@ -81,6 +80,13 @@ const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] =
   { key: "backup", label: "备份与迁移", icon: BackupIcon }
 ]
 
+function createCustomServiceDraft(): ModelServiceConfig {
+  return {
+    ...DEFAULT_CUSTOM_MODEL_SERVICE,
+    id: `service-${Date.now()}`
+  }
+}
+
 export default function OptionsPage() {
   const themeName = useUiThemeName()
   const theme = uiThemes[themeName]
@@ -97,9 +103,12 @@ export default function OptionsPage() {
   const [activeSection, setActiveSection] = useState<Section>("appearance")
   const [loaded, setLoaded] = useState(false)
   const [hoveredNav, setHoveredNav] = useState<string | null>(null)
-  const [confirmRestoreSection, setConfirmRestoreSection] = useState<RestorableSection | null>(null)
   const [backupStatus, setBackupStatus] = useState<{ success: boolean; message: string } | null>(null)
   const [pendingImportSettings, setPendingImportSettings] = useState<ExtensionSettings | null>(null)
+  const [connectionView, setConnectionView] = useState<"list" | "create" | "edit">("list")
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [serviceDraft, setServiceDraft] = useState<ModelServiceConfig>(createCustomServiceDraft())
+  const [pendingDeleteServiceId, setPendingDeleteServiceId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -134,10 +143,42 @@ export default function OptionsPage() {
     return settings.actions.some((item) => !hasTextPlaceholder(item.template))
   }, [settings.actions])
 
-  const canSave =
-    Boolean(settings.apiBaseUrl.trim()) &&
-    Boolean(settings.model.trim()) &&
-    !hasInvalidCustomTemplate
+  const canSave = !hasInvalidCustomTemplate
+
+  const isEditingConnection = connectionView !== "list"
+  const isServiceDraftValid =
+    Boolean(serviceDraft.name.trim()) &&
+    Boolean(serviceDraft.apiBaseUrl.trim()) &&
+    Boolean(serviceDraft.apiKey.trim()) &&
+    Boolean(serviceDraft.model.trim())
+
+  const saveSettingsNow = (updater: (current: ExtensionSettings) => ExtensionSettings, successMessage?: string) => {
+    setSettings((current) => {
+      const next = updater(current)
+
+      void saveSettings({
+        ...next,
+        modelServices: next.modelServices.map((service) => ({
+          ...service,
+          name: service.name.trim(),
+          apiBaseUrl: service.apiBaseUrl.trim(),
+          apiKey: service.apiKey.trim(),
+          model: service.model.trim()
+        }))
+      })
+        .then(() => {
+          if (successMessage) {
+            setStatus(successMessage)
+          }
+        })
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : "未知错误"
+          setStatus(`保存失败：${message}`)
+        })
+
+      return next
+    })
+  }
 
   const updateCustomAction = (index: number, patch: Partial<ActionTemplate>) => {
     setSettings((current) => ({
@@ -153,19 +194,10 @@ export default function OptionsPage() {
     }))
   }
 
-  const restoreSection = (section: RestorableSection) => {
-    const defaults = SECTION_DEFAULTS[section]
-    setSettings((prev) => ({ ...prev, ...defaults }))
-    if (section === "appearance") {
-      void saveSettings({ ...settings, ...defaults })
-    }
-    setConfirmRestoreSection(null)
-  }
-
   const handleTestConnection = () => {
-    const trimmedUrl = settings.apiBaseUrl.trim()
-    const trimmedKey = settings.apiKey.trim()
-    const trimmedModel = settings.model.trim()
+    const trimmedUrl = serviceDraft.apiBaseUrl.trim()
+    const trimmedKey = serviceDraft.apiKey.trim()
+    const trimmedModel = serviceDraft.model.trim()
 
     if (!trimmedUrl || !trimmedKey || !trimmedModel) {
       setTestResult({ success: false, message: "请填写 API Base URL、API Key 和 Model 后再测试。" })
@@ -205,7 +237,7 @@ export default function OptionsPage() {
   }
 
   const handleFetchModels = () => {
-    const trimmedUrl = settings.apiBaseUrl.trim()
+    const trimmedUrl = serviceDraft.apiBaseUrl.trim()
     if (!trimmedUrl) {
       setFetchError("请先填写 API Base URL")
       return
@@ -220,7 +252,7 @@ export default function OptionsPage() {
         type: MESSAGE_TYPES.FETCH_MODELS_REQUEST,
         payload: {
           apiBaseUrl: trimmedUrl,
-          apiKey: settings.apiKey.trim()
+          apiKey: serviceDraft.apiKey.trim()
         }
       },
       (response: FetchModelsResponse | undefined) => {
@@ -236,8 +268,8 @@ export default function OptionsPage() {
         if (response.success && response.models && response.models.length > 0) {
           setModels(response.models)
           setFetchError(null)
-          if (!settings.model.trim() || !response.models.includes(settings.model.trim())) {
-            setSettings((current) => ({ ...current, model: response.models![0] }))
+          if (!serviceDraft.model.trim() || !response.models.includes(serviceDraft.model.trim())) {
+            setServiceDraft((current) => ({ ...current, model: response.models![0] }))
           }
         } else {
           setFetchError(response.error ?? "未找到可用模型")
@@ -298,15 +330,22 @@ export default function OptionsPage() {
     }
 
     setSettings(pendingImportSettings)
+    setConnectionView("list")
+    setEditingServiceId(null)
+    setServiceDraft(createCustomServiceDraft())
     setSaving(true)
     setStatus("")
     setBackupStatus(null)
 
     void saveSettings({
       ...pendingImportSettings,
-      apiBaseUrl: pendingImportSettings.apiBaseUrl.trim(),
-      apiKey: pendingImportSettings.apiKey.trim(),
-      model: pendingImportSettings.model.trim()
+      modelServices: pendingImportSettings.modelServices.map((service) => ({
+        ...service,
+        name: service.name.trim(),
+        apiBaseUrl: service.apiBaseUrl.trim(),
+        apiKey: service.apiKey.trim(),
+        model: service.model.trim()
+      }))
     })
       .then(() => {
         setBackupStatus({ success: true, message: "配置已导入并保存。" })
@@ -319,6 +358,91 @@ export default function OptionsPage() {
         setSaving(false)
         setPendingImportSettings(null)
       })
+  }
+
+  const openCreateService = () => {
+    setConnectionView("create")
+    setEditingServiceId(null)
+    setServiceDraft(createCustomServiceDraft())
+    setModels([])
+    setFetchError(null)
+    setTestResult(null)
+    setStatus("")
+  }
+
+  const openEditService = (serviceId: string) => {
+    const target = settings.modelServices.find((service) => service.id === serviceId)
+    if (!target) {
+      return
+    }
+
+    setConnectionView("edit")
+    setEditingServiceId(serviceId)
+    setServiceDraft({ ...target, modelParams: { ...target.modelParams } })
+    setModels([])
+    setFetchError(null)
+    setTestResult(null)
+    setStatus("")
+  }
+
+  const closeConnectionEditor = () => {
+    setConnectionView("list")
+    setEditingServiceId(null)
+    setServiceDraft(createCustomServiceDraft())
+    setModels([])
+    setFetchError(null)
+    setTestResult(null)
+  }
+
+  const saveServiceDraft = () => {
+    if (!isServiceDraftValid) {
+      setStatus("请填写服务名称、API Base URL、API Key 和 Model 后再保存。")
+      return
+    }
+
+    const normalizedDraft: ModelServiceConfig = {
+      ...serviceDraft,
+      name: serviceDraft.name.trim(),
+      apiBaseUrl: serviceDraft.apiBaseUrl.trim(),
+      apiKey: serviceDraft.apiKey.trim(),
+      model: serviceDraft.model.trim()
+    }
+
+    saveSettingsNow((current) => {
+      if (connectionView === "edit" && editingServiceId) {
+        return {
+          ...current,
+          modelServices: current.modelServices.map((service) => (service.id === editingServiceId ? normalizedDraft : service))
+        }
+      }
+
+      return {
+        ...current,
+        modelServices: [...current.modelServices, normalizedDraft],
+        activeModelServiceId: current.activeModelServiceId || normalizedDraft.id
+      }
+    }, "服务已保存")
+
+    closeConnectionEditor()
+  }
+
+  const activateService = (serviceId: string) => {
+    saveSettingsNow((current) => ({ ...current, activeModelServiceId: serviceId }), "已切换启用服务")
+  }
+
+  const deleteService = (serviceId: string) => {
+    saveSettingsNow((current) => {
+      const remainingServices = current.modelServices.filter((service) => service.id !== serviceId)
+      const activeModelServiceId =
+        current.activeModelServiceId === serviceId ? (remainingServices[0]?.id ?? "") : current.activeModelServiceId
+
+      return {
+        ...current,
+        modelServices: remainingServices,
+        activeModelServiceId
+      }
+    }, "服务已删除")
+    setPendingDeleteServiceId(null)
   }
 
   // --- Shared styles ---
@@ -420,8 +544,7 @@ export default function OptionsPage() {
             <button
               key={value}
               onClick={() => {
-                setSettings((current) => ({ ...current, theme: value }))
-                void saveSettings({ ...settings, theme: value })
+                saveSettingsNow((current) => ({ ...current, theme: value }))
               }}
               style={{
                 padding: `${uiSpace[6]}px ${uiSpace[16]}px`,
@@ -487,8 +610,7 @@ export default function OptionsPage() {
                   key={option.value}
                   type="button"
                   onClick={() => {
-                    setSettings((current) => ({ ...current, toolbarMode: option.value }))
-                    void saveSettings({ ...settings, toolbarMode: option.value })
+                    saveSettingsNow((current) => ({ ...current, toolbarMode: option.value }))
                   }}
                   style={{
                     border: `1px solid ${isSelected ? theme.accent.primary : theme.border.default}`,
@@ -541,254 +663,381 @@ export default function OptionsPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => setConfirmRestoreSection("appearance")}
-          onMouseDown={() => setPressedBtn("restore-appearance")}
-          onMouseUp={() => setPressedBtn(null)}
-          onMouseLeave={() => setPressedBtn(null)}
-          style={{
-            ...secondaryBtnStyle,
-            color: theme.state.error,
-            borderColor: theme.state.error,
-            opacity: 0.8,
-            transform: pressedBtn === "restore-appearance" ? "scale(0.96)" : "scale(1)"
-          }}>
-          恢复默认
-        </button>
       </div>
     </section>
   )
 
   const renderConnection = () => (
     <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
-      <h2
-        style={{
-          margin: `0 0 ${uiSpace[4]}px`,
-          fontSize: uiTypography.fontSize.lg,
-          fontWeight: uiTypography.fontWeight.semibold,
-          letterSpacing: uiTypography.letterSpacing.tight
-        }}>
-        API配置
-      </h2>
-      <p
-        style={{
-          margin: `0 0 ${uiSpace[20]}px`,
-          color: theme.text.secondary,
-          fontSize: uiTypography.fontSize.md
-        }}>
-        配置模型接口
-      </p>
-
-      <div style={{ marginBottom: uiSpace[16] }}>
-        <div style={fieldLabelStyle}>API Base URL</div>
-        <input
-          value={settings.apiBaseUrl}
-          onFocus={() => setFocusedField("apiBaseUrl")}
-          onBlur={() => setFocusedField(null)}
-          onChange={(event) => {
-            setSettings((current) => ({ ...current, apiBaseUrl: event.target.value }))
-          }}
-          placeholder="https://api.openai.com/v1"
-          style={createInputStyle("apiBaseUrl")}
-        />
-      </div>
-
-      <div style={{ marginBottom: uiSpace[16] }}>
-        <div style={fieldLabelStyle}>API Key</div>
-        <input
-          type="password"
-          value={settings.apiKey}
-          onFocus={() => setFocusedField("apiKey")}
-          onBlur={() => setFocusedField(null)}
-          onChange={(event) => {
-            setSettings((current) => ({ ...current, apiKey: event.target.value }))
-          }}
-          placeholder="sk-..."
-          style={createInputStyle("apiKey")}
-        />
-      </div>
-
-      <div style={{ marginBottom: uiSpace[16] }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: uiSpace[6] }}>
-          <div style={fieldLabelStyle}>Model</div>
-          <button
-            type="button"
-            onClick={handleFetchModels}
-            disabled={fetchingModels}
-            style={{
-              ...secondaryBtnStyle,
-              display: "flex",
-              alignItems: "center",
-              gap: uiSpace[4],
-              opacity: fetchingModels ? 0.5 : 1,
-              cursor: fetchingModels ? "not-allowed" : "pointer"
-            }}>
-            <RefreshIcon size={14} color={theme.text.primary} />
-            {fetchingModels ? "获取中..." : "获取模型"}
-          </button>
-        </div>
-        {models.length > 0 ? (
-          <div style={{ display: "flex", gap: uiSpace[8] }}>
-            <select
-              value={settings.model}
-              onChange={(event) => {
-                setSettings((current) => ({ ...current, model: event.target.value }))
-              }}
-              style={{ ...createInputStyle("model"), flex: 1, cursor: "pointer" }}>
-              {models.map((id) => (
-                <option key={id} value={id}>
-                  {id}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => setModels([])}
-              style={secondaryBtnStyle}>
-              手动输入
+      {isEditingConnection ? (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16], marginBottom: uiSpace[20] }}>
+            <div>
+              <h2
+                style={{
+                  margin: `0 0 ${uiSpace[4]}px`,
+                  fontSize: uiTypography.fontSize.lg,
+                  fontWeight: uiTypography.fontWeight.semibold,
+                  letterSpacing: uiTypography.letterSpacing.tight
+                }}>
+                {connectionView === "create" ? "添加自定义服务" : "编辑自定义服务"}
+              </h2>
+              <p
+                style={{
+                  margin: 0,
+                  color: theme.text.secondary,
+                  fontSize: uiTypography.fontSize.md
+                }}>
+                配置服务名称、模型接口和采样参数
+              </p>
+            </div>
+            <button type="button" onClick={closeConnectionEditor} style={secondaryBtnStyle}>
+              返回列表
             </button>
           </div>
-        ) : (
-          <input
-            value={settings.model}
-            onFocus={() => setFocusedField("model")}
-            onBlur={() => setFocusedField(null)}
-            onChange={(event) => {
-              setSettings((current) => ({ ...current, model: event.target.value }))
-            }}
-            placeholder="gpt-4o-mini"
-            style={createInputStyle("model")}
-          />
-        )}
-        {fetchError ? (
-          <div
-            style={{
-              marginTop: uiSpace[8],
-              fontSize: uiTypography.fontSize.sm,
-              color: theme.state.error,
-              background: theme.state.errorBg,
-              padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-              borderRadius: uiRadius.sm
-            }}>
-            {fetchError}
+
+          <div style={{ marginBottom: uiSpace[16] }}>
+            <div style={fieldLabelStyle}>服务名称</div>
+            <input
+              value={serviceDraft.name}
+              onFocus={() => setFocusedField("service-name")}
+              onBlur={() => setFocusedField(null)}
+              onChange={(event) => {
+                setServiceDraft((current) => ({ ...current, name: event.target.value }))
+              }}
+              placeholder="例如：OpenAI 主账号"
+              style={createInputStyle("service-name")}
+            />
           </div>
-        ) : null}
-      </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: uiSpace[10], marginBottom: uiSpace[16] }}>
-        <button
-          disabled={testing}
-          onClick={handleTestConnection}
-          onMouseDown={() => setPressedBtn("test")}
-          onMouseUp={() => setPressedBtn(null)}
-          onMouseLeave={() => setPressedBtn(null)}
-          style={{
-            ...primaryBtnStyle,
-            display: "flex",
-            alignItems: "center",
-            gap: uiSpace[6],
-            opacity: testing ? 0.6 : 1,
-            cursor: testing ? "not-allowed" : "pointer",
-            background: testing ? theme.state.disabled : theme.accent.primary,
-            transform: pressedBtn === "test" ? "scale(0.96)" : "scale(1)"
-          }}>
-          {testing ? "测试中..." : "测试连通性"}
-        </button>
-        {testResult ? (
-          <span
-            style={{
-              fontSize: uiTypography.fontSize.sm,
-              color: testResult.success ? theme.state.success : theme.state.error,
-              background: testResult.success ? theme.state.successBg : theme.state.errorBg,
-              padding: `${uiSpace[6]}px ${uiSpace[10]}px`,
-              borderRadius: uiRadius.pill,
-              fontWeight: uiTypography.fontWeight.medium,
-              lineHeight: 1.5
-            }}>
-            {testResult.message}
-          </span>
-        ) : null}
-      </div>
+          <div style={{ marginBottom: uiSpace[16] }}>
+            <div style={fieldLabelStyle}>API Base URL</div>
+            <input
+              value={serviceDraft.apiBaseUrl}
+              onFocus={() => setFocusedField("apiBaseUrl")}
+              onBlur={() => setFocusedField(null)}
+              onChange={(event) => {
+                setServiceDraft((current) => ({ ...current, apiBaseUrl: event.target.value }))
+              }}
+              placeholder="https://api.openai.com/v1"
+              style={createInputStyle("apiBaseUrl")}
+            />
+          </div>
 
-      <div style={{ borderTop: `0.5px solid ${theme.border.hairline}`, paddingTop: uiSpace[20], marginTop: uiSpace[4] }}>
-        <h3
-          style={{
-            margin: `0 0 ${uiSpace[4]}px`,
-            fontSize: uiTypography.fontSize.md,
-            fontWeight: uiTypography.fontWeight.semibold,
-            letterSpacing: uiTypography.letterSpacing.tight
-          }}>
-          模型参数
-        </h3>
-        <p
-          style={{
-            margin: `0 0 ${uiSpace[16]}px`,
-            color: theme.text.secondary,
-            fontSize: uiTypography.fontSize.sm
-          }}>
-          适用于解释、翻译等文本处理场景的采样参数
-        </p>
+          <div style={{ marginBottom: uiSpace[16] }}>
+            <div style={fieldLabelStyle}>API Key</div>
+            <input
+              type="password"
+              value={serviceDraft.apiKey}
+              onFocus={() => setFocusedField("apiKey")}
+              onBlur={() => setFocusedField(null)}
+              onChange={(event) => {
+                setServiceDraft((current) => ({ ...current, apiKey: event.target.value }))
+              }}
+              placeholder="sk-..."
+              style={createInputStyle("apiKey")}
+            />
+          </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: `${uiSpace[12]}px ${uiSpace[16]}px`
-          }}>
-          {(
-            [
-              { key: "maxTokens" as const, label: "Max Tokens", placeholder: "1024", min: 1, max: 128000, step: 1, desc: "最大输出 token 数" },
-              { key: "temperature" as const, label: "Temperature", placeholder: "0.3", min: 0, max: 2, step: 0.1, desc: "采样温度，越低越确定" },
-              { key: "topP" as const, label: "Top P", placeholder: "0.9", min: 0, max: 1, step: 0.05, desc: "核采样概率阈值" },
-              { key: "presencePenalty" as const, label: "Presence Penalty", placeholder: "0", min: -2, max: 2, step: 0.1, desc: "存在惩罚" },
-              { key: "frequencyPenalty" as const, label: "Frequency Penalty", placeholder: "0", min: -2, max: 2, step: 0.1, desc: "频率惩罚" }
-            ]
-          ).map((param) => (
-            <div key={param.key}>
-              <div style={{ ...fieldLabelStyle, marginBottom: uiSpace[4] }}>{param.label}</div>
-              <div style={{ fontSize: uiTypography.fontSize.xs, color: theme.text.secondary, marginBottom: uiSpace[6] }}>
-                {param.desc}
+          <div style={{ marginBottom: uiSpace[16] }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: uiSpace[6] }}>
+              <div style={fieldLabelStyle}>Model</div>
+              <button
+                type="button"
+                onClick={handleFetchModels}
+                disabled={fetchingModels}
+                style={{
+                  ...secondaryBtnStyle,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: uiSpace[4],
+                  opacity: fetchingModels ? 0.5 : 1,
+                  cursor: fetchingModels ? "not-allowed" : "pointer"
+                }}>
+                <RefreshIcon size={14} color={theme.text.primary} />
+                {fetchingModels ? "获取中..." : "获取模型"}
+              </button>
+            </div>
+            {models.length > 0 ? (
+              <div style={{ display: "flex", gap: uiSpace[8] }}>
+                <select
+                  value={serviceDraft.model}
+                  onChange={(event) => {
+                    setServiceDraft((current) => ({ ...current, model: event.target.value }))
+                  }}
+                  style={{ ...createInputStyle("model"), flex: 1, cursor: "pointer" }}>
+                  {models.map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setModels([])}
+                  style={secondaryBtnStyle}>
+                  手动输入
+                </button>
               </div>
+            ) : (
               <input
-                type="number"
-                value={settings.modelParams[param.key]}
-                min={param.min}
-                max={param.max}
-                step={param.step}
-                onFocus={() => setFocusedField(`modelParams-${param.key}`)}
+                value={serviceDraft.model}
+                onFocus={() => setFocusedField("model")}
                 onBlur={() => setFocusedField(null)}
                 onChange={(event) => {
-                  const raw = event.target.value
-                  const value = raw === "" ? DEFAULT_SETTINGS.modelParams[param.key] : Number(raw)
-                  setSettings((current) => ({
-                    ...current,
-                    modelParams: { ...current.modelParams, [param.key]: value }
-                  }))
+                  setServiceDraft((current) => ({ ...current, model: event.target.value }))
                 }}
-                placeholder={param.placeholder}
-                style={createInputStyle(`modelParams-${param.key}`)}
+                placeholder="gpt-4o-mini"
+                style={createInputStyle("model")}
               />
-            </div>
-          ))}
-        </div>
-      </div>
+            )}
+            {fetchError ? (
+              <div
+                style={{
+                  marginTop: uiSpace[8],
+                  fontSize: uiTypography.fontSize.sm,
+                  color: theme.state.error,
+                  background: theme.state.errorBg,
+                  padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
+                  borderRadius: uiRadius.sm
+                }}>
+                {fetchError}
+              </div>
+            ) : null}
+          </div>
 
-      <div style={{ marginTop: uiSpace[20] }}>
-        <button
-          onClick={() => setConfirmRestoreSection("connection")}
-          onMouseDown={() => setPressedBtn("restore-connection")}
-          onMouseUp={() => setPressedBtn(null)}
-          onMouseLeave={() => setPressedBtn(null)}
-          style={{
-            ...secondaryBtnStyle,
-            color: theme.state.error,
-            borderColor: theme.state.error,
-            opacity: 0.8,
-            transform: pressedBtn === "restore-connection" ? "scale(0.96)" : "scale(1)"
-          }}>
-          恢复默认
-        </button>
-      </div>
+          <div style={{ display: "flex", alignItems: "center", gap: uiSpace[10], marginBottom: uiSpace[16], flexWrap: "wrap" }}>
+            <button
+              disabled={testing}
+              onClick={handleTestConnection}
+              onMouseDown={() => setPressedBtn("test")}
+              onMouseUp={() => setPressedBtn(null)}
+              onMouseLeave={() => setPressedBtn(null)}
+              style={{
+                ...primaryBtnStyle,
+                display: "flex",
+                alignItems: "center",
+                gap: uiSpace[6],
+                opacity: testing ? 0.6 : 1,
+                cursor: testing ? "not-allowed" : "pointer",
+                background: testing ? theme.state.disabled : theme.accent.primary,
+                transform: pressedBtn === "test" ? "scale(0.96)" : "scale(1)"
+              }}>
+              {testing ? "测试中..." : "测试连通性"}
+            </button>
+            {testResult ? (
+              <span
+                style={{
+                  fontSize: uiTypography.fontSize.sm,
+                  color: testResult.success ? theme.state.success : theme.state.error,
+                  background: testResult.success ? theme.state.successBg : theme.state.errorBg,
+                  padding: `${uiSpace[6]}px ${uiSpace[10]}px`,
+                  borderRadius: uiRadius.pill,
+                  fontWeight: uiTypography.fontWeight.medium,
+                  lineHeight: 1.5
+                }}>
+                {testResult.message}
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ borderTop: `0.5px solid ${theme.border.hairline}`, paddingTop: uiSpace[20], marginTop: uiSpace[4] }}>
+            <h3
+              style={{
+                margin: `0 0 ${uiSpace[4]}px`,
+                fontSize: uiTypography.fontSize.md,
+                fontWeight: uiTypography.fontWeight.semibold,
+                letterSpacing: uiTypography.letterSpacing.tight
+              }}>
+              模型参数
+            </h3>
+            <p
+              style={{
+                margin: `0 0 ${uiSpace[16]}px`,
+                color: theme.text.secondary,
+                fontSize: uiTypography.fontSize.sm
+              }}>
+              适用于解释、翻译等文本处理场景的采样参数
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: `${uiSpace[12]}px ${uiSpace[16]}px`
+              }}>
+              {(
+                [
+                  { key: "maxTokens" as const, label: "Max Tokens", placeholder: "1024", min: 1, max: 128000, step: 1, desc: "最大输出 token 数" },
+                  { key: "temperature" as const, label: "Temperature", placeholder: "0.3", min: 0, max: 2, step: 0.1, desc: "采样温度，越低越确定" },
+                  { key: "topP" as const, label: "Top P", placeholder: "0.9", min: 0, max: 1, step: 0.05, desc: "核采样概率阈值" },
+                  { key: "presencePenalty" as const, label: "Presence Penalty", placeholder: "0", min: -2, max: 2, step: 0.1, desc: "存在惩罚" },
+                  { key: "frequencyPenalty" as const, label: "Frequency Penalty", placeholder: "0", min: -2, max: 2, step: 0.1, desc: "频率惩罚" }
+                ]
+              ).map((param) => (
+                <div key={param.key}>
+                  <div style={{ ...fieldLabelStyle, marginBottom: uiSpace[4] }}>{param.label}</div>
+                  <div style={{ fontSize: uiTypography.fontSize.xs, color: theme.text.secondary, marginBottom: uiSpace[6] }}>
+                    {param.desc}
+                  </div>
+                  <input
+                    type="number"
+                    value={serviceDraft.modelParams[param.key]}
+                    min={param.min}
+                    max={param.max}
+                    step={param.step}
+                    onFocus={() => setFocusedField(`modelParams-${param.key}`)}
+                    onBlur={() => setFocusedField(null)}
+                    onChange={(event) => {
+                      const raw = event.target.value
+                      const value = raw === "" ? DEFAULT_CUSTOM_MODEL_SERVICE.modelParams[param.key] : Number(raw)
+                      setServiceDraft((current) => ({
+                        ...current,
+                        modelParams: { ...current.modelParams, [param.key]: value }
+                      }))
+                    }}
+                    placeholder={param.placeholder}
+                    style={createInputStyle(`modelParams-${param.key}`)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: uiSpace[12], marginTop: uiSpace[20], flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={saveServiceDraft}
+              disabled={!isServiceDraftValid}
+              style={{
+                ...primaryBtnStyle,
+                opacity: isServiceDraftValid ? 1 : 0.5,
+                cursor: isServiceDraftValid ? "pointer" : "not-allowed"
+              }}>
+              保存服务
+            </button>
+            <button type="button" onClick={closeConnectionEditor} style={secondaryBtnStyle}>
+              取消
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16], marginBottom: uiSpace[20] }}>
+            <div>
+              <h2
+                style={{
+                  margin: `0 0 ${uiSpace[4]}px`,
+                  fontSize: uiTypography.fontSize.lg,
+                  fontWeight: uiTypography.fontWeight.semibold,
+                  letterSpacing: uiTypography.letterSpacing.tight
+                }}>
+                大模型服务列表
+              </h2>
+              <p
+                style={{
+                  margin: 0,
+                  color: theme.text.secondary,
+                  fontSize: uiTypography.fontSize.md
+                }}>
+                当前仅支持自定义服务，可添加多个，但同时只能启用一个
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openCreateService}
+              onMouseDown={() => setPressedBtn("add-service")}
+              onMouseUp={() => setPressedBtn(null)}
+              onMouseLeave={() => setPressedBtn(null)}
+              style={{
+                ...primaryBtnStyle,
+                display: "flex",
+                alignItems: "center",
+                gap: uiSpace[4],
+                transform: pressedBtn === "add-service" ? "scale(0.96)" : "scale(1)"
+              }}>
+              <PlusIcon size={14} color={theme.text.inverse} />
+              添加自定义服务
+            </button>
+          </div>
+
+          {settings.modelServices.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: `${uiSpace[28]}px ${uiSpace[16]}px`,
+                color: theme.text.secondary,
+                fontSize: uiTypography.fontSize.md,
+                border: `1px dashed ${theme.border.default}`,
+                borderRadius: uiRadius.md,
+                background: theme.bg.surfaceMuted
+              }}>
+              还没有添加任何自定义服务，点击上方按钮开始配置。
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: uiSpace[12] }}>
+              {settings.modelServices.map((service) => {
+                const isActive = settings.activeModelServiceId === service.id
+
+                return (
+                  <div
+                    key={service.id}
+                    style={{
+                      border: `1px solid ${isActive ? theme.accent.primary : theme.border.default}`,
+                      borderRadius: uiRadius.md,
+                      padding: uiSpace[14],
+                      background: isActive ? theme.bg.surfaceAlt : theme.bg.surface,
+                      boxShadow: isActive ? `0 0 0 3px ${theme.accent.primary}22` : "none",
+                      transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+                    }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16] }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], marginBottom: uiSpace[6], flexWrap: "wrap" }}>
+                          <span style={{ fontSize: uiTypography.fontSize.md, fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary }}>
+                            {service.name}
+                          </span>
+                          <span
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: "50%",
+                              background: isActive ? theme.accent.primary : theme.border.default,
+                              flexShrink: 0
+                            }}>
+                            <span style={{ display: "none" }}>{isActive ? "已启用" : "未启用"}</span>
+                          </span>
+                          <span style={{ fontSize: uiTypography.fontSize.xs, color: theme.text.secondary }}>自定义服务</span>
+                        </div>
+                        <div style={{ color: theme.text.secondary, fontSize: uiTypography.fontSize.sm, lineHeight: 1.6, wordBreak: "break-all" }}>
+                          <div>API Base URL: {service.apiBaseUrl || "未填写"}</div>
+                          <div>Model: {service.model || "未填写"}</div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        {!isActive ? (
+                          <button type="button" onClick={() => activateService(service.id)} style={secondaryBtnStyle}>
+                            设为启用
+                          </button>
+                        ) : null}
+                        <button type="button" onClick={() => openEditService(service.id)} style={secondaryBtnStyle}>
+                          编辑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPendingDeleteServiceId(service.id)}
+                          style={{ ...secondaryBtnStyle, color: theme.state.error, borderColor: theme.state.error }}>
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
     </section>
   )
 
@@ -937,20 +1186,6 @@ export default function OptionsPage() {
       ) : null}
 
       <div style={{ marginTop: uiSpace[20] }}>
-        <button
-          onClick={() => setConfirmRestoreSection("actions")}
-          onMouseDown={() => setPressedBtn("restore-actions")}
-          onMouseUp={() => setPressedBtn(null)}
-          onMouseLeave={() => setPressedBtn(null)}
-          style={{
-            ...secondaryBtnStyle,
-            color: theme.state.error,
-            borderColor: theme.state.error,
-            opacity: 0.8,
-            transform: pressedBtn === "restore-actions" ? "scale(0.96)" : "scale(1)"
-          }}>
-          恢复默认
-        </button>
       </div>
     </section>
   )
@@ -1236,17 +1471,6 @@ export default function OptionsPage() {
           {/* Section content */}
           {sectionContent[activeSection]()}
 
-          {confirmRestoreSection ? (
-            <ConfirmDialog
-              title="恢复默认设置"
-              message={`确定将「${sections.find((s) => s.key === confirmRestoreSection)?.label}」页面的所有设置恢复为默认值吗？此操作不可撤销。`}
-              confirmLabel="恢复默认"
-              onConfirm={() => restoreSection(confirmRestoreSection)}
-              onCancel={() => setConfirmRestoreSection(null)}
-              themeName={themeName}
-            />
-          ) : null}
-
           {pendingImportSettings ? (
             <ConfirmDialog
               title="导入配置"
@@ -1258,7 +1482,18 @@ export default function OptionsPage() {
             />
           ) : null}
 
-          {activeSection !== "backup" ? (
+          {pendingDeleteServiceId ? (
+            <ConfirmDialog
+              title="删除自定义服务"
+              message="确定删除这个自定义服务吗？如果它当前已启用，系统会自动启用下一个服务。"
+              confirmLabel="删除服务"
+              onConfirm={() => deleteService(pendingDeleteServiceId)}
+              onCancel={() => setPendingDeleteServiceId(null)}
+              themeName={themeName}
+            />
+          ) : null}
+
+          {activeSection !== "backup" && activeSection !== "connection" ? (
             <div
               style={{
                 display: "flex",
@@ -1281,9 +1516,13 @@ export default function OptionsPage() {
 
                   void saveSettings({
                     ...settings,
-                    apiBaseUrl: settings.apiBaseUrl.trim(),
-                    apiKey: settings.apiKey.trim(),
-                    model: settings.model.trim()
+                    modelServices: settings.modelServices.map((service) => ({
+                      ...service,
+                      name: service.name.trim(),
+                      apiBaseUrl: service.apiBaseUrl.trim(),
+                      apiKey: service.apiKey.trim(),
+                      model: service.model.trim()
+                    }))
                   })
                     .then(() => {
                       setStatus("保存成功")

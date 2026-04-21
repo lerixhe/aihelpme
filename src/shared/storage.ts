@@ -1,5 +1,5 @@
-import { DEFAULT_SETTINGS } from "~/shared/defaults"
-import type { ExtensionSettings, ModelParams, ThemePreference, ToolbarMode } from "~/shared/types"
+import { DEFAULT_CUSTOM_MODEL_SERVICE, DEFAULT_SETTINGS } from "~/shared/defaults"
+import type { ExtensionSettings, ModelParams, ModelServiceConfig, ModelServiceType, ThemePreference, ToolbarMode } from "~/shared/types"
 
 export { DEFAULT_SETTINGS }
 
@@ -22,18 +22,41 @@ function validateModelParams(value: unknown): ModelParams {
   const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {}
 
   return {
-    maxTokens: typeof record.maxTokens === "number" && Number.isFinite(record.maxTokens) ? record.maxTokens : DEFAULT_SETTINGS.modelParams.maxTokens,
-    temperature: typeof record.temperature === "number" && Number.isFinite(record.temperature) ? record.temperature : DEFAULT_SETTINGS.modelParams.temperature,
-    topP: typeof record.topP === "number" && Number.isFinite(record.topP) ? record.topP : DEFAULT_SETTINGS.modelParams.topP,
+    maxTokens: typeof record.maxTokens === "number" && Number.isFinite(record.maxTokens) ? record.maxTokens : DEFAULT_CUSTOM_MODEL_SERVICE.modelParams.maxTokens,
+    temperature: typeof record.temperature === "number" && Number.isFinite(record.temperature) ? record.temperature : DEFAULT_CUSTOM_MODEL_SERVICE.modelParams.temperature,
+    topP: typeof record.topP === "number" && Number.isFinite(record.topP) ? record.topP : DEFAULT_CUSTOM_MODEL_SERVICE.modelParams.topP,
     presencePenalty:
       typeof record.presencePenalty === "number" && Number.isFinite(record.presencePenalty)
         ? record.presencePenalty
-        : DEFAULT_SETTINGS.modelParams.presencePenalty,
+        : DEFAULT_CUSTOM_MODEL_SERVICE.modelParams.presencePenalty,
     frequencyPenalty:
       typeof record.frequencyPenalty === "number" && Number.isFinite(record.frequencyPenalty)
         ? record.frequencyPenalty
-        : DEFAULT_SETTINGS.modelParams.frequencyPenalty
+        : DEFAULT_CUSTOM_MODEL_SERVICE.modelParams.frequencyPenalty
   }
+}
+
+function validateModelServiceType(value: unknown): ModelServiceType {
+  return value === "official-premium" || value === "official-free" || value === "custom" ? value : "custom"
+}
+
+function validateModelServices(items: unknown[]): ModelServiceConfig[] {
+  return items
+    .filter((item) => item && typeof item === "object")
+    .map((item, index) => {
+      const record = item as Record<string, unknown>
+      const id = typeof record.id === "string" && record.id.trim() ? record.id.trim() : `service-${Date.now()}-${index}`
+
+      return {
+        id,
+        type: validateModelServiceType(record.type),
+        name: typeof record.name === "string" ? record.name : DEFAULT_CUSTOM_MODEL_SERVICE.name,
+        apiBaseUrl: typeof record.apiBaseUrl === "string" ? record.apiBaseUrl : DEFAULT_CUSTOM_MODEL_SERVICE.apiBaseUrl,
+        apiKey: typeof record.apiKey === "string" ? record.apiKey : DEFAULT_CUSTOM_MODEL_SERVICE.apiKey,
+        model: typeof record.model === "string" ? record.model : DEFAULT_CUSTOM_MODEL_SERVICE.model,
+        modelParams: validateModelParams(record.modelParams)
+      }
+    })
 }
 
 export function normalizeSettings(value: unknown): ExtensionSettings {
@@ -54,14 +77,18 @@ export function normalizeSettings(value: unknown): ExtensionSettings {
       ? validateActions(saved.customActions)
       : DEFAULT_SETTINGS.actions
 
+  const modelServices = Array.isArray(saved.modelServices) ? validateModelServices(saved.modelServices) : DEFAULT_SETTINGS.modelServices
+  const activeModelServiceId =
+    typeof saved.activeModelServiceId === "string" && modelServices.some((service) => service.id === saved.activeModelServiceId)
+      ? saved.activeModelServiceId
+      : modelServices[0]?.id ?? DEFAULT_SETTINGS.activeModelServiceId
+
   return {
-    apiBaseUrl: typeof saved.apiBaseUrl === "string" ? saved.apiBaseUrl : DEFAULT_SETTINGS.apiBaseUrl,
-    apiKey: typeof saved.apiKey === "string" ? saved.apiKey : DEFAULT_SETTINGS.apiKey,
-    model: typeof saved.model === "string" ? saved.model : DEFAULT_SETTINGS.model,
+    modelServices,
+    activeModelServiceId,
     theme,
     toolbarMode,
-    actions,
-    modelParams: validateModelParams(saved.modelParams)
+    actions
   }
 }
 
@@ -90,4 +117,8 @@ export async function saveSettings(settings: ExtensionSettings): Promise<void> {
   } catch {
     // Extension context may have been invalidated
   }
+}
+
+export function getActiveModelService(settings: ExtensionSettings): ModelServiceConfig | null {
+  return settings.modelServices.find((service) => service.id === settings.activeModelServiceId) ?? null
 }

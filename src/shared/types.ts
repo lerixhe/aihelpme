@@ -16,14 +16,24 @@ export interface ModelParams {
   frequencyPenalty: number
 }
 
-export interface ExtensionSettings {
+export type ModelServiceType = "custom" | "official-premium" | "official-free"
+
+export interface ModelServiceConfig {
+  id: string
+  type: ModelServiceType
+  name: string
   apiBaseUrl: string
   apiKey: string
   model: string
+  modelParams: ModelParams
+}
+
+export interface ExtensionSettings {
+  modelServices: ModelServiceConfig[]
+  activeModelServiceId: string
   theme: ThemePreference
   toolbarMode: ToolbarMode
   actions: ActionTemplate[]
-  modelParams: ModelParams
 }
 
 export interface SelectionContext {

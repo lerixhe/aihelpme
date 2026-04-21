@@ -9,7 +9,7 @@ import type {
 } from "~/shared/types"
 import { MESSAGE_TYPES, ERROR_MESSAGES } from "~/shared/constants"
 import { formatApiError, getErrorMessage, isAbortError } from "~/shared/errors"
-import { getSettings } from "~/shared/storage"
+import { getActiveModelService, getSettings } from "~/shared/storage"
 
 function normalizeBaseUrl(url: string): string {
   return url.replace(/\/$/, "")
@@ -86,8 +86,9 @@ async function streamOpenAiCompatible(
   onEvent: (event: ChatStreamEvent) => void
 ): Promise<void> {
   const settings = await getSettings()
+  const activeService = getActiveModelService(settings)
 
-  if (!settings.apiKey.trim()) {
+  if (!activeService?.apiKey.trim()) {
     onEvent({
       type: "failed",
       error: ERROR_MESSAGES.NO_API_KEY
@@ -97,22 +98,30 @@ async function streamOpenAiCompatible(
 
   onEvent({ type: "started" })
 
-  const endpoint = `${normalizeBaseUrl(settings.apiBaseUrl)}/chat/completions`
+  if (!activeService.apiBaseUrl.trim() || !activeService.model.trim()) {
+    onEvent({
+      type: "failed",
+      error: ERROR_MESSAGES.API_TEST_MISSING_FIELDS
+    })
+    return
+  }
+
+  const endpoint = `${normalizeBaseUrl(activeService.apiBaseUrl)}/chat/completions`
   const response = await fetch(endpoint, {
     signal,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${settings.apiKey}`
+      Authorization: `Bearer ${activeService.apiKey}`
     },
     body: JSON.stringify({
-      model: settings.model,
+      model: activeService.model,
       stream: true,
-      max_tokens: settings.modelParams.maxTokens,
-      temperature: settings.modelParams.temperature,
-      top_p: settings.modelParams.topP,
-      presence_penalty: settings.modelParams.presencePenalty,
-      frequency_penalty: settings.modelParams.frequencyPenalty,
+      max_tokens: activeService.modelParams.maxTokens,
+      temperature: activeService.modelParams.temperature,
+      top_p: activeService.modelParams.topP,
+      presence_penalty: activeService.modelParams.presencePenalty,
+      frequency_penalty: activeService.modelParams.frequencyPenalty,
       messages: messages.map((item) => ({
         role: item.role,
         content: item.content
