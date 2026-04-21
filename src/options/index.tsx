@@ -76,8 +76,8 @@ function BackupIcon({ size, color }: { size: number; color: string }) {
 
 const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] = [
   { key: "appearance", label: "外观", icon: AppearanceIcon },
-  { key: "connection", label: "连接", icon: ConnectionIcon },
-  { key: "actions", label: "动作", icon: ActionsIcon },
+  { key: "connection", label: "大模型配置", icon: ConnectionIcon },
+  { key: "actions", label: "动作指令", icon: ActionsIcon },
   { key: "backup", label: "备份与迁移", icon: BackupIcon }
 ]
 
@@ -692,7 +692,7 @@ export default function OptionsPage() {
             background: testing ? theme.state.disabled : theme.accent.primary,
             transform: pressedBtn === "test" ? "scale(0.96)" : "scale(1)"
           }}>
-          {testing ? "测试中..." : "测试连接"}
+          {testing ? "测试中..." : "测试连通性"}
         </button>
         {testResult ? (
           <span
