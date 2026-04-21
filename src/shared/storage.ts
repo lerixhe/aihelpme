@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS } from "~/shared/defaults"
-import type { ExtensionSettings, ThemePreference } from "~/shared/types"
+import type { ExtensionSettings, ModelParams, ThemePreference } from "~/shared/types"
 
 export { DEFAULT_SETTINGS }
 
@@ -18,6 +18,50 @@ function validateActions(items: unknown[]): ExtensionSettings["actions"] {
     })
 }
 
+function validateModelParams(value: unknown): ModelParams {
+  const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {}
+
+  return {
+    maxTokens: typeof record.maxTokens === "number" && Number.isFinite(record.maxTokens) ? record.maxTokens : DEFAULT_SETTINGS.modelParams.maxTokens,
+    temperature: typeof record.temperature === "number" && Number.isFinite(record.temperature) ? record.temperature : DEFAULT_SETTINGS.modelParams.temperature,
+    topP: typeof record.topP === "number" && Number.isFinite(record.topP) ? record.topP : DEFAULT_SETTINGS.modelParams.topP,
+    presencePenalty:
+      typeof record.presencePenalty === "number" && Number.isFinite(record.presencePenalty)
+        ? record.presencePenalty
+        : DEFAULT_SETTINGS.modelParams.presencePenalty,
+    frequencyPenalty:
+      typeof record.frequencyPenalty === "number" && Number.isFinite(record.frequencyPenalty)
+        ? record.frequencyPenalty
+        : DEFAULT_SETTINGS.modelParams.frequencyPenalty
+  }
+}
+
+export function normalizeSettings(value: unknown): ExtensionSettings {
+  const saved = value as Partial<ExtensionSettings> & { customActions?: unknown[] } | undefined
+
+  if (!saved || typeof saved !== "object") {
+    return DEFAULT_SETTINGS
+  }
+
+  const validThemes: ThemePreference[] = ["auto", "light", "dark"]
+  const theme = validThemes.includes(saved.theme as ThemePreference) ? (saved.theme as ThemePreference) : DEFAULT_SETTINGS.theme
+
+  const actions = Array.isArray(saved.actions)
+    ? validateActions(saved.actions)
+    : Array.isArray(saved.customActions)
+      ? validateActions(saved.customActions)
+      : DEFAULT_SETTINGS.actions
+
+  return {
+    apiBaseUrl: typeof saved.apiBaseUrl === "string" ? saved.apiBaseUrl : DEFAULT_SETTINGS.apiBaseUrl,
+    apiKey: typeof saved.apiKey === "string" ? saved.apiKey : DEFAULT_SETTINGS.apiKey,
+    model: typeof saved.model === "string" ? saved.model : DEFAULT_SETTINGS.model,
+    theme,
+    actions,
+    modelParams: validateModelParams(saved.modelParams)
+  }
+}
+
 export async function getSettings(): Promise<ExtensionSettings> {
   let result: Record<string, unknown>
   try {
@@ -32,21 +76,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
     return DEFAULT_SETTINGS
   }
 
-  const validThemes: ThemePreference[] = ["auto", "light", "dark"]
-  const theme = validThemes.includes(saved.theme as ThemePreference) ? (saved.theme as ThemePreference) : DEFAULT_SETTINGS.theme
-
-  const actions = Array.isArray(saved.actions)
-    ? validateActions(saved.actions)
-    : Array.isArray(saved.customActions)
-      ? validateActions(saved.customActions)
-      : DEFAULT_SETTINGS.actions
-
-  return {
-    ...DEFAULT_SETTINGS,
-    ...saved,
-    theme,
-    actions
-  }
+  return normalizeSettings(saved)
 }
 
 export async function saveSettings(settings: ExtensionSettings): Promise<void> {

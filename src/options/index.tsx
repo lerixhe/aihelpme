@@ -1,15 +1,16 @@
-import { type JSX, useEffect, useMemo, useState, type CSSProperties } from "react"
+import { type JSX, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { hasTextPlaceholder } from "~/shared/prompt"
 import { DEFAULT_SETTINGS, SECTION_DEFAULTS } from "~/shared/defaults"
-import { getSettings, saveSettings } from "~/shared/storage"
+import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import type { ActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse, ModelParams } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
 
-type Section = "appearance" | "connection" | "actions"
+type Section = "appearance" | "connection" | "actions" | "backup"
+type RestorableSection = Exclude<Section, "backup">
 
 function PlusIcon({ size, color }: { size: number; color: string }) {
   return (
@@ -63,10 +64,21 @@ function ActionsIcon({ size, color }: { size: number; color: string }) {
   )
 }
 
+function BackupIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M10 3V11" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <path d="M7.5 8.5L10 11L12.5 8.5" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 13.5V14C4 15.1 4.9 16 6 16H14C15.1 16 16 15.1 16 14V13.5" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </svg>
+  )
+}
+
 const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] = [
   { key: "appearance", label: "外观", icon: AppearanceIcon },
   { key: "connection", label: "连接", icon: ConnectionIcon },
-  { key: "actions", label: "动作", icon: ActionsIcon }
+  { key: "actions", label: "动作", icon: ActionsIcon },
+  { key: "backup", label: "备份与迁移", icon: BackupIcon }
 ]
 
 export default function OptionsPage() {
@@ -85,7 +97,10 @@ export default function OptionsPage() {
   const [activeSection, setActiveSection] = useState<Section>("appearance")
   const [loaded, setLoaded] = useState(false)
   const [hoveredNav, setHoveredNav] = useState<string | null>(null)
-  const [confirmRestoreSection, setConfirmRestoreSection] = useState<Section | null>(null)
+  const [confirmRestoreSection, setConfirmRestoreSection] = useState<RestorableSection | null>(null)
+  const [backupStatus, setBackupStatus] = useState<{ success: boolean; message: string } | null>(null)
+  const [pendingImportSettings, setPendingImportSettings] = useState<ExtensionSettings | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     void getSettings().then((loaded) => {
@@ -93,7 +108,7 @@ export default function OptionsPage() {
     })
     void chrome.storage.local.get("optionsActiveSection").then((result) => {
       const saved = result.optionsActiveSection as Section | undefined
-      if (saved && ["appearance", "connection", "actions"].includes(saved)) {
+      if (saved && ["appearance", "connection", "actions", "backup"].includes(saved)) {
         setActiveSection(saved)
       }
       setLoaded(true)
@@ -138,7 +153,7 @@ export default function OptionsPage() {
     }))
   }
 
-  const restoreSection = (section: Section) => {
+  const restoreSection = (section: RestorableSection) => {
     const defaults = SECTION_DEFAULTS[section]
     setSettings((prev) => ({ ...prev, ...defaults }))
     if (section === "appearance") {
@@ -229,6 +244,81 @@ export default function OptionsPage() {
         }
       }
     )
+  }
+
+  const handleExportSettings = () => {
+    const payload = {
+      app: "ai-help-me",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      settings: normalizeSettings(settings)
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    const date = new Date().toISOString().slice(0, 10)
+
+    link.href = url
+    link.download = `ai-help-me-settings-${date}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    setBackupStatus({ success: true, message: "配置已导出为 JSON 文件。" })
+  }
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+
+    if (!file) {
+      return
+    }
+
+    try {
+      const content = await file.text()
+      const parsed = JSON.parse(content) as ExtensionSettings | { settings?: unknown }
+      const imported = normalizeSettings("settings" in parsed ? parsed.settings : parsed)
+
+      setPendingImportSettings(imported)
+      setBackupStatus(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "无法解析文件"
+      setBackupStatus({ success: false, message: `导入失败：${message}` })
+    }
+  }
+
+  const confirmImportSettings = () => {
+    if (!pendingImportSettings) {
+      return
+    }
+
+    setSettings(pendingImportSettings)
+    setSaving(true)
+    setStatus("")
+    setBackupStatus(null)
+
+    void saveSettings({
+      ...pendingImportSettings,
+      apiBaseUrl: pendingImportSettings.apiBaseUrl.trim(),
+      apiKey: pendingImportSettings.apiKey.trim(),
+      model: pendingImportSettings.model.trim()
+    })
+      .then(() => {
+        setBackupStatus({ success: true, message: "配置已导入并保存。" })
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "未知错误"
+        setBackupStatus({ success: false, message: `导入保存失败：${message}` })
+      })
+      .finally(() => {
+        setSaving(false)
+        setPendingImportSettings(null)
+      })
   }
 
   // --- Shared styles ---
@@ -768,10 +858,131 @@ export default function OptionsPage() {
     </section>
   )
 
+  const renderBackup = () => (
+    <section style={{ ...cardStyle }}>
+      <div style={{ marginBottom: uiSpace[20] }}>
+        <h2
+          style={{
+            margin: `0 0 ${uiSpace[4]}px`,
+            fontSize: uiTypography.fontSize.lg,
+            fontWeight: uiTypography.fontWeight.semibold,
+            letterSpacing: uiTypography.letterSpacing.tight
+          }}>
+          配置数据
+        </h2>
+        <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>
+          导入与导出配置
+        </p>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: uiSpace[16],
+          marginBottom: uiSpace[16]
+        }}>
+        <div
+          style={{
+            border: `1px solid ${theme.border.hairline}`,
+            borderRadius: uiRadius.md,
+            padding: uiSpace[16],
+            background: theme.bg.surfaceMuted
+          }}>
+          <h3
+            style={{
+              margin: `0 0 ${uiSpace[6]}px`,
+              fontSize: uiTypography.fontSize.md,
+              fontWeight: uiTypography.fontWeight.semibold
+            }}>
+            导出配置
+          </h3>
+          <p style={{ margin: `0 0 ${uiSpace[14]}px`, color: theme.text.secondary, fontSize: uiTypography.fontSize.sm, lineHeight: 1.6 }}>
+            导出 API 配置、主题、动作模板和模型参数，便于迁移或备份。
+          </p>
+          <button
+            type="button"
+            onClick={handleExportSettings}
+            onMouseDown={() => setPressedBtn("export-settings")}
+            onMouseUp={() => setPressedBtn(null)}
+            onMouseLeave={() => setPressedBtn(null)}
+            style={{
+              ...primaryBtnStyle,
+              transform: pressedBtn === "export-settings" ? "scale(0.96)" : "scale(1)"
+            }}>
+            导出 JSON
+          </button>
+        </div>
+
+        <div
+          style={{
+            border: `1px solid ${theme.border.hairline}`,
+            borderRadius: uiRadius.md,
+            padding: uiSpace[16],
+            background: theme.bg.surfaceMuted
+          }}>
+          <h3
+            style={{
+              margin: `0 0 ${uiSpace[6]}px`,
+              fontSize: uiTypography.fontSize.md,
+              fontWeight: uiTypography.fontWeight.semibold
+            }}>
+            导入配置
+          </h3>
+          <p style={{ margin: `0 0 ${uiSpace[14]}px`, color: theme.text.secondary, fontSize: uiTypography.fontSize.sm, lineHeight: 1.6 }}>
+            从已导出的 JSON 文件恢复设置。导入后会覆盖当前配置。
+          </p>
+          <button
+            type="button"
+            onClick={handleImportClick}
+            onMouseDown={() => setPressedBtn("import-settings")}
+            onMouseUp={() => setPressedBtn(null)}
+            onMouseLeave={() => setPressedBtn(null)}
+            style={{
+              ...secondaryBtnStyle,
+              transform: pressedBtn === "import-settings" ? "scale(0.96)" : "scale(1)"
+            }}>
+            选择备份文件
+          </button>
+          <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={(event) => void handleImportFile(event)} style={{ display: "none" }} />
+        </div>
+      </div>
+
+      <div
+        style={{
+          fontSize: uiTypography.fontSize.sm,
+          color: theme.text.secondary,
+          lineHeight: 1.7,
+          padding: `${uiSpace[12]}px ${uiSpace[14]}px`,
+          background: theme.bg.surfaceAlt,
+          borderRadius: uiRadius.md,
+          border: `1px solid ${theme.border.hairline}`
+        }}>
+        导入时会自动校验并补齐缺失字段，不兼容字段会回退到默认值。
+      </div>
+
+      {backupStatus ? (
+        <div
+          style={{
+            marginTop: uiSpace[16],
+            fontSize: uiTypography.fontSize.sm,
+            color: backupStatus.success ? theme.state.success : theme.state.error,
+            background: backupStatus.success ? theme.state.successBg : theme.state.errorBg,
+            padding: `${uiSpace[10]}px ${uiSpace[12]}px`,
+            borderRadius: uiRadius.md,
+            lineHeight: 1.6
+          }}>
+          {backupStatus.message}
+        </div>
+      ) : null}
+    </section>
+  )
+
   const sectionContent: Record<Section, () => JSX.Element> = {
     appearance: renderAppearance,
     connection: renderConnection,
-    actions: renderActions
+    actions: renderActions,
+    backup: renderBackup
   }
 
   const sidebarWidth = 240
@@ -939,70 +1150,82 @@ export default function OptionsPage() {
             />
           ) : null}
 
-          {/* Save area — always visible at bottom */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: uiSpace[12],
-              marginTop: uiSpace[20],
-              paddingTop: uiSpace[16],
-              paddingBottom: uiSpace[32]
-            }}>
-            <button
-              disabled={!canSave || saving}
-              onClick={() => {
-                if (!canSave) {
-                  setStatus("请先修正设置项后再保存。")
-                  return
-                }
+          {pendingImportSettings ? (
+            <ConfirmDialog
+              title="导入配置"
+              message="确定导入这份备份并覆盖当前所有设置吗？当前未保存的修改也会被替换。"
+              confirmLabel="导入并覆盖"
+              onConfirm={confirmImportSettings}
+              onCancel={() => setPendingImportSettings(null)}
+              themeName={themeName}
+            />
+          ) : null}
 
-                setSaving(true)
-                setStatus("")
-
-                void saveSettings({
-                  ...settings,
-                  apiBaseUrl: settings.apiBaseUrl.trim(),
-                  apiKey: settings.apiKey.trim(),
-                  model: settings.model.trim()
-                })
-                  .then(() => {
-                    setStatus("保存成功")
-                  })
-                  .catch((error: unknown) => {
-                    const message = error instanceof Error ? error.message : "未知错误"
-                    setStatus(`保存失败：${message}`)
-                  })
-                  .finally(() => {
-                    setSaving(false)
-                  })
-              }}
-              onMouseDown={() => setPressedBtn("save")}
-              onMouseUp={() => setPressedBtn(null)}
-              onMouseLeave={() => setPressedBtn(null)}
+          {activeSection !== "backup" ? (
+            <div
               style={{
-                ...primaryBtnStyle,
-                padding: `${uiSpace[10]}px ${uiSpace[24]}px`,
-                fontSize: uiTypography.fontSize.lg,
-                opacity: !canSave || saving ? 0.5 : 1,
-                cursor: !canSave || saving ? "not-allowed" : "pointer",
-                background: !canSave || saving ? theme.state.disabled : theme.accent.primary,
-                transform: pressedBtn === "save" ? "scale(0.96)" : "scale(1)"
+                display: "flex",
+                alignItems: "center",
+                gap: uiSpace[12],
+                marginTop: uiSpace[20],
+                paddingTop: uiSpace[16],
+                paddingBottom: uiSpace[32]
               }}>
-              {saving ? "保存中..." : "保存设置"}
-            </button>
-            {status ? (
-              <span
+              <button
+                disabled={!canSave || saving}
+                onClick={() => {
+                  if (!canSave) {
+                    setStatus("请先修正设置项后再保存。")
+                    return
+                  }
+
+                  setSaving(true)
+                  setStatus("")
+
+                  void saveSettings({
+                    ...settings,
+                    apiBaseUrl: settings.apiBaseUrl.trim(),
+                    apiKey: settings.apiKey.trim(),
+                    model: settings.model.trim()
+                  })
+                    .then(() => {
+                      setStatus("保存成功")
+                    })
+                    .catch((error: unknown) => {
+                      const message = error instanceof Error ? error.message : "未知错误"
+                      setStatus(`保存失败：${message}`)
+                    })
+                    .finally(() => {
+                      setSaving(false)
+                    })
+                }}
+                onMouseDown={() => setPressedBtn("save")}
+                onMouseUp={() => setPressedBtn(null)}
+                onMouseLeave={() => setPressedBtn(null)}
                 style={{
-                  fontSize: uiTypography.fontSize.sm,
-                  color: status.includes("失败") || status.includes("修正") ? theme.state.error : theme.state.success,
-                  fontWeight: uiTypography.fontWeight.medium,
-                  lineHeight: 1.5
+                  ...primaryBtnStyle,
+                  padding: `${uiSpace[10]}px ${uiSpace[24]}px`,
+                  fontSize: uiTypography.fontSize.lg,
+                  opacity: !canSave || saving ? 0.5 : 1,
+                  cursor: !canSave || saving ? "not-allowed" : "pointer",
+                  background: !canSave || saving ? theme.state.disabled : theme.accent.primary,
+                  transform: pressedBtn === "save" ? "scale(0.96)" : "scale(1)"
                 }}>
-                {status}
-              </span>
-            ) : null}
-          </div>
+                {saving ? "保存中..." : "保存设置"}
+              </button>
+              {status ? (
+                <span
+                  style={{
+                    fontSize: uiTypography.fontSize.sm,
+                    color: status.includes("失败") || status.includes("修正") ? theme.state.error : theme.state.success,
+                    fontWeight: uiTypography.fontWeight.medium,
+                    lineHeight: 1.5
+                  }}>
+                  {status}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
