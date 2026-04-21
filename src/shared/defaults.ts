@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   apiKey: "",
   model: "gpt-4o-mini",
   theme: "auto",
+  toolbarMode: "explode",
   actions: DEFAULT_ACTIONS,
   modelParams: DEFAULT_MODEL_PARAMS
 }
@@ -34,7 +35,8 @@ type SectionKey = "appearance" | "connection" | "actions"
 
 export const SECTION_DEFAULTS: Record<SectionKey, Partial<ExtensionSettings>> = {
   appearance: {
-    theme: DEFAULT_SETTINGS.theme
+    theme: DEFAULT_SETTINGS.theme,
+    toolbarMode: DEFAULT_SETTINGS.toolbarMode
   },
   connection: {
     apiBaseUrl: DEFAULT_SETTINGS.apiBaseUrl,

@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react"
 
 import ExplodedActionMenu from "~/contents/components/ExplodedActionMenu"
+import PillActionMenu from "~/contents/components/PillActionMenu"
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiLayout, uiLayer, uiMotion, uiShadow, uiTypography } from "~/shared/ui/tokens"
-import type { ActionTemplate, SelectionAnchor } from "~/shared/types"
+import type { ActionTemplate, SelectionAnchor, ToolbarMode } from "~/shared/types"
 
 interface Props {
   visible: boolean
   anchor: SelectionAnchor | null
   actions: ActionTemplate[]
+  toolbarMode: ToolbarMode
   onAction: (template: string, text: string) => void
   onClose: () => void
 }
@@ -38,6 +40,7 @@ export default function SelectionToolbar({
   visible,
   anchor,
   actions,
+  toolbarMode,
   onAction,
   onClose
 }: Props) {
@@ -163,14 +166,25 @@ export default function SelectionToolbar({
       </div>
 
       {ringOpen && (
-        <ExplodedActionMenu
-          actions={actions}
-          hoveredActionId={ringHovered}
-          onHoverChange={setRingHovered}
-          onActionClick={handleActionClick}
-          theme={theme}
-          triggerSize={TRIGGER_SIZE}
-        />
+        toolbarMode === "pill" ? (
+          <PillActionMenu
+            actions={actions}
+            hoveredActionId={ringHovered}
+            onHoverChange={setRingHovered}
+            onActionClick={handleActionClick}
+            theme={theme}
+            triggerSize={TRIGGER_SIZE}
+          />
+        ) : (
+          <ExplodedActionMenu
+            actions={actions}
+            hoveredActionId={ringHovered}
+            onHoverChange={setRingHovered}
+            onActionClick={handleActionClick}
+            theme={theme}
+            triggerSize={TRIGGER_SIZE}
+          />
+        )
       )}
     </div>
   )

@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS, SECTION_DEFAULTS } from "~/shared/defaults"
 import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
-import type { ActionTemplate, ExtensionSettings, ThemePreference, ApiTestResponse, FetchModelsResponse, ModelParams } from "~/shared/types"
+import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, ApiTestResponse, FetchModelsResponse, ModelParams } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
 
@@ -145,9 +145,9 @@ export default function OptionsPage() {
       actions: current.actions.map((item, itemIndex) =>
         itemIndex === index
           ? {
-              ...item,
-              ...patch
-            }
+            ...item,
+            ...patch
+          }
           : item
       )
     }))
@@ -444,6 +444,103 @@ export default function OptionsPage() {
       </div>
 
       <div style={{ marginTop: uiSpace[20] }}>
+        <div
+          style={{
+            borderTop: `0.5px solid ${theme.border.hairline}`,
+            paddingTop: uiSpace[20],
+            marginBottom: uiSpace[20]
+          }}>
+          <h2
+            style={{
+              margin: `0 0 ${uiSpace[4]}px`,
+              fontSize: uiTypography.fontSize.lg,
+              fontWeight: uiTypography.fontWeight.semibold,
+              letterSpacing: uiTypography.letterSpacing.tight
+            }}>
+            工具栏样式
+          </h2>
+          <p
+            style={{
+              margin: `0 0 ${uiSpace[16]}px`,
+              color: theme.text.secondary,
+              fontSize: uiTypography.fontSize.md
+            }}>
+            选择触发按钮展开后的动作菜单样式
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: uiSpace[12]
+            }}>
+            {(
+              [
+                { value: "explode", label: "环形按钮排列", description: "灵动展开，趣味反馈" },
+                { value: "pill", label: "胶囊工具栏", description: "经典设计，沉稳直观" }
+              ] satisfies { value: ToolbarMode; label: string; description: string }[]
+            ).map((option) => {
+              const isSelected = settings.toolbarMode === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setSettings((current) => ({ ...current, toolbarMode: option.value }))
+                    void saveSettings({ ...settings, toolbarMode: option.value })
+                  }}
+                  style={{
+                    border: `1px solid ${isSelected ? theme.accent.primary : theme.border.default}`,
+                    borderRadius: uiRadius.md,
+                    background: isSelected ? theme.bg.surfaceAlt : theme.bg.surface,
+                    padding: uiSpace[14],
+                    textAlign: "left",
+                    cursor: "pointer",
+                    boxShadow: isSelected ? `0 0 0 3px ${theme.accent.primary}22` : "none",
+                    transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+                  }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: uiSpace[8]
+                    }}>
+                    <span
+                      style={{
+                        color: theme.text.primary,
+                        fontSize: uiTypography.fontSize.md,
+                        fontWeight: uiTypography.fontWeight.semibold,
+                        fontFamily: uiTypography.fontFamily
+                      }}>
+                      {option.label}
+                    </span>
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: isSelected ? theme.accent.primary : theme.border.default,
+                        flexShrink: 0
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      color: theme.text.secondary,
+                      fontSize: uiTypography.fontSize.sm,
+                      lineHeight: 1.6,
+                      fontFamily: uiTypography.fontFamily
+                    }}>
+                    {option.description}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <button
           onClick={() => setConfirmRestoreSection("appearance")}
           onMouseDown={() => setPressedBtn("restore-appearance")}

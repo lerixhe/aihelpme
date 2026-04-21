@@ -1,5 +1,7 @@
 export type ThemePreference = "auto" | "light" | "dark"
 
+export type ToolbarMode = "explode" | "pill"
+
 export interface ActionTemplate {
   id: string
   label: string
@@ -19,6 +21,7 @@ export interface ExtensionSettings {
   apiKey: string
   model: string
   theme: ThemePreference
+  toolbarMode: ToolbarMode
   actions: ActionTemplate[]
   modelParams: ModelParams
 }

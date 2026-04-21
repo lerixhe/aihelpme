@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS } from "~/shared/defaults"
-import type { ExtensionSettings, ModelParams, ThemePreference } from "~/shared/types"
+import type { ExtensionSettings, ModelParams, ThemePreference, ToolbarMode } from "~/shared/types"
 
 export { DEFAULT_SETTINGS }
 
@@ -45,6 +45,8 @@ export function normalizeSettings(value: unknown): ExtensionSettings {
 
   const validThemes: ThemePreference[] = ["auto", "light", "dark"]
   const theme = validThemes.includes(saved.theme as ThemePreference) ? (saved.theme as ThemePreference) : DEFAULT_SETTINGS.theme
+  const validToolbarModes: ToolbarMode[] = ["explode", "pill"]
+  const toolbarMode = validToolbarModes.includes(saved.toolbarMode as ToolbarMode) ? (saved.toolbarMode as ToolbarMode) : DEFAULT_SETTINGS.toolbarMode
 
   const actions = Array.isArray(saved.actions)
     ? validateActions(saved.actions)
@@ -57,6 +59,7 @@ export function normalizeSettings(value: unknown): ExtensionSettings {
     apiKey: typeof saved.apiKey === "string" ? saved.apiKey : DEFAULT_SETTINGS.apiKey,
     model: typeof saved.model === "string" ? saved.model : DEFAULT_SETTINGS.model,
     theme,
+    toolbarMode,
     actions,
     modelParams: validateModelParams(saved.modelParams)
   }

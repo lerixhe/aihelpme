@@ -22,6 +22,7 @@ function App() {
     toolbarAnchor,
     selectionContext,
     actions,
+    toolbarMode,
     closeToolbar,
     openToolbar,
     toolbarVisibleRef
@@ -131,6 +132,7 @@ function App() {
         visible={toolbarVisible}
         anchor={toolbarAnchor}
         actions={actions}
+        toolbarMode={toolbarMode}
         onAction={(template, text) => {
           void handleAction(template, selectionContext?.text ?? text)
         }}
