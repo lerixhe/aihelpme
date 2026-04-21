@@ -23,6 +23,9 @@
     "typescript": "latest"
   },
   "manifest": {
+    "action": {
+      "default_popup": "popup.html"
+    },
     "permissions": ["storage"],
     "host_permissions": ["<all_urls>"],
     "options_ui": {

@@ -940,7 +940,7 @@ export default function OptionsPage() {
                   color: theme.text.secondary,
                   fontSize: uiTypography.fontSize.md
                 }}>
-                当前仅支持自定义服务，可添加多个，但同时只能启用一个
+                可添加多个大模型服务，但同时只能启用一个
               </p>
             </div>
             <button
