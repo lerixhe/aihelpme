@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 
+import ExplodedActionMenu from "~/contents/components/ExplodedActionMenu"
 import { useUiTheme } from "~/shared/ui/theme"
-import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
+import { uiLayout, uiLayer, uiMotion, uiShadow, uiTypography } from "~/shared/ui/tokens"
 import type { ActionTemplate, SelectionAnchor } from "~/shared/types"
 
 interface Props {
@@ -13,10 +14,6 @@ interface Props {
 }
 
 const TRIGGER_SIZE = 40
-const PILL_HEIGHT = 32
-const PILL_PAD_X = 14
-const CHAR_WIDTH = 7.5
-const PILL_GAP = 6
 
 function SparkleIcon({ size, color }: { size: number; color: string }) {
   return (
@@ -33,10 +30,6 @@ function SparkleIcon({ size, color }: { size: number; color: string }) {
       <circle cx="18" cy="5" r="1.5" fill={color} fillOpacity={0.5} />
     </svg>
   )
-}
-
-function estimateWidth(label: string) {
-  return label.length * CHAR_WIDTH + PILL_PAD_X * 2
 }
 
 type RingAction = { id: string; label: string; template: string }
@@ -85,11 +78,6 @@ export default function SelectionToolbar({
     return { top, left }
   }, [anchor])
 
-  const pillBarPosition = useMemo(() => {
-    const totalWidth = allActions.reduce((sum, a) => sum + estimateWidth(a.label) + PILL_GAP, -PILL_GAP)
-    return { width: totalWidth, offsetX: -(totalWidth - TRIGGER_SIZE) / 2 }
-  }, [allActions])
-
   const handleTriggerEnter = () => {
     setRingOpen(true)
     window.getSelection()?.removeAllRanges()
@@ -122,29 +110,6 @@ export default function SelectionToolbar({
         pointerEvents: "auto",
         fontFamily: uiTypography.fontFamily
       }}>
-      <style>{`
-        @keyframes pill-bar-enter {
-          from {
-            opacity: 0;
-            transform: translateY(6px) scale(0.96);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes pill-item-enter {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
-
       {/* Trigger button */}
       <div
         role="button"
@@ -197,71 +162,15 @@ export default function SelectionToolbar({
         <SparkleIcon size={20} color={theme.text.inverse} />
       </div>
 
-      {/* Pill bar */}
       {ringOpen && (
-        <div
-          style={{
-            position: "absolute",
-            left: pillBarPosition.offsetX,
-            top: -(PILL_HEIGHT + 10),
-            display: "flex",
-            gap: PILL_GAP,
-            padding: "6px 8px",
-            borderRadius: uiRadius.lg,
-            background: theme.bg.glass,
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            border: `0.5px solid ${theme.border.hairline}`,
-            boxShadow: uiShadow.xl,
-            pointerEvents: "auto",
-            animation: `pill-bar-enter 250ms ${uiMotion.easingSpring} forwards`
-          }}>
-          {allActions.map((action, i) => {
-            const isHovered = ringHovered === action.id
-            return (
-              <div
-                key={action.id}
-                role="button"
-                tabIndex={0}
-                title={action.label}
-                aria-label={action.label}
-                onMouseEnter={() => setRingHovered(action.id)}
-                onMouseLeave={() => setRingHovered(null)}
-                onClick={() => handleActionClick(action)}
-                onFocus={() => setRingHovered(action.id)}
-                onBlur={() => setRingHovered(null)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault()
-                    handleActionClick(action)
-                  }
-                }}
-                style={{
-                  height: PILL_HEIGHT,
-                  borderRadius: uiRadius.pill,
-                  border: "none",
-                  background: isHovered ? theme.accent.primary : "transparent",
-                  color: isHovered ? theme.text.inverse : theme.text.primary,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: uiTypography.fontSize.sm,
-                  fontWeight: uiTypography.fontWeight.medium,
-                  fontFamily: uiTypography.fontFamily,
-                  whiteSpace: "nowrap",
-                  outline: "none",
-                  padding: `0 ${PILL_PAD_X}px`,
-                  transform: isHovered ? "scale(1.04)" : "scale(1)",
-                  transition: `transform 150ms ${uiMotion.easingSpring}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-                  animation: `pill-item-enter 200ms ${uiMotion.easingSpring} ${i * 30}ms both`,
-                  pointerEvents: "auto"
-                }}>
-                {action.label}
-              </div>
-            )
-          })}
-        </div>
+        <ExplodedActionMenu
+          actions={actions}
+          hoveredActionId={ringHovered}
+          onHoverChange={setRingHovered}
+          onActionClick={handleActionClick}
+          theme={theme}
+          triggerSize={TRIGGER_SIZE}
+        />
       )}
     </div>
   )
