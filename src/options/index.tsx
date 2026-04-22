@@ -1458,7 +1458,8 @@ export default function OptionsPage() {
         }}>
         <div
           style={{
-            maxWidth: 800,
+            maxWidth: 1000,
+            minWidth: 400,
             width: "100%",
             margin: "0 auto",
             padding: `${uiSpace[32]}px ${uiSpace[32]}px ${uiSpace[20]}px`,
