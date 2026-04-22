@@ -121,7 +121,7 @@ export default function OptionsPage() {
   const theme = uiThemes[themeName]
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState<string>("")
+  const [actionsStatus, setActionsStatus] = useState<string>("")
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -181,7 +181,7 @@ export default function OptionsPage() {
     Boolean(serviceDraft.apiKey.trim()) &&
     Boolean(serviceDraft.model.trim())
 
-  const saveSettingsNow = (updater: (current: ExtensionSettings) => ExtensionSettings, successMessage?: string) => {
+  const saveSettingsNow = (updater: (current: ExtensionSettings) => ExtensionSettings) => {
     setSettings((current) => {
       const next = updater(current)
 
@@ -195,15 +195,6 @@ export default function OptionsPage() {
           model: service.model.trim()
         }))
       })
-        .then(() => {
-          if (successMessage) {
-            setStatus(successMessage)
-          }
-        })
-        .catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : "未知错误"
-          setStatus(`保存失败：${message}`)
-        })
 
       return next
     })
@@ -363,7 +354,6 @@ export default function OptionsPage() {
     setEditingServiceId(null)
     setServiceDraft(createCustomServiceDraft())
     setSaving(true)
-    setStatus("")
     setBackupStatus(null)
 
     void saveSettings({
@@ -396,7 +386,6 @@ export default function OptionsPage() {
     setModels([])
     setFetchError(null)
     setTestResult(null)
-    setStatus("")
   }
 
   const openEditService = (serviceId: string) => {
@@ -411,7 +400,6 @@ export default function OptionsPage() {
     setModels([])
     setFetchError(null)
     setTestResult(null)
-    setStatus("")
   }
 
   const closeConnectionEditor = () => {
@@ -425,7 +413,6 @@ export default function OptionsPage() {
 
   const saveServiceDraft = () => {
     if (!isServiceDraftValid) {
-      setStatus("请填写服务名称、API Base URL、API Key 和 Model 后再保存。")
       return
     }
 
@@ -450,7 +437,7 @@ export default function OptionsPage() {
         modelServices: [...current.modelServices, normalizedDraft],
         activeModelServiceId: current.activeModelServiceId || normalizedDraft.id
       }
-    }, "服务已保存")
+    })
 
     closeConnectionEditor()
   }
@@ -463,7 +450,7 @@ export default function OptionsPage() {
         return { ...current, activeModelServiceId: otherService?.id ?? "" }
       }
       return { ...current, activeModelServiceId: serviceId }
-    }, "已切换启用服务")
+    })
   }
 
   const deleteService = (serviceId: string) => {
@@ -477,7 +464,7 @@ export default function OptionsPage() {
         modelServices: remainingServices,
         activeModelServiceId
       }
-    }, "服务已删除")
+    })
     setPendingDeleteServiceId(null)
   }
 
@@ -1164,12 +1151,12 @@ export default function OptionsPage() {
           disabled={!canSave || saving}
           onClick={() => {
             if (!canSave) {
-              setStatus("请先修正设置项后再保存。")
+              setActionsStatus("请先修正设置项后再保存。")
               return
             }
 
             setSaving(true)
-            setStatus("")
+            setActionsStatus("")
 
             void saveSettings({
               ...settings,
@@ -1182,11 +1169,11 @@ export default function OptionsPage() {
               }))
             })
               .then(() => {
-                setStatus("保存成功")
+                setActionsStatus("保存成功")
               })
               .catch((error: unknown) => {
                 const message = error instanceof Error ? error.message : "未知错误"
-                setStatus(`保存失败：${message}`)
+                setActionsStatus(`保存失败：${message}`)
               })
               .finally(() => {
                 setSaving(false)
@@ -1206,17 +1193,17 @@ export default function OptionsPage() {
           }}>
           {saving ? "保存中..." : "保存指令"}
         </button>
-        {status ? (
+        {actionsStatus ? (
           <span
             role="status"
             aria-live="polite"
             style={{
               fontSize: uiTypography.fontSize.sm,
-              color: status.includes("失败") || status.includes("修正") ? theme.state.error : theme.state.success,
+              color: actionsStatus.includes("失败") || actionsStatus.includes("修正") ? theme.state.error : theme.state.success,
               fontWeight: uiTypography.fontWeight.medium,
               lineHeight: 1.5
             }}>
-            {status}
+            {actionsStatus}
           </span>
         ) : null}
       </div>
