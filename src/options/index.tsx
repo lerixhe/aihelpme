@@ -1155,7 +1155,75 @@ export default function OptionsPage() {
         </div>
       ) : null}
 
-      <div style={{ marginTop: uiSpace[20] }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: uiSpace[12],
+          marginTop: uiSpace[20],
+          paddingTop: uiSpace[16],
+          paddingBottom: uiSpace[4]
+        }}>
+        <button
+          type="button"
+          disabled={!canSave || saving}
+          onClick={() => {
+            if (!canSave) {
+              setStatus("请先修正设置项后再保存。")
+              return
+            }
+
+            setSaving(true)
+            setStatus("")
+
+            void saveSettings({
+              ...settings,
+              modelServices: settings.modelServices.map((service) => ({
+                ...service,
+                name: service.name.trim(),
+                apiBaseUrl: service.apiBaseUrl.trim(),
+                apiKey: service.apiKey.trim(),
+                model: service.model.trim()
+              }))
+            })
+              .then(() => {
+                setStatus("保存成功")
+              })
+              .catch((error: unknown) => {
+                const message = error instanceof Error ? error.message : "未知错误"
+                setStatus(`保存失败：${message}`)
+              })
+              .finally(() => {
+                setSaving(false)
+              })
+          }}
+          onMouseDown={() => setPressedBtn("save")}
+          onMouseUp={() => setPressedBtn(null)}
+          onMouseLeave={() => setPressedBtn(null)}
+          style={{
+            ...primaryBtnStyle,
+            padding: `${uiSpace[10]}px ${uiSpace[24]}px`,
+            fontSize: uiTypography.fontSize.lg,
+            opacity: !canSave || saving ? 0.5 : 1,
+            cursor: !canSave || saving ? "not-allowed" : "pointer",
+            background: !canSave || saving ? theme.state.disabled : theme.accent.primary,
+            transform: pressedBtn === "save" ? "scale(0.96)" : "scale(1)"
+          }}>
+          {saving ? "保存中..." : "保存指令"}
+        </button>
+        {status ? (
+          <span
+            role="status"
+            aria-live="polite"
+            style={{
+              fontSize: uiTypography.fontSize.sm,
+              color: status.includes("失败") || status.includes("修正") ? theme.state.error : theme.state.success,
+              fontWeight: uiTypography.fontWeight.medium,
+              lineHeight: 1.5
+            }}>
+            {status}
+          </span>
+        ) : null}
       </div>
     </section>
   )
@@ -1440,78 +1508,7 @@ export default function OptionsPage() {
             />
           ) : null}
 
-          {activeSection !== "backup" && activeSection !== "connection" ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: uiSpace[12],
-                marginTop: uiSpace[20],
-                paddingTop: uiSpace[16],
-                paddingBottom: uiSpace[32]
-              }}>
-              <button
-                type="button"
-                disabled={!canSave || saving}
-                onClick={() => {
-                  if (!canSave) {
-                    setStatus("请先修正设置项后再保存。")
-                    return
-                  }
 
-                  setSaving(true)
-                  setStatus("")
-
-                  void saveSettings({
-                    ...settings,
-                    modelServices: settings.modelServices.map((service) => ({
-                      ...service,
-                      name: service.name.trim(),
-                      apiBaseUrl: service.apiBaseUrl.trim(),
-                      apiKey: service.apiKey.trim(),
-                      model: service.model.trim()
-                    }))
-                  })
-                    .then(() => {
-                      setStatus("保存成功")
-                    })
-                    .catch((error: unknown) => {
-                      const message = error instanceof Error ? error.message : "未知错误"
-                      setStatus(`保存失败：${message}`)
-                    })
-                    .finally(() => {
-                      setSaving(false)
-                    })
-                }}
-                onMouseDown={() => setPressedBtn("save")}
-                onMouseUp={() => setPressedBtn(null)}
-                onMouseLeave={() => setPressedBtn(null)}
-                style={{
-                  ...primaryBtnStyle,
-                  padding: `${uiSpace[10]}px ${uiSpace[24]}px`,
-                  fontSize: uiTypography.fontSize.lg,
-                  opacity: !canSave || saving ? 0.5 : 1,
-                  cursor: !canSave || saving ? "not-allowed" : "pointer",
-                  background: !canSave || saving ? theme.state.disabled : theme.accent.primary,
-                  transform: pressedBtn === "save" ? "scale(0.96)" : "scale(1)"
-                }}>
-                {saving ? "保存中..." : "保存设置"}
-              </button>
-              {status ? (
-                <span
-                  role="status"
-                  aria-live="polite"
-                  style={{
-                    fontSize: uiTypography.fontSize.sm,
-                    color: status.includes("失败") || status.includes("修正") ? theme.state.error : theme.state.success,
-                    fontWeight: uiTypography.fontWeight.medium,
-                    lineHeight: 1.5
-                  }}>
-                  {status}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
     </div>
