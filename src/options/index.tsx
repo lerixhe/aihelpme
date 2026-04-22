@@ -1354,7 +1354,7 @@ export default function OptionsPage() {
             display: "flex",
             alignItems: "center",
             gap: uiSpace[10],
-            padding: `${uiSpace[20]}px ${uiSpace[16]}px ${uiSpace[12]}px`
+            padding: `${uiSpace[20]}px ${uiSpace[32]}px ${uiSpace[12]}px`
           }}>
           <div
             style={{
@@ -1391,7 +1391,7 @@ export default function OptionsPage() {
         </div>
 
         {/* Nav items */}
-        <div style={{ padding: `${uiSpace[4]}px ${uiSpace[16]}px`, flex: 1 }}>
+        <div style={{ padding: `${uiSpace[4]}px ${uiSpace[32]}px`, flex: 1 }}>
           {sections.map((section) => {
             const isActive = activeSection === section.key
             const isHovered = hoveredNav === section.key
@@ -1410,8 +1410,8 @@ export default function OptionsPage() {
                   alignItems: "center",
                   gap: uiSpace[8],
                   width: "100%",
-                  padding: `${uiSpace[6]}px ${uiSpace[10]}px`,
-                  marginBottom: 1,
+                  padding: `${uiSpace[8]}px ${uiSpace[10]}px`,
+                  marginBottom: 4,
                   border: "none",
                   borderRadius: uiRadius.sm,
                   background: isActive ? theme.bg.surfaceMuted : isHovered ? theme.bg.surfaceAlt : "transparent",
