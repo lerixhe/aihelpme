@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 
 import { type UiTheme, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
+import { createFocusRing } from "~/shared/ui/styles"
 import type { ActionTemplate } from "~/shared/types"
 
 const PILL_PAD_X = 14
@@ -133,10 +134,9 @@ export default function ExplodedActionMenu({
         const offsetY = `${action.top + EXPLODE_BUTTON_HEIGHT / 2 - containerSize / 2}px`
 
         return (
-          <div
+          <button
             key={action.id}
-            role="button"
-            tabIndex={0}
+            type="button"
             title={action.label}
             aria-label={action.label}
             onMouseEnter={() => onHoverChange(action.id)}
@@ -161,7 +161,6 @@ export default function ExplodedActionMenu({
               border: `1px solid ${isHovered ? `${theme.accent.primary}55` : theme.border.hairline}`,
               background: isHovered ? theme.accent.primary : theme.bg.glass,
               color: isHovered ? theme.text.inverse : theme.text.primary,
-              boxShadow: isHovered ? uiShadow.xl : uiShadow.lg,
               backdropFilter: "blur(18px)",
               WebkitBackdropFilter: "blur(18px)",
               cursor: "pointer",
@@ -173,6 +172,7 @@ export default function ExplodedActionMenu({
               fontFamily: uiTypography.fontFamily,
               whiteSpace: "nowrap",
               outline: "none",
+              boxShadow: isHovered ? `${uiShadow.xl}, ${createFocusRing(theme.accent.primary)}` : uiShadow.lg,
               padding: `0 ${PILL_PAD_X}px`,
               pointerEvents: "auto",
               transition: `transform ${uiMotion.durationFast} ${uiMotion.easingSpring}, background ${uiMotion.durationNormal} ${uiMotion.easingDecelerate}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationNormal} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
@@ -183,7 +183,7 @@ export default function ExplodedActionMenu({
               ["--explode-y" as string]: offsetY
             }}>
             {action.label}
-          </div>
+          </button>
         )
       })}
     </div>

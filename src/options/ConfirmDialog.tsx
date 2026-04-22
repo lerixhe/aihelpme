@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect } from "react"
 import type { UiThemeName } from "~/shared/ui/tokens"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography, uiLayer } from "~/shared/ui/tokens"
+import { createButtonStyle, createCardStyle, createOverlayStyle } from "~/shared/ui/styles"
 
 interface ConfirmDialogProps {
   title: string
@@ -13,6 +14,8 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCancel, themeName }: ConfirmDialogProps) {
   const theme = uiThemes[themeName]
+  const titleId = "confirm-dialog-title"
+  const descriptionId = "confirm-dialog-description"
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -25,61 +28,35 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
   }, [onCancel])
 
   const overlayStyle: CSSProperties = {
-    position: "fixed",
-    inset: 0,
+    ...createOverlayStyle(theme),
     zIndex: uiLayer.overlay,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: theme.bg.overlay,
-    backdropFilter: "blur(4px)",
-    WebkitBackdropFilter: "blur(4px)",
     animation: `fadeIn ${uiMotion.durationFast} ${uiMotion.easingStandard}`
   }
 
   const cardStyle: CSSProperties = {
+    ...createCardStyle(theme),
     maxWidth: 400,
     width: "calc(100% - 48px)",
     padding: `${uiSpace[28]}px`,
     borderRadius: uiRadius.lg,
-    background: theme.bg.surface,
     boxShadow: uiShadow.xl,
-    border: `0.5px solid ${theme.border.hairline}`,
     animation: `slideUp ${uiMotion.durationNormal} ${uiMotion.easingSpring}`
   }
 
-  const cancelBtnStyle: CSSProperties = {
-    border: `1px solid ${theme.border.default}`,
-    borderRadius: uiRadius.pill,
-    padding: `${uiSpace[8]}px ${uiSpace[20]}px`,
-    background: "transparent",
-    color: theme.text.primary,
-    fontWeight: uiTypography.fontWeight.medium,
-    fontSize: uiTypography.fontSize.md,
-    fontFamily: uiTypography.fontFamily,
-    cursor: "pointer",
-    outline: "none",
-    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}`
-  }
-
-  const confirmBtnStyle: CSSProperties = {
-    border: "none",
-    borderRadius: uiRadius.pill,
-    padding: `${uiSpace[8]}px ${uiSpace[20]}px`,
-    background: theme.state.error,
-    color: "#FFFFFF",
-    fontWeight: uiTypography.fontWeight.semibold,
-    fontSize: uiTypography.fontSize.md,
-    fontFamily: uiTypography.fontFamily,
-    cursor: "pointer",
-    outline: "none",
-    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}`
-  }
+  const cancelBtnStyle = createButtonStyle(theme, "secondary")
+  const confirmBtnStyle = createButtonStyle(theme, "danger")
 
   return (
     <div style={overlayStyle} onClick={onCancel}>
-      <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        style={cardStyle}
+        onClick={(e) => e.stopPropagation()}>
         <h2
+          id={titleId}
           style={{
             margin: 0,
             fontSize: uiTypography.fontSize.xxl,
@@ -90,6 +67,7 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
           {title}
         </h2>
         <p
+          id={descriptionId}
           style={{
             margin: `${uiSpace[8]}px 0 0`,
             fontSize: uiTypography.fontSize.md,

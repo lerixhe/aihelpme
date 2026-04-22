@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiTypography, uiLayer } from "~/shared/ui/tokens"
+import { createButtonStyle, createCardStyle, createFocusRing, createInputStyle, createOverlayStyle, createStatusMessageStyle } from "~/shared/ui/styles"
 import type { ChatMessage } from "~/shared/types"
 
 interface Props {
@@ -186,7 +187,7 @@ export default function UnifiedPanel({
   }, [messages, requestState])
 
   const focusRing = (state: string | null, target: string) =>
-    focused === target ? `0 0 0 3px ${theme.accent.primary}33` : "none"
+    focused === target ? createFocusRing(theme.accent.primary) : "none"
 
   return (
     <div
@@ -200,16 +201,9 @@ export default function UnifiedPanel({
         onClose()
       }}
       style={{
-        position: "fixed",
-        inset: 0,
+        ...createOverlayStyle(theme),
         zIndex: uiLayer.overlay,
         pointerEvents: "auto",
-        background: theme.bg.overlay,
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         fontFamily: uiTypography.fontFamily,
         animation: `unified-overlay-enter 250ms ${uiMotion.easingDecelerate} forwards`
       }}
@@ -274,14 +268,13 @@ export default function UnifiedPanel({
           event.stopPropagation()
         }}
         style={{
+          ...createCardStyle(theme),
           width: 680,
           maxWidth: "calc(100vw - 32px)",
           height: "min(70vh, calc(100vh - 32px))",
           display: "flex",
           flexDirection: "column",
-          background: theme.bg.surface,
           borderRadius: uiRadius.xl,
-          border: `0.5px solid ${theme.border.hairline}`,
           boxShadow: uiShadow.xl,
           overflow: "hidden",
           animation: `unified-panel-enter 350ms ${uiMotion.easingSpring} forwards`
@@ -329,10 +322,13 @@ export default function UnifiedPanel({
             onBlur={() => setFocused(null)}
             aria-label="关闭对话面板"
             style={{
-              border: "none",
+              ...createButtonStyle(theme, "secondary", {
+                compact: true,
+                pressed: closePressed,
+                focused: focused === "close"
+              }),
               background: hovered === "close" ? theme.bg.surfaceMuted : "transparent",
               color: theme.text.secondary,
-              cursor: "pointer",
               width: 28,
               height: 28,
               borderRadius: "50%",
@@ -340,10 +336,7 @@ export default function UnifiedPanel({
               alignItems: "center",
               justifyContent: "center",
               padding: 0,
-              outline: "none",
-              transform: closePressed ? "scale(0.9)" : "scale(1)",
-              boxShadow: focused === "close" ? `0 0 0 3px ${theme.accent.primary}33` : "none",
-              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              transform: closePressed ? "scale(0.9)" : "scale(1)"
             }}
             onMouseEnter={() => setHovered("close")}
             onMouseLeave={() => {
@@ -382,19 +375,13 @@ export default function UnifiedPanel({
               aria-label="已捕获的选区文本"
               placeholder="选中文本将显示在这里..."
               style={{
+                ...createInputStyle(theme, focused === "captured"),
                 width: "100%",
                 resize: "vertical",
-                border: "none",
-                background: theme.bg.surfaceMuted,
-                color: theme.text.primary,
                 borderRadius: uiRadius.sm,
-                padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                boxShadow: focusRing(focused, "captured"),
-                outline: "none",
                 fontSize: uiTypography.fontSize.md,
                 fontFamily: "inherit",
                 lineHeight: 1.55,
-                transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
                 boxSizing: "border-box"
               }}
             />
@@ -417,11 +404,10 @@ export default function UnifiedPanel({
           {messages.length === 0 ? (
             <div
               style={{
+                ...createStatusMessageStyle(theme, "info"),
                 color: theme.text.secondary,
                 fontSize: uiTypography.fontSize.md,
-                border: `1px dashed ${theme.border.default}`,
                 borderRadius: uiRadius.md,
-                background: theme.bg.surface,
                 padding: `${uiSpace[16]}px ${uiSpace[20]}px`,
                 textAlign: "center",
                 lineHeight: 1.55
@@ -476,11 +462,7 @@ export default function UnifiedPanel({
             <div
               style={{
                 color: theme.text.secondary,
-                fontSize: uiTypography.fontSize.sm,
-                padding: `${uiSpace[8]}px ${uiSpace[14]}px`,
-                borderRadius: uiRadius.md,
-                background: theme.bg.surface,
-                border: `0.5px solid ${theme.border.hairline}`,
+                ...createStatusMessageStyle(theme, "info"),
                 display: "flex",
                 alignItems: "center",
                 gap: uiSpace[8]
@@ -534,20 +516,16 @@ export default function UnifiedPanel({
             aria-label="在对话面板中继续提问"
             placeholder="继续提问（Enter 发送，Shift+Enter 换行）"
             style={{
+              ...createInputStyle(theme, focused === "input"),
               flex: 1,
               minHeight: 56,
               resize: "none",
               borderRadius: uiRadius.md,
-              border: "none",
-              background: theme.bg.surfaceMuted,
-              color: theme.text.primary,
               padding: `${uiSpace[10]}px ${uiSpace[14]}px`,
               fontSize: uiTypography.fontSize.md,
               fontFamily: "inherit",
               lineHeight: 1.5,
-              outline: "none",
-              boxShadow: focusRing(focused, "input"),
-              transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              boxShadow: focusRing(focused, "input")
             }}
           />
           <button
@@ -576,10 +554,14 @@ export default function UnifiedPanel({
             onBlur={() => setFocused(null)}
             disabled={sendDisabled && !isStreaming}
             style={{
+              ...createButtonStyle(theme, isStreaming ? "secondary" : "primary", {
+                disabled: sendDisabled && !isStreaming,
+                pressed: sendPressed,
+                focused: focused === "send"
+              }),
               height: 36,
               minWidth: 72,
               alignSelf: "flex-end",
-              border: "none",
               borderRadius: uiRadius.pill,
               background: isStreaming
                 ? theme.bg.surfaceMuted
@@ -588,15 +570,9 @@ export default function UnifiedPanel({
                   : hovered === "send"
                     ? theme.accent.primaryHover
                     : theme.accent.primary,
-              color: isStreaming ? theme.text.primary : theme.text.inverse,
-              fontWeight: uiTypography.fontWeight.semibold,
-              fontSize: uiTypography.fontSize.md,
-              fontFamily: uiTypography.fontFamily,
               cursor: isStreaming ? "pointer" : sendDisabled ? "not-allowed" : "pointer",
               opacity: sendDisabled && !isStreaming ? 0.5 : 1,
               transform: sendPressed ? "scale(0.95)" : "scale(1)",
-              boxShadow: focused === "send" ? `0 0 0 3px ${theme.accent.primary}33` : "none",
-              transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
               padding: `0 ${uiSpace[16]}px`
             }}>
             {isStreaming ? "停止" : "发送"}

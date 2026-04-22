@@ -5,6 +5,7 @@ import { DEFAULT_CUSTOM_MODEL_SERVICE, DEFAULT_SETTINGS } from "~/shared/default
 import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
+import { createButtonStyle, createCardStyle, createFieldLabelStyle, createFocusRing, createInputStyle as createSharedInputStyle, createStatusMessageStyle } from "~/shared/ui/styles"
 import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, ApiTestResponse, FetchModelsResponse, ModelServiceConfig } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
@@ -448,62 +449,56 @@ export default function OptionsPage() {
   // --- Shared styles ---
 
   const cardStyle: CSSProperties = {
-    borderRadius: uiRadius.lg,
-    padding: `${uiSpace[20]}px ${uiSpace[24]}px`,
-    background: theme.bg.surface,
-    boxShadow: uiShadow.sm,
-    border: `0.5px solid ${theme.border.hairline}`
+    ...createCardStyle(theme)
   }
 
   const fieldLabelStyle: CSSProperties = {
-    fontSize: uiTypography.fontSize.sm,
-    fontWeight: uiTypography.fontWeight.medium,
-    color: theme.text.secondary,
-    marginBottom: uiSpace[6],
-    letterSpacing: uiTypography.letterSpacing.normal
+    ...createFieldLabelStyle(theme)
   }
 
   const createInputStyle = (fieldName: string): CSSProperties => ({
-    border: "none",
-    borderRadius: uiRadius.sm,
-    padding: `${uiSpace[10]}px ${uiSpace[12]}px`,
-    fontSize: uiTypography.fontSize.md,
-    fontFamily: uiTypography.fontFamily,
-    outline: "none",
-    color: theme.text.primary,
-    background: theme.bg.surfaceMuted,
-    boxShadow: focusedField === fieldName ? `0 0 0 3px ${theme.accent.primary}33` : "none",
-    transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
-    width: "100%",
-    boxSizing: "border-box"
+    ...createSharedInputStyle(theme, focusedField === fieldName)
   })
 
   const primaryBtnStyle: CSSProperties = {
-    border: "none",
-    borderRadius: uiRadius.pill,
-    padding: `${uiSpace[8]}px ${uiSpace[16]}px`,
-    background: theme.accent.primary,
-    color: theme.text.inverse,
-    fontWeight: uiTypography.fontWeight.semibold,
-    fontSize: uiTypography.fontSize.md,
-    fontFamily: uiTypography.fontFamily,
-    cursor: "pointer",
-    outline: "none",
-    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, opacity ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+    ...createButtonStyle(theme, "primary")
   }
 
   const secondaryBtnStyle: CSSProperties = {
-    border: `1px solid ${theme.border.default}`,
-    borderRadius: uiRadius.pill,
-    padding: `${uiSpace[6]}px ${uiSpace[12]}px`,
-    background: "transparent",
-    color: theme.text.primary,
-    fontWeight: uiTypography.fontWeight.medium,
-    fontSize: uiTypography.fontSize.sm,
-    fontFamily: uiTypography.fontFamily,
+    ...createButtonStyle(theme, "secondary", { compact: true })
+  }
+
+  const createSelectableCardStyle = (selected: boolean): CSSProperties => ({
+    border: `1px solid ${selected ? theme.accent.primary : theme.border.default}`,
+    borderRadius: uiRadius.md,
+    background: selected ? theme.bg.surfaceAlt : theme.bg.surface,
+    padding: uiSpace[14],
+    textAlign: "left",
     cursor: "pointer",
-    outline: "none",
-    transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}`
+    boxShadow: selected ? createFocusRing(theme.accent.primary) : "none",
+    transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+  })
+
+  const insetCardStyle: CSSProperties = {
+    border: `1px solid ${theme.border.hairline}`,
+    borderRadius: uiRadius.md,
+    padding: uiSpace[16],
+    background: theme.bg.surfaceMuted
+  }
+
+  const emptyStateStyle: CSSProperties = {
+    ...createStatusMessageStyle(theme, "info"),
+    textAlign: "center",
+    padding: `${uiSpace[24]}px ${uiSpace[16]}px`,
+    border: `1px dashed ${theme.border.default}`,
+    background: theme.bg.surfaceMuted,
+    color: theme.text.secondary,
+    fontSize: uiTypography.fontSize.md
+  }
+
+  const helperNoteStyle: CSSProperties = {
+    ...createStatusMessageStyle(theme, "info"),
+    lineHeight: 1.7
   }
 
   // --- Section renderers ---
@@ -540,12 +535,13 @@ export default function OptionsPage() {
           const isSelected = settings.theme === value
           const labels: Record<ThemePreference, string> = { auto: "跟随系统", light: "浅色", dark: "深色" }
 
-          return (
-            <button
-              key={value}
-              onClick={() => {
-                saveSettingsNow((current) => ({ ...current, theme: value }))
-              }}
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  saveSettingsNow((current) => ({ ...current, theme: value }))
+                }}
               style={{
                 padding: `${uiSpace[6]}px ${uiSpace[16]}px`,
                 border: "none",
@@ -557,7 +553,7 @@ export default function OptionsPage() {
                 fontWeight: isSelected ? uiTypography.fontWeight.semibold : uiTypography.fontWeight.regular,
                 fontFamily: uiTypography.fontFamily,
                 outline: "none",
-                boxShadow: isSelected ? uiShadow.sm : "none",
+                boxShadow: isSelected ? createFocusRing(theme.accent.primary) : "none",
                 transition: `all ${uiMotion.durationFast} ${uiMotion.easingStandard}`
               }}>
               {labels[value]}
@@ -612,16 +608,8 @@ export default function OptionsPage() {
                   onClick={() => {
                     saveSettingsNow((current) => ({ ...current, toolbarMode: option.value }))
                   }}
-                  style={{
-                    border: `1px solid ${isSelected ? theme.accent.primary : theme.border.default}`,
-                    borderRadius: uiRadius.md,
-                    background: isSelected ? theme.bg.surfaceAlt : theme.bg.surface,
-                    padding: uiSpace[14],
-                    textAlign: "left",
-                    cursor: "pointer",
-                    boxShadow: isSelected ? `0 0 0 3px ${theme.accent.primary}22` : "none",
-                    transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-                  }}>
+                  aria-pressed={isSelected}
+                  style={createSelectableCardStyle(isSelected)}>
                   <div
                     style={{
                       display: "flex",
@@ -697,8 +685,9 @@ export default function OptionsPage() {
           </div>
 
           <div style={{ marginBottom: uiSpace[16] }}>
-            <div style={fieldLabelStyle}>服务名称</div>
+            <label htmlFor="service-name" style={fieldLabelStyle}>服务名称</label>
             <input
+              id="service-name"
               value={serviceDraft.name}
               onFocus={() => setFocusedField("service-name")}
               onBlur={() => setFocusedField(null)}
@@ -711,8 +700,9 @@ export default function OptionsPage() {
           </div>
 
           <div style={{ marginBottom: uiSpace[16] }}>
-            <div style={fieldLabelStyle}>API Base URL</div>
+            <label htmlFor="service-api-base-url" style={fieldLabelStyle}>API Base URL</label>
             <input
+              id="service-api-base-url"
               value={serviceDraft.apiBaseUrl}
               onFocus={() => setFocusedField("apiBaseUrl")}
               onBlur={() => setFocusedField(null)}
@@ -725,8 +715,9 @@ export default function OptionsPage() {
           </div>
 
           <div style={{ marginBottom: uiSpace[16] }}>
-            <div style={fieldLabelStyle}>API Key</div>
+            <label htmlFor="service-api-key" style={fieldLabelStyle}>API Key</label>
             <input
+              id="service-api-key"
               type="password"
               value={serviceDraft.apiKey}
               onFocus={() => setFocusedField("apiKey")}
@@ -741,7 +732,7 @@ export default function OptionsPage() {
 
           <div style={{ marginBottom: uiSpace[16] }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: uiSpace[6] }}>
-              <div style={fieldLabelStyle}>Model</div>
+              <label htmlFor="service-model" style={fieldLabelStyle}>Model</label>
               <button
                 type="button"
                 onClick={handleFetchModels}
@@ -761,6 +752,7 @@ export default function OptionsPage() {
             {models.length > 0 ? (
               <div style={{ display: "flex", gap: uiSpace[8] }}>
                 <select
+                  id="service-model"
                   value={serviceDraft.model}
                   onChange={(event) => {
                     setServiceDraft((current) => ({ ...current, model: event.target.value }))
@@ -781,6 +773,7 @@ export default function OptionsPage() {
               </div>
             ) : (
               <input
+                id="service-model"
                 value={serviceDraft.model}
                 onFocus={() => setFocusedField("model")}
                 onBlur={() => setFocusedField(null)}
@@ -793,14 +786,9 @@ export default function OptionsPage() {
             )}
             {fetchError ? (
               <div
-                style={{
-                  marginTop: uiSpace[8],
-                  fontSize: uiTypography.fontSize.sm,
-                  color: theme.state.error,
-                  background: theme.state.errorBg,
-                  padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
-                  borderRadius: uiRadius.sm
-                }}>
+                role="status"
+                aria-live="polite"
+                style={{ marginTop: uiSpace[8], ...createStatusMessageStyle(theme, "error") }}>
                 {fetchError}
               </div>
             ) : null}
@@ -827,11 +815,10 @@ export default function OptionsPage() {
             </button>
             {testResult ? (
               <span
+                role="status"
+                aria-live="polite"
                 style={{
-                  fontSize: uiTypography.fontSize.sm,
-                  color: testResult.success ? theme.state.success : theme.state.error,
-                  background: testResult.success ? theme.state.successBg : theme.state.errorBg,
-                  padding: `${uiSpace[6]}px ${uiSpace[10]}px`,
+                  ...createStatusMessageStyle(theme, testResult.success ? "success" : "error"),
                   borderRadius: uiRadius.pill,
                   fontWeight: uiTypography.fontWeight.medium,
                   lineHeight: 1.5
@@ -876,11 +863,12 @@ export default function OptionsPage() {
                 ]
               ).map((param) => (
                 <div key={param.key}>
-                  <div style={{ ...fieldLabelStyle, marginBottom: uiSpace[4] }}>{param.label}</div>
+                  <label htmlFor={`model-param-${param.key}`} style={{ ...fieldLabelStyle, marginBottom: uiSpace[4] }}>{param.label}</label>
                   <div style={{ fontSize: uiTypography.fontSize.xs, color: theme.text.secondary, marginBottom: uiSpace[6] }}>
                     {param.desc}
                   </div>
                   <input
+                    id={`model-param-${param.key}`}
                     type="number"
                     value={serviceDraft.modelParams[param.key]}
                     min={param.min}
@@ -963,15 +951,7 @@ export default function OptionsPage() {
 
           {settings.modelServices.length === 0 ? (
             <div
-              style={{
-                textAlign: "center",
-                padding: `${uiSpace[28]}px ${uiSpace[16]}px`,
-                color: theme.text.secondary,
-                fontSize: uiTypography.fontSize.md,
-                border: `1px dashed ${theme.border.default}`,
-                borderRadius: uiRadius.md,
-                background: theme.bg.surfaceMuted
-              }}>
+              style={{ ...emptyStateStyle, padding: `${uiSpace[28]}px ${uiSpace[16]}px` }}>
               还没有添加任何自定义服务，点击上方按钮开始配置。
             </div>
           ) : (
@@ -982,14 +962,7 @@ export default function OptionsPage() {
                 return (
                   <div
                     key={service.id}
-                    style={{
-                      border: `1px solid ${isActive ? theme.accent.primary : theme.border.default}`,
-                      borderRadius: uiRadius.md,
-                      padding: uiSpace[14],
-                      background: isActive ? theme.bg.surfaceAlt : theme.bg.surface,
-                      boxShadow: isActive ? `0 0 0 3px ${theme.accent.primary}22` : "none",
-                      transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}`
-                    }}>
+                    style={createSelectableCardStyle(isActive)}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16] }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], marginBottom: uiSpace[6], flexWrap: "wrap" }}>
@@ -1059,6 +1032,7 @@ export default function OptionsPage() {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => {
             setSettings((current) => ({
               ...current,
@@ -1108,6 +1082,7 @@ export default function OptionsPage() {
             }}>
             <div style={{ display: "grid", gridTemplateColumns: "140px 1fr auto", gap: uiSpace[8], alignItems: "start" }}>
               <input
+                aria-label="动作名称"
                 value={item.label}
                 onFocus={() => setFocusedField(`${item.id}-label`)}
                 onBlur={() => setFocusedField(null)}
@@ -1118,6 +1093,7 @@ export default function OptionsPage() {
                 style={createInputStyle(`${item.id}-label`)}
               />
               <input
+                aria-label="动作模板"
                 value={item.template}
                 onFocus={() => setFocusedField(`${item.id}-template`)}
                 onBlur={() => setFocusedField(null)}
@@ -1128,6 +1104,7 @@ export default function OptionsPage() {
                 style={createInputStyle(`${item.id}-template`)}
               />
               <button
+                type="button"
                 onClick={() => {
                   setSettings((current) => ({
                     ...current,
@@ -1138,19 +1115,20 @@ export default function OptionsPage() {
                 onMouseUp={() => setPressedBtn(null)}
                 aria-label="删除动作"
                 style={{
+                  ...createButtonStyle(theme, "secondary", {
+                    compact: true,
+                    pressed: pressedBtn === `delete-${item.id}`
+                  }),
                   width: 36,
                   height: 36,
-                  border: "none",
                   borderRadius: uiRadius.sm,
-                  background: "transparent",
+                  border: `1px solid ${theme.state.error}33`,
+                  background: theme.bg.surface,
                   color: theme.state.error,
-                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  outline: "none",
-                  transform: pressedBtn === `delete-${item.id}` ? "scale(0.9)" : "scale(1)",
-                  transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, transform 150ms ${uiMotion.easingSpring}`
+                  transform: pressedBtn === `delete-${item.id}` ? "scale(0.9)" : "scale(1)"
                 }}
                 onMouseEnter={(event) => {
                   event.currentTarget.style.background = theme.state.errorBg
@@ -1172,15 +1150,7 @@ export default function OptionsPage() {
       })}
 
       {settings.actions.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: `${uiSpace[24]}px ${uiSpace[16]}px`,
-            color: theme.text.secondary,
-            fontSize: uiTypography.fontSize.md,
-            border: `1px dashed ${theme.border.default}`,
-            borderRadius: uiRadius.md
-          }}>
+        <div style={emptyStateStyle}>
           还没有动作，点击上方「新增动作」开始创建。
         </div>
       ) : null}
@@ -1215,12 +1185,7 @@ export default function OptionsPage() {
           marginBottom: uiSpace[16]
         }}>
         <div
-          style={{
-            border: `1px solid ${theme.border.hairline}`,
-            borderRadius: uiRadius.md,
-            padding: uiSpace[16],
-            background: theme.bg.surfaceMuted
-          }}>
+          style={insetCardStyle}>
           <h3
             style={{
               margin: `0 0 ${uiSpace[6]}px`,
@@ -1247,12 +1212,7 @@ export default function OptionsPage() {
         </div>
 
         <div
-          style={{
-            border: `1px solid ${theme.border.hairline}`,
-            borderRadius: uiRadius.md,
-            padding: uiSpace[16],
-            background: theme.bg.surfaceMuted
-          }}>
+          style={insetCardStyle}>
           <h3
             style={{
               margin: `0 0 ${uiSpace[6]}px`,
@@ -1281,28 +1241,17 @@ export default function OptionsPage() {
       </div>
 
       <div
-        style={{
-          fontSize: uiTypography.fontSize.sm,
-          color: theme.text.secondary,
-          lineHeight: 1.7,
-          padding: `${uiSpace[12]}px ${uiSpace[14]}px`,
-          background: theme.bg.surfaceAlt,
-          borderRadius: uiRadius.md,
-          border: `1px solid ${theme.border.hairline}`
-        }}>
+        style={helperNoteStyle}>
         导入时会自动校验并补齐缺失字段，不兼容字段会回退到默认值。
       </div>
 
       {backupStatus ? (
         <div
+          role="status"
+          aria-live="polite"
           style={{
             marginTop: uiSpace[16],
-            fontSize: uiTypography.fontSize.sm,
-            color: backupStatus.success ? theme.state.success : theme.state.error,
-            background: backupStatus.success ? theme.state.successBg : theme.state.errorBg,
-            padding: `${uiSpace[10]}px ${uiSpace[12]}px`,
-            borderRadius: uiRadius.md,
-            lineHeight: 1.6
+            ...createStatusMessageStyle(theme, backupStatus.success ? "success" : "error")
           }}>
           {backupStatus.message}
         </div>
@@ -1393,9 +1342,11 @@ export default function OptionsPage() {
             return (
               <button
                 key={section.key}
+                type="button"
                 onClick={() => setActiveSection(section.key)}
                 onMouseEnter={() => setHoveredNav(section.key)}
                 onMouseLeave={() => setHoveredNav(null)}
+                aria-current={isActive ? "page" : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -1412,6 +1363,7 @@ export default function OptionsPage() {
                   fontSize: uiTypography.fontSize.md,
                   fontWeight: isActive ? uiTypography.fontWeight.semibold : uiTypography.fontWeight.regular,
                   outline: "none",
+                  boxShadow: isActive ? createFocusRing(theme.accent.primary) : "none",
                   textAlign: "left",
                   transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
                   position: "relative"
@@ -1504,6 +1456,7 @@ export default function OptionsPage() {
                 paddingBottom: uiSpace[32]
               }}>
               <button
+                type="button"
                 disabled={!canSave || saving}
                 onClick={() => {
                   if (!canSave) {
@@ -1551,6 +1504,8 @@ export default function OptionsPage() {
               </button>
               {status ? (
                 <span
+                  role="status"
+                  aria-live="polite"
                   style={{
                     fontSize: uiTypography.fontSize.sm,
                     color: status.includes("失败") || status.includes("修正") ? theme.state.error : theme.state.success,

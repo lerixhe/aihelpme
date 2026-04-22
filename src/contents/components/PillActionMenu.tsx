@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 
 import { type UiTheme, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
+import { createFocusRing } from "~/shared/ui/styles"
 import type { ActionTemplate } from "~/shared/types"
 
 const PILL_HEIGHT = 32
@@ -79,10 +80,9 @@ export default function PillActionMenu({
         const isHovered = hoveredActionId === action.id
 
         return (
-          <div
+          <button
             key={action.id}
-            role="button"
-            tabIndex={0}
+            type="button"
             title={action.label}
             aria-label={action.label}
             onMouseEnter={() => onHoverChange(action.id)}
@@ -111,6 +111,7 @@ export default function PillActionMenu({
               fontFamily: uiTypography.fontFamily,
               whiteSpace: "nowrap",
               outline: "none",
+              boxShadow: isHovered ? createFocusRing(theme.accent.primary) : "none",
               padding: `0 ${PILL_PAD_X}px`,
               transform: isHovered ? "scale(1.04)" : "scale(1)",
               transition: `transform 150ms ${uiMotion.easingSpring}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
@@ -118,7 +119,7 @@ export default function PillActionMenu({
               pointerEvents: "auto"
             }}>
             {action.label}
-          </div>
+          </button>
         )
       })}
     </div>

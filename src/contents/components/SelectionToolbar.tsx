@@ -4,6 +4,7 @@ import ExplodedActionMenu from "~/contents/components/ExplodedActionMenu"
 import PillActionMenu from "~/contents/components/PillActionMenu"
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiLayout, uiLayer, uiMotion, uiShadow, uiTypography } from "~/shared/ui/tokens"
+import { createFocusRing } from "~/shared/ui/styles"
 import type { ActionTemplate, SelectionAnchor, ToolbarMode } from "~/shared/types"
 
 interface Props {
@@ -113,11 +114,10 @@ export default function SelectionToolbar({
         pointerEvents: "auto",
         fontFamily: uiTypography.fontFamily
       }}>
-      {/* Trigger button */}
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         aria-label={ringOpen ? "收起动作菜单" : "展开动作菜单"}
+        aria-expanded={ringOpen}
         onMouseEnter={handleTriggerEnter}
         onClick={() => {
           if (ringOpen) {
@@ -158,12 +158,12 @@ export default function SelectionToolbar({
           border: "none",
           padding: 0,
           outline: "none",
-          boxShadow: uiShadow.lg,
+          boxShadow: triggerPressed ? uiShadow.md : `${uiShadow.lg}, ${ringOpen ? createFocusRing(theme.accent.primary) : "none"}`,
           transform: triggerPressed ? "scale(0.92)" : ringOpen ? "scale(1.08)" : "scale(1)",
           transition: `transform 200ms ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
         }}>
         <SparkleIcon size={20} color={theme.text.inverse} />
-      </div>
+      </button>
 
       {ringOpen && (
         toolbarMode === "pill" ? (
