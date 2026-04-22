@@ -12,18 +12,46 @@ import { ConfirmDialog } from "~/options/ConfirmDialog"
 
 type Section = "appearance" | "connection" | "actions" | "backup"
 
+function ToggleSwitch({ checked, onChange, theme }: { checked: boolean; onChange: () => void; theme: any }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      style={{
+        position: "relative",
+        width: 44,
+        height: 24,
+        borderRadius: 12,
+        border: "none",
+        background: checked ? theme.accent.primary : theme.border.default,
+        cursor: "pointer",
+        transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+        padding: 0,
+        flexShrink: 0
+      }}>
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: checked ? 23 : 3,
+          width: 18,
+          height: 18,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          transition: `left ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+        }}
+      />
+    </button>
+  )
+}
+
 function PlusIcon({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path d="M8 3V13M3 8H13" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function TrashIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M2 4H14M5 4V2H11V4M6 7V12M10 7V12M3 4L4 14H12L13 4" stroke={color} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -427,8 +455,15 @@ export default function OptionsPage() {
     closeConnectionEditor()
   }
 
-  const activateService = (serviceId: string) => {
-    saveSettingsNow((current) => ({ ...current, activeModelServiceId: serviceId }), "已切换启用服务")
+  const toggleServiceActive = (serviceId: string) => {
+    saveSettingsNow((current) => {
+      const isCurrentlyActive = current.activeModelServiceId === serviceId
+      if (isCurrentlyActive) {
+        const otherService = current.modelServices.find((s) => s.id !== serviceId)
+        return { ...current, activeModelServiceId: otherService?.id ?? "" }
+      }
+      return { ...current, activeModelServiceId: serviceId }
+    }, "已切换启用服务")
   }
 
   const deleteService = (serviceId: string) => {
@@ -576,7 +611,8 @@ export default function OptionsPage() {
               fontWeight: uiTypography.fontWeight.semibold,
               letterSpacing: uiTypography.letterSpacing.tight
             }}>
-            工具栏样式
+
+            动作菜单样式
           </h2>
           <p
             style={{
@@ -969,30 +1005,14 @@ export default function OptionsPage() {
                           <span style={{ fontSize: uiTypography.fontSize.md, fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary }}>
                             {service.name}
                           </span>
-                          <span
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: "50%",
-                              background: isActive ? theme.accent.primary : theme.border.default,
-                              flexShrink: 0
-                            }}>
-                            <span style={{ display: "none" }}>{isActive ? "已启用" : "未启用"}</span>
-                          </span>
                           <span style={{ fontSize: uiTypography.fontSize.xs, color: theme.text.secondary }}>自定义服务</span>
                         </div>
                         <div style={{ color: theme.text.secondary, fontSize: uiTypography.fontSize.sm, lineHeight: 1.6, wordBreak: "break-all" }}>
-                          <div>API Base URL: {service.apiBaseUrl || "未填写"}</div>
-                          <div>Model: {service.model || "未填写"}</div>
                         </div>
                       </div>
 
                       <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], flexWrap: "wrap", justifyContent: "flex-end" }}>
-                        {!isActive ? (
-                          <button type="button" onClick={() => activateService(service.id)} style={secondaryBtnStyle}>
-                            设为启用
-                          </button>
-                        ) : null}
+                        <ToggleSwitch checked={isActive} onChange={() => toggleServiceActive(service.id)} theme={theme} />
                         <button type="button" onClick={() => openEditService(service.id)} style={secondaryBtnStyle}>
                           编辑
                         </button>
@@ -1080,7 +1100,7 @@ export default function OptionsPage() {
               boxShadow: invalid ? "none" : uiShadow.sm,
               transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
             }}>
-            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr auto", gap: uiSpace[8], alignItems: "start" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr auto", gap: uiSpace[8], alignItems: "center" }}>
               <input
                 aria-label="动作名称"
                 value={item.label}
@@ -1111,33 +1131,8 @@ export default function OptionsPage() {
                     actions: current.actions.filter((action) => action.id !== item.id)
                   }))
                 }}
-                onMouseDown={() => setPressedBtn(`delete-${item.id}`)}
-                onMouseUp={() => setPressedBtn(null)}
-                aria-label="删除动作"
-                style={{
-                  ...createButtonStyle(theme, "secondary", {
-                    compact: true,
-                    pressed: pressedBtn === `delete-${item.id}`
-                  }),
-                  width: 36,
-                  height: 36,
-                  borderRadius: uiRadius.sm,
-                  border: `1px solid ${theme.state.error}33`,
-                  background: theme.bg.surface,
-                  color: theme.state.error,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: pressedBtn === `delete-${item.id}` ? "scale(0.9)" : "scale(1)"
-                }}
-                onMouseEnter={(event) => {
-                  event.currentTarget.style.background = theme.state.errorBg
-                }}
-                onMouseLeave={(event) => {
-                  event.currentTarget.style.background = "transparent"
-                  setPressedBtn(null)
-                }}>
-                <TrashIcon size={16} color={theme.state.error} />
+                style={{ ...secondaryBtnStyle, color: theme.state.error, borderColor: theme.state.error }}>
+                删除
               </button>
             </div>
             {invalid ? (
@@ -1396,7 +1391,7 @@ export default function OptionsPage() {
         </div>
 
         {/* Nav items */}
-        <div style={{ padding: `${uiSpace[4]}px ${uiSpace[8]}px`, flex: 1 }}>
+        <div style={{ padding: `${uiSpace[4]}px ${uiSpace[16]}px`, flex: 1 }}>
           {sections.map((section) => {
             const isActive = activeSection === section.key
             const isHovered = hoveredNav === section.key
