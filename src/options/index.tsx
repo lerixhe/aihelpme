@@ -535,13 +535,13 @@ export default function OptionsPage() {
           const isSelected = settings.theme === value
           const labels: Record<ThemePreference, string> = { auto: "跟随系统", light: "浅色", dark: "深色" }
 
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => {
-                  saveSettingsNow((current) => ({ ...current, theme: value }))
-                }}
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                saveSettingsNow((current) => ({ ...current, theme: value }))
+              }}
               style={{
                 padding: `${uiSpace[6]}px ${uiSpace[16]}px`,
                 border: "none",
@@ -1195,7 +1195,7 @@ export default function OptionsPage() {
             导出配置
           </h3>
           <p style={{ margin: `0 0 ${uiSpace[14]}px`, color: theme.text.secondary, fontSize: uiTypography.fontSize.sm, lineHeight: 1.6 }}>
-            导出 API 配置、主题、动作模板和模型参数，便于迁移或备份。
+            导出配置便于迁移或备份，文件中可能包含key等敏感信息，请妥善保存。
           </p>
           <button
             type="button"
@@ -1240,11 +1240,6 @@ export default function OptionsPage() {
         </div>
       </div>
 
-      <div
-        style={helperNoteStyle}>
-        导入时会自动校验并补齐缺失字段，不兼容字段会回退到默认值。
-      </div>
-
       {backupStatus ? (
         <div
           role="status"
@@ -1266,7 +1261,7 @@ export default function OptionsPage() {
     backup: renderBackup
   }
 
-  const sidebarWidth = 240
+  const sidebarWidth = 320
 
   return (
     <div
