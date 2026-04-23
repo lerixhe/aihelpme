@@ -129,23 +129,29 @@ aihelpme/
 │   ├── background/            # 后台脚本逻辑
 │   ├── contents/              # 内容脚本 UI 和逻辑
 │   │   ├── components/        # React 组件
+│   │   │   ├── SelectionToolbar.tsx   # 触发按钮定位 + 渲染入口
+│   │   │   ├── ExplodedActionMenu.tsx # 环形展开菜单
+│   │   │   ├── PillActionMenu.tsx     # 胶囊工具栏菜单
+│   │   │   └── UnifiedPanel.tsx       # 对话窗
 │   │   ├── hooks/             # 自定义 Hooks
 │   │   └── utils/             # DOM 工具函数
 │   ├── options/               # 选项页组件
-│   ├── popup/                 # Popup 组件（空目录）
+│   │   ├── index.tsx          # 选项页主体
+│   │   └── ConfirmDialog.tsx  # 确认对话框
 │   └── shared/                # 共享模块
 │       ├── types.ts           # TypeScript 类型定义
 │       ├── constants.ts       # 常量定义
-│       ├── defaults.ts        # 默认值
-│       ├── errors.ts          # 错误处理
-│       ├── messaging.ts       # 消息传递封装
-│       ├── prompt.ts          # 提示词构建
+│       ├── defaults.ts        # 默认值（DEFAULT_ACTIONS, DEFAULT_SETTINGS 等）
+│       ├── errors.ts          # 错误处理（AppError, getErrorMessage 等）
+│       ├── messaging.ts       # 消息传递封装（streamChat）
+│       ├── prompt.ts          # 提示词构建（resolveActionTemplate, buildContextSystemMessage）
 │       ├── selection.ts       # 文本选择逻辑
 │       ├── storage.ts         # Chrome 存储封装
 │       └── ui/                # UI 相关
 │           ├── tokens.ts      # 设计令牌（颜色、间距、字体等）
-│           ├── theme.ts       # 主题 Hook
-│           └── styles.ts      # 样式工厂函数
+│           ├── theme.ts       # 主题 Hook（useUiThemeName, useUiTheme）
+│           ├── styles.ts      # 样式工厂函数（createButtonStyle, createCardStyle 等）
+│           └── icons.tsx      # BrandIcon 组件
 ├── package.json               # 项目配置
 ├── tsconfig.json              # TypeScript 配置
 ├── AGENTS.md                  # 项目说明文档
@@ -231,8 +237,8 @@ function App() {
 **文件位置**：`src/contents/components/SelectionToolbar.tsx`
 
 **功能**：
-- 渐变圆形触发按钮（SparkleIcon）
-- 两种菜单模式：`explode`（环形展开）和 `pill`（胶囊工具栏）
+- 渐变圆形触发按钮（BrandIcon）
+- 根据 `toolbarMode` 渲染两种菜单：`ExplodedActionMenu`（环形展开）或 `PillActionMenu`（胶囊工具栏）
 - 基于鼠标位置的智能定位
 
 **定位算法**（`src/contents/components/SelectionToolbar.tsx:57-83`）：
@@ -314,7 +320,10 @@ await streamChat(apiMessages, {
       }
     }
     if (event.type === "completed") {
-      // 完成
+      // 完成，若无内容则显示空消息提示
+    }
+    if (event.type === "cancelled") {
+      // 标记为已取消
     }
     if (event.type === "failed") {
       // 处理错误
@@ -380,6 +389,7 @@ export function isInsideExtensionEvent(event: Event, extensionRoot: HTMLElement 
    - 使用 `fetch` 调用 OpenAI 兼容的 `/chat/completions` 端点
    - 处理 SSE（Server-Sent Events）流
    - 支持 `reasoning_content`（DeepSeek 等模型）
+   - 处理中断错误（`isAbortError`）并发送 `cancelled` 事件
 
 2. **消息处理器注册**（`src/background/index.ts:242-297`）：
 ```typescript
@@ -702,7 +712,21 @@ export function resolveActionTemplate(template: string, context: SelectionContex
 }
 ```
 
-2. **构建上下文系统消息**（`src/shared/prompt.ts:16-96`）：
+2. **格式化自由输入提示**（`src/shared/prompt.ts:12-14`）：
+```typescript
+export function formatFreeInputPrompt(input: string, text: string): string {
+  return `帮我${input}「${text}」`
+}
+```
+
+3. **验证占位符**（`src/shared/prompt.ts:98-100`）：
+```typescript
+export function hasTextPlaceholder(template: string): boolean {
+  return template.includes("{text}")
+}
+```
+
+4. **构建上下文系统消息**（`src/shared/prompt.ts:16-96`）：
    - 角色定义
    - 行为准则
    - 输出格式要求
@@ -1475,14 +1499,17 @@ Content Script                    Port                    Background
 | 文件路径 | 行号范围 | 描述 |
 |----------|----------|------|
 | `src/contents/main.tsx` | 1-167 | Content Script 入口 |
-| `src/contents/components/SelectionToolbar.tsx` | 1-191 | 触发按钮/环形菜单 |
-| `src/contents/components/UnifiedPanel.tsx` | 1-584 | 对话窗 |
+| `src/contents/components/SelectionToolbar.tsx` | 1-175 | 触发按钮定位 + 菜单渲染入口 |
+| `src/contents/components/ExplodedActionMenu.tsx` | 1-191 | 环形展开菜单 |
+| `src/contents/components/PillActionMenu.tsx` | 1-127 | 胶囊工具栏菜单 |
+| `src/contents/components/UnifiedPanel.tsx` | 1-556 | 对话窗 |
 | `src/contents/hooks/useToolbarState.ts` | 1-90 | 工具栏状态 Hook |
 | `src/contents/hooks/useChatState.ts` | 1-218 | 聊天状态 Hook |
 | `src/contents/hooks/useSelectionDetection.ts` | 1-180 | 选择检测 Hook |
 | `src/contents/utils/domUtils.ts` | 1-113 | DOM 工具函数 |
 | `src/background/index.ts` | 1-422 | Background 消息处理器 |
-| `src/options/index.tsx` | 1-1524 | 选项页 |
+| `src/options/index.tsx` | 1-1479 | 选项页 |
+| `src/options/ConfirmDialog.tsx` | 1-106 | 确认对话框 |
 | `src/shared/types.ts` | 1-157 | 类型定义 |
 | `src/shared/constants.ts` | 1-53 | 常量定义 |
 | `src/shared/defaults.ts` | 1-52 | 默认值 |
@@ -1493,12 +1520,14 @@ Content Script                    Port                    Background
 | `src/shared/errors.ts` | 1-52 | 错误处理 |
 | `src/shared/ui/tokens.ts` | 1-216 | 设计令牌 |
 | `src/shared/ui/theme.ts` | 1-84 | 主题 Hook |
-| `popup.tsx` | 1-386 | Popup 窗口 |
+| `src/shared/ui/styles.ts` | 1-134 | 样式工厂函数 |
+| `src/shared/ui/icons.tsx` | 1-26 | BrandIcon 组件 |
+| `popup.tsx` | 1-488 | Popup 窗口 |
 | `background.ts` | 1-3 | Background 入口 |
 | `options.tsx` | 1-3 | Options 入口 |
 
 ---
 
-**文档版本**：1.0  
-**最后更新**：2026-04-22  
+**文档版本**：1.1  
+**最后更新**：2026-04-24  
 **维护者**：AI Help Me 开发团队

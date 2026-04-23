@@ -8,6 +8,7 @@ Chrome extension (MV3) built with Plasmo + React + TypeScript. Users select text
 - Build may warn about missing `svgo` for `htmlnano minifySvg`; builds still succeed.
 - TypeScript path alias: `~/*` maps to `src/*` (tsconfig `paths`).
 - Design docs: `DESIGN.md`.
+- Detailed architecture docs: `WIKI.md`.
 - UI module naming (触发按钮/环形菜单/对话窗 etc.) is defined in `DESIGN.md` §0 and CLAUDE.md.
 
 ## Commands
@@ -20,6 +21,7 @@ Chrome extension (MV3) built with Plasmo + React + TypeScript. Users select text
 - `src/contents/main.tsx`: content-script UI entry (must be default-exported React component for Plasmo).
 - `background.ts`: thin entry; calls `setupBackgroundMessageHandler()` from `src/background/index.ts`.
 - `options.tsx`: thin entry; re-exports from `src/options/index.tsx`.
+- `popup.tsx`: browser action popup (service switcher + open settings). Direct React component, no wrapper.
 
 ## Architecture
 Three runtime contexts communicate via `chrome.runtime.onMessage`:
@@ -28,7 +30,7 @@ Three runtime contexts communicate via `chrome.runtime.onMessage`:
 - **Background** (`src/background/index.ts` via `background.ts`): registers the message handler, reads settings from `chrome.storage.sync`, calls the API, normalizes responses. **Never move API requests into the content script.**
 - **Options** (`src/options/index.tsx` via `options.tsx`): edits API config, translation language, and custom actions, then validates and persists settings.
 
-Shared logic in `src/shared/*`: `types.ts`, `selection.ts`, `prompt.ts`, `messaging.ts`, `storage.ts`.
+Shared logic in `src/shared/*`: `types.ts`, `selection.ts`, `prompt.ts`, `messaging.ts`, `storage.ts`, `constants.ts`, `defaults.ts`, `errors.ts`.
 
 ## Invariants
 - Keep `data-ai-help-me-root="true"` on the extension UI root. Selection and mousedown handlers depend on ignoring events inside that subtree.

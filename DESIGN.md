@@ -41,6 +41,8 @@
 | **品牌** | `brand.primary` | `#0D9488` | `#2DD4BF` |
 | | `brand.primaryHover` | `#0F766E` | `#14B8A6` |
 | | `brand.primaryActive` | `#115E59` | `#0D9488` |
+| | `brand.secondary` | `#E0F5F0` | `#1A3A35` |
+| | `brand.secondaryHover` | `#CCEBEB` | `#1F4A44` |
 | **强调** | `accent.primary` | `#007AFF` | `#0A84FF` |
 | | `accent.primaryHover` | `#0066D6` | `#409CFF` |
 | | `accent.primaryActive` | `#0055B3` | `#0066D6` |
@@ -379,6 +381,7 @@ border-right: 0.5px solid border.hairline
 - Logo 区：`padding: 20px 32px 12px`
 - 导航区：`padding: 4px 32px`
 - 导航项间距：4px
+- 导航项：外观、AI大模型、动作指令、备份
 
 **主内容区**：
 ```
@@ -457,7 +460,7 @@ margin: 20px 0
 ## 10. 图标规范
 
 - **侧边栏图标**：18×18px
-- **Logo**：32×32px，渐变背景 `linear-gradient(135deg, accent.primary, brand.primary)`
+- **Logo**：32×32px，蓝色渐变棱镜图标 `linear-gradient(135deg, #60A5FA, #3B82F6)`，带 `clipPath` 圆角（rx=8），实现在 `src/shared/ui/icons.tsx`
 - **按钮内图标**：14×14px
 - **SVG 描边**：1.2-1.5px
 - **图标颜色**：跟随文字色或状态色
@@ -488,27 +491,56 @@ margin: 20px 0
 
 ```
 src/shared/ui/
-├── tokens.ts   # 颜色、字体、间距、圆角、阴影、动效 token
+├── tokens.ts   # 颜色、字体、间距、圆角、阴影、动效、层级、布局 token
 ├── styles.ts   # 可复用的样式工厂函数
-└── theme.ts    # 主题切换逻辑（useUiThemeName hook）
+├── theme.ts    # 主题切换逻辑（useUiThemeName, useUiTheme）
+└── icons.tsx   # BrandIcon 组件（品牌 SVG 图标）
 ```
 
 **样式工厂函数**：
 - `createFocusRing(color)` — 聚焦环
 - `createCardStyle(theme)` — 卡片
 - `createInputStyle(theme, focused)` — 输入框
-- `createButtonStyle(theme, variant, options?)` — 按钮
-- `createStatusMessageStyle(theme, tone)` — 状态消息
+- `createButtonStyle(theme, variant, options?)` — 按钮（variant: primary | secondary | danger, options: disabled/pressed/focused/compact）
+- `createStatusMessageStyle(theme, tone)` — 状态消息（tone: success | error | info）
 - `createFieldLabelStyle(theme)` — 字段标签
 - `createOverlayStyle(theme)` — 遮罩层
 
+**导出 Token 常量**：
+- `uiThemes` — 完整主题对象（light/dark）
+- `uiTypography` — 字体栈、字号、字重、字间距
+- `uiSpace` — 间距 scale（2-32）
+- `uiRadius` — 圆角（sm/md/lg/xl/pill）
+- `uiShadow` — 阴影（sm/md/lg/xl）
+- `uiMotion` — 动效时长 + 缓动曲线
+- `uiLayer` — z-index 层级（overlay: 2147483647）
+- `uiLayout` — 布局常量（edgeInset, toolbar, chatPanel）
+
 ---
 
-## 14. 内容脚本 UI 层级
+## 14. 内容脚本 UI 层级与布局常量
 
 ```
 uiLayer: {
   overlay: 2147483647  // 最大 z-index，确保对话框在最上层
+}
+```
+
+```
+uiLayout: {
+  edgeInset: 8,          // 工具栏距视口边缘最小距离
+  toolbar: {
+    yOffset: 56,
+    preferredXOffset: 160,
+    widthEstimate: 420,
+    inputMinWidth: 160
+  },
+  chatPanel: {
+    width: 420,
+    height: 360,
+    initialX: 24,
+    initialY: 24
+  }
 }
 ```
 
@@ -523,3 +555,8 @@ uiLayer: {
 3. **弹性动效**：使用 `easingSpring` 给按钮/对话框添加轻微弹性，增加趣味感
 4. **禁用态灰度**：使用统一的 `state.disabled` 色 + 0.5 opacity
 5. **深色模式**：不简单反转，而是精心调整的独立色值
+
+---
+
+**文档版本**：1.1  
+**最后更新**：2026-04-24
