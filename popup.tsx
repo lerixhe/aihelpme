@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react"
 
 import { getSettings, saveSettings } from "~/shared/storage"
+import { BrandIcon } from "~/shared/ui/icons"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import { createCardStyle, createFocusRing } from "~/shared/ui/styles"
@@ -188,6 +189,13 @@ export default function Popup() {
     marginBottom: uiSpace[12]
   }
 
+  const titleContainerStyle: CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: uiSpace[8],
+    margin: 0
+  }
+
   const titleStyle: CSSProperties = {
     fontSize: uiTypography.fontSize.lg,
     fontWeight: uiTypography.fontWeight.semibold,
@@ -302,7 +310,10 @@ export default function Popup() {
     <div style={shellStyle}>
       {/* Header */}
       <div style={headerStyle}>
-        <h1 style={titleStyle}>AI Help Me</h1>
+        <div style={titleContainerStyle}>
+          <BrandIcon size={24} />
+          <h1 style={titleStyle}>AI Help Me</h1>
+        </div>
         <button
           type="button"
           onClick={openOptionsPage}

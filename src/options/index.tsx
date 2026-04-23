@@ -1282,7 +1282,7 @@ export default function OptionsPage() {
             onMouseUp={() => setPressedBtn(null)}
             onMouseLeave={() => setPressedBtn(null)}
             style={{
-              ...secondaryBtnStyle,
+              ...createButtonStyle(theme, "secondary"),
               transform: pressedBtn === "import-settings" ? "scale(0.96)" : "scale(1)"
             }}>
             选择备份文件
