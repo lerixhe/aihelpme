@@ -40,7 +40,7 @@ export default function PillActionMenu({
       style={{
         position: "absolute",
         left: barOffsetX,
-        top: -(PILL_HEIGHT + 10),
+        top: -(PILL_HEIGHT + 16),
         display: "flex",
         gap: PILL_GAP,
         padding: "6px 8px",

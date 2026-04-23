@@ -17,7 +17,7 @@ interface Props {
   onClose: () => void
 }
 
-const TRIGGER_SIZE = 40
+const TRIGGER_SIZE = 25
 
 type RingAction = { id: string; label: string; template: string }
 
@@ -36,7 +36,7 @@ export default function SelectionToolbar({
 
   const allActions: RingAction[] = useMemo(() =>
     actions.map((a) => ({ id: a.id, label: a.label, template: a.template }))
-  , [actions])
+    , [actions])
 
   const position = useMemo(() => {
     if (!anchor) {
