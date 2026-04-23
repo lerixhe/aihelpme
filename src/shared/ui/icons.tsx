@@ -6,18 +6,21 @@ export function BrandIcon({ size }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <defs>
-        <linearGradient id="robotIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="prismIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#60A5FA" />
           <stop offset="100%" stopColor="#3B82F6" />
         </linearGradient>
+        <clipPath id="prismClip">
+          <rect width="32" height="32" rx="8" />
+        </clipPath>
       </defs>
-      <rect width="32" height="32" rx="8" fill="url(#robotIconGrad)" />
-      <rect x="8" y="11" width="16" height="14" rx="3" fill="#FFFFFF" />
-      <line x1="16" y1="11" x2="16" y2="7" stroke="#1E40AF" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="16" cy="5.5" r="1.5" fill="#1E40AF" />
-      <circle cx="12" cy="16" r="2" fill="#1E40AF" />
-      <circle cx="20" cy="16" r="2" fill="#1E40AF" />
-      <rect x="12" y="21" width="8" height="2" rx="1" fill="#1E40AF" />
+      <g clipPath="url(#prismClip)">
+        <rect width="32" height="32" fill="url(#prismIconGrad)" />
+        <polygon points="16,5 24,16 16,14" fill="#93C5FD" />
+        <polygon points="16,5 16,14 8,16" fill="#DBEAFE" />
+        <polygon points="16,14 24,16 21,26 16,22" fill="#2563EB" />
+        <polygon points="16,14 16,22 11,26 8,16" fill="#3B82F6" />
+      </g>
     </svg>
   )
 }
