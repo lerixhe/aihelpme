@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react"
 
 import ExplodedActionMenu from "~/contents/components/ExplodedActionMenu"
 import PillActionMenu from "~/contents/components/PillActionMenu"
+import { BrandIcon } from "~/shared/ui/icons"
 import { useUiTheme } from "~/shared/ui/theme"
-import { uiLayout, uiLayer, uiMotion, uiShadow, uiTypography } from "~/shared/ui/tokens"
+import { uiLayout, uiLayer, uiMotion, uiRadius, uiShadow, uiTypography } from "~/shared/ui/tokens"
 import { createFocusRing } from "~/shared/ui/styles"
 import type { ActionTemplate, SelectionAnchor, ToolbarMode } from "~/shared/types"
 
@@ -17,23 +18,6 @@ interface Props {
 }
 
 const TRIGGER_SIZE = 40
-
-function SparkleIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2L13.5 9.5L21 12L13.5 14.5L12 22L10.5 14.5L3 12L10.5 9.5L12 2Z"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill={color}
-        fillOpacity={0.15}
-      />
-      <circle cx="18" cy="5" r="1.5" fill={color} fillOpacity={0.5} />
-    </svg>
-  )
-}
 
 type RingAction = { id: string; label: string; template: string }
 
@@ -149,8 +133,7 @@ export default function SelectionToolbar({
         style={{
           width: TRIGGER_SIZE,
           height: TRIGGER_SIZE,
-          borderRadius: "50%",
-          background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.brand.primary})`,
+          background: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -159,10 +142,11 @@ export default function SelectionToolbar({
           padding: 0,
           outline: "none",
           boxShadow: triggerPressed ? uiShadow.md : `${uiShadow.lg}, ${ringOpen ? createFocusRing(theme.accent.primary) : "none"}`,
+          borderRadius: uiRadius.sm,
           transform: triggerPressed ? "scale(0.92)" : ringOpen ? "scale(1.08)" : "scale(1)",
           transition: `transform 200ms ${uiMotion.easingSpring}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
         }}>
-        <SparkleIcon size={20} color={theme.text.inverse} />
+        <BrandIcon size={TRIGGER_SIZE} />
       </button>
 
       {ringOpen && (

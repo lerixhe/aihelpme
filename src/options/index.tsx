@@ -1,6 +1,7 @@
 import { type JSX, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 
 import { hasTextPlaceholder } from "~/shared/prompt"
+import { BrandIcon } from "~/shared/ui/icons"
 import { DEFAULT_CUSTOM_MODEL_SERVICE, DEFAULT_SETTINGS } from "~/shared/defaults"
 import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
@@ -1343,29 +1344,8 @@ export default function OptionsPage() {
             gap: uiSpace[10],
             padding: `${uiSpace[20]}px ${uiSpace[32]}px ${uiSpace[12]}px`
           }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: uiRadius.sm,
-              background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.brand.primary})`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: uiShadow.md,
-              flexShrink: 0
-            }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M12 2L13.5 9.5L21 12L13.5 14.5L12 22L10.5 14.5L3 12L10.5 9.5L12 2Z"
-                stroke={theme.text.inverse}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill={theme.text.inverse}
-                fillOpacity={0.2}
-              />
-            </svg>
+          <div style={{ boxShadow: uiShadow.md, flexShrink: 0, borderRadius: uiRadius.sm, overflow: "hidden" }}>
+            <BrandIcon size={32} />
           </div>
           <span
             style={{

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
+import { BrandIcon } from "~/shared/ui/icons"
 import { useUiTheme } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiTypography, uiLayer } from "~/shared/ui/tokens"
 import { createButtonStyle, createCardStyle, createFocusRing, createInputStyle, createOverlayStyle, createStatusMessageStyle } from "~/shared/ui/styles"
@@ -13,23 +14,6 @@ interface Props {
   onSend: (input: string) => void
   onStop: () => void
   onClose: () => void
-}
-
-function SparkleIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2L13.5 9.5L21 12L13.5 14.5L12 22L10.5 14.5L3 12L10.5 9.5L12 2Z"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill={color}
-        fillOpacity={0.15}
-      />
-      <circle cx="18" cy="5" r="1.5" fill={color} fillOpacity={0.5} />
-    </svg>
-  )
 }
 
 function ChevronIcon({ expanded, color }: { expanded: boolean; color: string }) {
@@ -291,19 +275,7 @@ export default function UnifiedPanel({
             flexShrink: 0
           }}>
           <div style={{ display: "flex", alignItems: "center", gap: uiSpace[10] }}>
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                background: `linear-gradient(135deg, ${theme.accent.primary}, ${theme.brand.primary})`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0
-              }}>
-              <SparkleIcon size={16} color={theme.text.inverse} />
-            </div>
+            <BrandIcon size={28} />
             <span
               style={{
                 fontWeight: uiTypography.fontWeight.semibold,
