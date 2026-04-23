@@ -6,6 +6,7 @@ export interface ActionTemplate {
   id: string
   label: string
   template: string
+  enabled?: boolean
 }
 
 export interface ModelParams {

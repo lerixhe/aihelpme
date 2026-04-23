@@ -1049,7 +1049,8 @@ export default function OptionsPage() {
                 {
                   id: `custom-${Date.now()}`,
                   label: "新动作",
-                  template: "帮我处理以下内容「{text}」"
+                  template: "帮我处理以下内容「{text}」",
+                  enabled: true
                 }
               ]
             }))
@@ -1111,17 +1112,24 @@ export default function OptionsPage() {
                 placeholder="模板，必须包含 {text}"
                 style={createInputStyle(`${item.id}-template`)}
               />
-              <button
-                type="button"
-                onClick={() => {
-                  setSettings((current) => ({
-                    ...current,
-                    actions: current.actions.filter((action) => action.id !== item.id)
-                  }))
-                }}
-                style={{ ...secondaryBtnStyle, color: theme.state.error, borderColor: theme.state.error }}>
-                删除
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8] }}>
+                <ToggleSwitch
+                  checked={item.enabled !== false}
+                  onChange={() => updateCustomAction(index, { enabled: item.enabled === false ? true : false })}
+                  theme={theme}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettings((current) => ({
+                      ...current,
+                      actions: current.actions.filter((action) => action.id !== item.id)
+                    }))
+                  }}
+                  style={{ ...secondaryBtnStyle, color: theme.state.error, borderColor: theme.state.error }}>
+                  删除
+                </button>
+              </div>
             </div>
             {invalid ? (
               <div style={{ marginTop: uiSpace[8], color: theme.state.warning, fontSize: uiTypography.fontSize.sm, fontWeight: uiTypography.fontWeight.medium }}>

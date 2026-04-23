@@ -28,7 +28,7 @@ export function useToolbarState() {
   // Load actions from settings
   useEffect(() => {
     void getSettings().then((settings) => {
-      setActions(settings.actions)
+      setActions(settings.actions.filter((a) => a.enabled !== false))
       setToolbarMode(settings.toolbarMode)
     })
 
@@ -38,7 +38,7 @@ export function useToolbarState() {
       }
 
       void getSettings().then((settings) => {
-        setActions(settings.actions)
+        setActions(settings.actions.filter((a) => a.enabled !== false))
         setToolbarMode(settings.toolbarMode)
       })
     }

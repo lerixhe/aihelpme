@@ -13,7 +13,8 @@ function validateActions(items: unknown[]): ExtensionSettings["actions"] {
       return {
         id: String(record.id),
         label: String(record.label),
-        template: String(record.template)
+        template: String(record.template),
+        enabled: typeof record.enabled === "boolean" ? record.enabled : true
       }
     })
 }
