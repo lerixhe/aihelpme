@@ -1272,7 +1272,7 @@ export default function OptionsPage() {
             导入配置
           </h3>
           <p style={{ margin: `0 0 ${uiSpace[14]}px`, color: theme.text.secondary, fontSize: uiTypography.fontSize.sm, lineHeight: 1.6 }}>
-            从已导出的 JSON 文件恢复设置。导入后会覆盖当前配置。
+            从已导出的 JSON 文件恢复设置，导入后会覆盖当前配置。
           </p>
           <button
             type="button"
