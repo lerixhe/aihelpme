@@ -1,11 +1,11 @@
-import { type CSSProperties, useEffect, useRef, useState } from "react"
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react"
 
 import { getSettings, saveSettings } from "~/shared/storage"
 import { BrandIcon } from "~/shared/ui/icons"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import { createCardStyle, createFocusRing } from "~/shared/ui/styles"
-import type { ExtensionSettings } from "~/shared/types"
+import type { ActionTemplate, ExtensionSettings } from "~/shared/types"
 
 function SettingsIcon({ color }: { color: string }) {
   return (
@@ -53,6 +53,45 @@ function CheckIcon({ color }: { color: string }) {
   )
 }
 
+function CheckboxIcon({ checked, color }: { checked: boolean; color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect
+        x="1"
+        y="1"
+        width="14"
+        height="14"
+        rx="4"
+        fill={checked ? color : "transparent"}
+        stroke={checked ? color : "#AEAEB2"}
+        strokeWidth="1.5"
+      />
+      {checked && <path d="M4 8L7 11L12 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
+    </svg>
+  )
+}
+
+function ActionsIcon({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4.5 12.5L8.5 8.5L11.5 11.5L15.5 5.5"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12.5 5.5H15.5V8.5"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function getServiceInitial(name: string | undefined) {
   const trimmed = name?.trim() ?? ""
   if (!trimmed) {
@@ -84,18 +123,58 @@ function getAvatarPalette(name: string | undefined, dark: boolean) {
 }
 
 export default function Popup() {
-  const baseHeight = 230
+  const baseHeight = 330
   const themeName = useUiThemeName()
   const theme = uiThemes[themeName]
   const [settings, setSettings] = useState<ExtensionSettings | null>(null)
   const [changing, setChanging] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [serviceMenuOpen, setServiceMenuOpen] = useState(false)
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const [pressedBtn, setPressedBtn] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDivElement | null>(null)
+  const serviceMenuRef = useRef<HTMLDivElement | null>(null)
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null)
   const activeService =
     settings?.modelServices.find((service) => service.id === settings.activeModelServiceId) ?? null
   const avatarPalette = getAvatarPalette(activeService?.name, themeName === "dark")
+  const enabledActionsCount = settings?.actions.filter((a) => a.enabled !== false).length ?? 0
+
+  const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={(e) => {
+        e.stopPropagation()
+        onChange()
+      }}
+      style={{
+        position: "relative",
+        width: 36,
+        height: 20,
+        borderRadius: 10,
+        border: "none",
+        background: checked ? theme.accent.primary : theme.border.default,
+        cursor: "pointer",
+        transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+        padding: 0,
+        flexShrink: 0
+      }}>
+      <span
+        style={{
+          position: "absolute",
+          top: 2,
+          left: checked ? 18 : 2,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          transition: `left ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+        }}
+      />
+    </button>
+  )
 
   useEffect(() => {
     document.documentElement.style.margin = "0"
@@ -140,8 +219,11 @@ export default function Popup() {
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false)
+      if (!serviceMenuRef.current?.contains(event.target as Node)) {
+        setServiceMenuOpen(false)
+      }
+      if (!actionsMenuRef.current?.contains(event.target as Node)) {
+        setActionsMenuOpen(false)
       }
     }
     document.addEventListener("mousedown", handlePointerDown)
@@ -157,10 +239,23 @@ export default function Popup() {
     const nextSettings = { ...settings, activeModelServiceId: serviceId }
     setSettings(nextSettings)
     setChanging(true)
-    setMenuOpen(false)
+    setServiceMenuOpen(false)
     await saveSettings(nextSettings)
     setChanging(false)
   }
+
+  const handleActionToggle = useCallback(
+    async (actionId: string) => {
+      if (!settings) return
+      const nextActions = settings.actions.map((a) =>
+        a.id === actionId ? { ...a, enabled: a.enabled === false ? true : false } : a
+      )
+      const nextSettings = { ...settings, actions: nextActions }
+      setSettings(nextSettings)
+      await saveSettings(nextSettings)
+    },
+    [settings]
+  )
 
   const openOptionsPage = () => {
     void chrome.runtime.openOptionsPage()
@@ -229,9 +324,9 @@ export default function Popup() {
     letterSpacing: uiTypography.letterSpacing.normal
   }
 
-  const triggerStyle: CSSProperties = {
+  const triggerStyle = (isOpen: boolean): CSSProperties => ({
     width: "100%",
-    border: `1px solid ${menuOpen ? theme.accent.primary : theme.border.subtle}`,
+    border: `1px solid ${isOpen ? theme.accent.primary : theme.border.subtle}`,
     borderRadius: uiRadius.md,
     height: 44,
     padding: `0 ${uiSpace[12]}px 0 40px`,
@@ -241,14 +336,14 @@ export default function Popup() {
     fontWeight: uiTypography.fontWeight.medium,
     fontFamily: uiTypography.fontFamily,
     outline: "none",
-    boxShadow: menuOpen ? createFocusRing(theme.accent.primary) : "none",
+    boxShadow: isOpen ? createFocusRing(theme.accent.primary) : "none",
     cursor: settings?.modelServices.length ? "pointer" : "default",
     transition: `border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}, box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
     display: "flex",
     alignItems: "center",
     textAlign: "left",
     position: "relative" as const
-  }
+  })
 
   const menuStyle: CSSProperties = {
     position: "absolute" as const,
@@ -335,20 +430,21 @@ export default function Popup() {
       <div style={{ marginBottom: uiSpace[12] }}>
         <div style={fieldLabelStyle}>选择模型服务：</div>
 
-        <div ref={menuRef} style={{ position: "relative" }}>
+        <div ref={serviceMenuRef} style={{ position: "relative" }}>
           <button
             type="button"
             onClick={() => {
               if (!settings || settings.modelServices.length === 0 || changing) {
                 return
               }
-              setMenuOpen((open) => !open)
+              setServiceMenuOpen((open) => !open)
+              setActionsMenuOpen(false)
             }}
             disabled={!settings || settings.modelServices.length === 0 || changing}
             aria-haspopup="listbox"
-            aria-expanded={menuOpen}
+            aria-expanded={serviceMenuOpen}
             style={{
-              ...triggerStyle,
+              ...triggerStyle(serviceMenuOpen),
               opacity: !settings || changing ? 0.6 : 1
             }}>
             {/* Avatar */}
@@ -385,12 +481,12 @@ export default function Popup() {
                 transform: "translateY(-50%)",
                 pointerEvents: "none"
               }}>
-              <ChevronIcon color={theme.text.secondary} expanded={menuOpen} />
+              <ChevronIcon color={theme.text.secondary} expanded={serviceMenuOpen} />
             </div>
           </button>
 
           {/* Dropdown Menu */}
-          {menuOpen && settings?.modelServices.length ? (
+          {serviceMenuOpen && settings?.modelServices.length ? (
             <div role="listbox" style={menuStyle}>
               {settings.modelServices.map((service) => {
                 const palette = getAvatarPalette(service.name, themeName === "dark")
@@ -436,6 +532,130 @@ export default function Popup() {
           ) : null}
         </div>
 
+      </div>
+
+      {/* Actions Selector */}
+      <div style={{ marginBottom: uiSpace[12] }}>
+        <div style={fieldLabelStyle}>选择动作指令：</div>
+
+        <div ref={actionsMenuRef} style={{ position: "relative" }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (!settings || settings.actions.length === 0) {
+                return
+              }
+              setActionsMenuOpen((open) => !open)
+              setServiceMenuOpen(false)
+            }}
+            disabled={!settings || settings.actions.length === 0}
+            aria-haspopup="listbox"
+            aria-expanded={actionsMenuOpen}
+            style={{
+              ...triggerStyle(actionsMenuOpen),
+              paddingLeft: uiSpace[12],
+              opacity: !settings ? 0.6 : 1
+            }}>
+            {/* Actions Icon */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: uiSpace[10],
+                transform: "translateY(-50%)",
+                display: "flex",
+                alignItems: "center",
+                pointerEvents: "none"
+              }}>
+              <ActionsIcon color={theme.text.secondary} />
+            </div>
+
+            {/* Actions Count */}
+            <span
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1
+              }}>
+              {enabledActionsCount > 0
+                ? `已启用 ${enabledActionsCount} 个动作`
+                : "暂无可用动作指令"}
+            </span>
+
+            {/* Chevron */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                right: uiSpace[10],
+                transform: "translateY(-50%)",
+                pointerEvents: "none"
+              }}>
+              <ChevronIcon color={theme.text.secondary} expanded={actionsMenuOpen} />
+            </div>
+          </button>
+
+          {/* Actions Dropdown Menu */}
+          {actionsMenuOpen && settings?.actions.length ? (
+            <div
+              role="listbox"
+              aria-multiselectable="true"
+              style={menuStyle}>
+              {settings.actions.map((action) => {
+                const isEnabled = action.enabled !== false
+                const isHovered = hoveredItem === action.id
+
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isEnabled}
+                    onClick={() => {
+                      void handleActionToggle(action.id)
+                    }}
+                    onMouseEnter={() => setHoveredItem(action.id)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      minHeight: 44,
+                      padding: `${uiSpace[10]}px ${uiSpace[12]}px`,
+                      border: "none",
+                      borderRadius: uiRadius.sm,
+                      background: isHovered ? theme.bg.surfaceMuted : "transparent",
+                      color: isEnabled ? theme.text.primary : theme.text.secondary,
+                      cursor: "pointer",
+                      textAlign: "left" as const,
+                      fontFamily: uiTypography.fontFamily,
+                      fontSize: uiTypography.fontSize.md,
+                      fontWeight: uiTypography.fontWeight.regular,
+                      transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+                    }}>
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                        marginRight: uiSpace[8]
+                      }}>
+                      {action.label}
+                    </span>
+                    <ToggleSwitch
+                      checked={isEnabled}
+                      onChange={() => void handleActionToggle(action.id)}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Footer */}
