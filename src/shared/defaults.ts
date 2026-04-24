@@ -5,13 +5,15 @@ export const DEFAULT_ACTIONS: ActionTemplate[] = [
     id: "explain",
     label: "解释",
     template: "帮我解释选中内容「{text}」",
-    enabled: true
+    enabled: true,
+    iconText: "释"
   },
   {
     id: "translate",
     label: "翻译",
     template: "请将以下内容翻译为简体中文：\n{text}",
-    enabled: true
+    enabled: true,
+    iconText: "译"
   }
 ]
 

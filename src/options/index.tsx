@@ -154,6 +154,8 @@ export default function OptionsPage() {
   const [pendingDeleteServiceId, setPendingDeleteServiceId] = useState<string | null>(null)
   const [editingIconServiceId, setEditingIconServiceId] = useState<string | null>(null)
   const [iconEditText, setIconEditText] = useState("")
+  const [editingIconActionId, setEditingIconActionId] = useState<string | null>(null)
+  const [actionIconEditText, setActionIconEditText] = useState("")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -217,7 +219,7 @@ export default function OptionsPage() {
   }
 
   const updateCustomAction = (index: number, patch: Partial<ActionTemplate>) => {
-    setSettings((current) => ({
+    saveSettingsNow((current) => ({
       ...current,
       actions: current.actions.map((item, itemIndex) =>
         itemIndex === index
@@ -1139,7 +1141,8 @@ export default function OptionsPage() {
                   id: `custom-${Date.now()}`,
                   label: "新动作",
                   template: "帮我处理以下内容「{text}」",
-                  enabled: true
+                  enabled: true,
+                  iconText: ""
                 }
               ]
             }))
@@ -1165,6 +1168,8 @@ export default function OptionsPage() {
 
       {settings.actions.map((item, index) => {
         const invalid = !hasTextPlaceholder(item.template)
+        const displayText = getAvatarDisplayText(item.iconText, item.label)
+        const isEditingIcon = editingIconActionId === item.id
 
         return (
           <div
@@ -1178,7 +1183,80 @@ export default function OptionsPage() {
               boxShadow: invalid ? "none" : uiShadow.sm,
               transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
             }}>
-            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr auto", gap: uiSpace[8], alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "30px 140px 1fr auto", gap: uiSpace[8], alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4] }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingIconActionId(item.id)
+                    setActionIconEditText(item.iconText ?? "")
+                  }}
+                  title="点击自定义图标文字"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: uiRadius.sm,
+                    border: "none",
+                    background: getAvatarPalette(item.iconText, item.label, themeName === "dark").background,
+                    color: getAvatarPalette(item.iconText, item.label, themeName === "dark").color,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: displayText.length >= 4 ? 8 : displayText.length > 1 ? 9 : 11,
+                    fontWeight: uiTypography.fontWeight.semibold,
+                    letterSpacing: uiTypography.letterSpacing.tight,
+                    flexShrink: 0,
+                    cursor: "pointer",
+                    padding: 0,
+                    outline: "none"
+                  }}>
+                  {displayText}
+                </button>
+              </div>
+              {isEditingIcon ? (
+                <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4], gridColumn: "2 / 4" }}>
+                  <input
+                    autoFocus
+                    maxLength={4}
+                    value={actionIconEditText}
+                    onChange={(e) => setActionIconEditText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        saveSettingsNow((current) => ({
+                          ...current,
+                          actions: current.actions.map((a, i) =>
+                            i === index ? { ...a, iconText: actionIconEditText.trim() } : a
+                          )
+                        }))
+                        setEditingIconActionId(null)
+                      } else if (e.key === "Escape") {
+                        setEditingIconActionId(null)
+                      }
+                    }}
+                    onBlur={() => {
+                      saveSettingsNow((current) => ({
+                        ...current,
+                        actions: current.actions.map((a, i) =>
+                          i === index ? { ...a, iconText: actionIconEditText.trim() } : a
+                        )
+                      }))
+                      setEditingIconActionId(null)
+                    }}
+                    placeholder="最多4字"
+                    style={{
+                      width: 48,
+                      height: 24,
+                      fontSize: uiTypography.fontSize.sm,
+                      border: `1px solid ${theme.border.default}`,
+                      borderRadius: uiRadius.sm,
+                      padding: `0 ${uiSpace[4]}px`,
+                      outline: "none",
+                      background: theme.bg.surface,
+                      color: theme.text.primary
+                    }}
+                  />
+                </div>
+              ) : null}
               <input
                 aria-label="动作名称"
                 value={item.label}

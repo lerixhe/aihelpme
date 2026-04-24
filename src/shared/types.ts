@@ -7,6 +7,7 @@ export interface ActionTemplate {
   label: string
   template: string
   enabled?: boolean
+  iconText?: string
 }
 
 export interface ModelParams {

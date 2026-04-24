@@ -14,7 +14,8 @@ function validateActions(items: unknown[]): ExtensionSettings["actions"] {
         id: String(record.id),
         label: String(record.label),
         template: String(record.template),
-        enabled: typeof record.enabled === "boolean" ? record.enabled : true
+        enabled: typeof record.enabled === "boolean" ? record.enabled : true,
+        iconText: typeof record.iconText === "string" ? record.iconText : undefined
       }
     })
 }

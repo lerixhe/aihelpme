@@ -577,6 +577,8 @@ export default function Popup() {
               {settings.actions.map((action) => {
                 const isEnabled = action.enabled !== false
                 const isHovered = hoveredItem === action.id
+                const actionPalette = getAvatarPalette(action.iconText, action.label, themeName === "dark")
+                const actionDisplayText = getAvatarDisplayText(action.iconText, action.label)
 
                 return (
                   <button
@@ -591,7 +593,7 @@ export default function Popup() {
                     onMouseLeave={() => setHoveredItem(null)}
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr auto",
+                      gridTemplateColumns: "24px 1fr auto",
                       alignItems: "center",
                       gap: uiSpace[8],
                       width: "100%",
@@ -608,6 +610,14 @@ export default function Popup() {
                       fontWeight: uiTypography.fontWeight.regular,
                       transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
                     }}>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        ...avatarStyle(actionPalette, 24, actionDisplayText.length),
+                        marginRight: 4
+                      }}>
+                      {actionDisplayText}
+                    </span>
                     <span
                       style={{
                         overflow: "hidden",
