@@ -329,7 +329,7 @@ export default function Popup() {
     border: `1px solid ${isOpen ? theme.accent.primary : theme.border.subtle}`,
     borderRadius: uiRadius.md,
     height: 44,
-    padding: `0 ${uiSpace[12]}px 0 40px`,
+    padding: `0 ${uiSpace[12]}px 0 48px`,
     background: theme.bg.surfaceMuted,
     color: theme.text.primary,
     fontSize: uiTypography.fontSize.md,
@@ -455,7 +455,7 @@ export default function Popup() {
                 top: "50%",
                 left: uiSpace[10],
                 transform: "translateY(-50%)",
-                ...avatarStyle(avatarPalette, 24),
+                ...avatarStyle(avatarPalette, 30),
                 pointerEvents: "none"
               }}>
               {getServiceInitial(activeService?.name)}
@@ -502,7 +502,7 @@ export default function Popup() {
                     onMouseEnter={() => setHoveredItem(service.id)}
                     onMouseLeave={() => setHoveredItem(null)}
                     style={menuItemStyle(service.id, selected)}>
-                    <span aria-hidden="true" style={avatarStyle(palette, 24)}>
+                    <span aria-hidden="true" style={{ ...avatarStyle(palette, 30), marginRight: 12 }}>
                       {getServiceInitial(service.name)}
                     </span>
                     <span
