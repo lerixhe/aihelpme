@@ -619,15 +619,16 @@ export default function Popup() {
                     onMouseEnter={() => setHoveredItem(action.id)}
                     onMouseLeave={() => setHoveredItem(null)}
                     style={{
-                      display: "flex",
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
                       alignItems: "center",
-                      justifyContent: "space-between",
+                      gap: uiSpace[8],
                       width: "100%",
-                      minHeight: 44,
-                      padding: `${uiSpace[10]}px ${uiSpace[12]}px`,
+                      minHeight: 40,
+                      padding: `${uiSpace[8]}px ${uiSpace[10]}px`,
                       border: "none",
                       borderRadius: uiRadius.sm,
-                      background: isHovered ? theme.bg.surfaceMuted : "transparent",
+                      background: isHovered ? theme.bg.surfaceAlt : "transparent",
                       color: isEnabled ? theme.text.primary : theme.text.secondary,
                       cursor: "pointer",
                       textAlign: "left" as const,
@@ -640,9 +641,7 @@ export default function Popup() {
                       style={{
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        flex: 1,
-                        marginRight: uiSpace[8]
+                        whiteSpace: "nowrap"
                       }}>
                       {action.label}
                     </span>
