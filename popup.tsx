@@ -107,7 +107,7 @@ export default function Popup() {
   const actionsMenuRef = useRef<HTMLDivElement | null>(null)
   const activeService =
     settings?.modelServices.find((service) => service.id === settings.activeModelServiceId) ?? null
-  const avatarPalette = getAvatarPalette(activeService?.name, themeName === "dark")
+  const avatarPalette = getAvatarPalette(activeService?.iconText, activeService?.name, themeName === "dark")
   const enabledActionsCount = settings?.actions.filter((a) => a.enabled !== false).length ?? 0
 
   const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
@@ -460,7 +460,7 @@ export default function Popup() {
           {serviceMenuOpen && settings?.modelServices.length ? (
             <div role="listbox" style={menuStyle}>
               {settings.modelServices.map((service) => {
-                const palette = getAvatarPalette(service.name, themeName === "dark")
+                const palette = getAvatarPalette(service.iconText, service.name, themeName === "dark")
                 const selected = service.id === settings.activeModelServiceId
 
                 return (

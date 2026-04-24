@@ -16,14 +16,15 @@ export function getAvatarDisplayText(iconText: string | undefined, serviceName: 
 
 export function hashString(value: string) {
   let hash = 0
-  for (const char of value) {
-    hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  for (let i = 0; i < value.length; i++) {
+    const char = value.charCodeAt(i)
+    hash = (hash * 131 + char * (i + 1) + char * char) | 0
   }
-  return hash
+  return Math.abs(hash)
 }
 
-export function getAvatarPalette(name: string | undefined, dark: boolean) {
-  const seed = name?.trim() || "service"
+export function getAvatarPalette(iconText: string | undefined, serviceName: string | undefined, dark: boolean) {
+  const seed = iconText?.trim() || serviceName?.trim() || "service"
   const hue = hashString(seed) % 360
   return dark
     ? {
