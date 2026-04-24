@@ -1025,7 +1025,7 @@ export default function OptionsPage() {
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              fontSize: displayText.length > 1 ? 9 : 11,
+                              fontSize: displayText.length >= 4 ? 8 : displayText.length > 1 ? 9 : 11,
                               fontWeight: uiTypography.fontWeight.semibold,
                               letterSpacing: uiTypography.letterSpacing.tight,
                               flexShrink: 0,
@@ -1039,7 +1039,7 @@ export default function OptionsPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4] }}>
                               <input
                                 autoFocus
-                                maxLength={2}
+                                maxLength={4}
                                 value={iconEditText}
                                 onChange={(e) => setIconEditText(e.target.value)}
                                 onKeyDown={(e) => {
@@ -1064,7 +1064,7 @@ export default function OptionsPage() {
                                   }))
                                   setEditingIconServiceId(null)
                                 }}
-                                placeholder="最多2字"
+                                placeholder="最多4字"
                                 style={{
                                   width: 48,
                                   height: 24,

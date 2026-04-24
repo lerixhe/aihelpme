@@ -366,7 +366,7 @@ export default function Popup() {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: textLength > 1 ? 9 : size >= 24 ? 11 : 10,
+    fontSize: textLength >= 4 ? 8 : textLength > 1 ? 9 : size >= 24 ? 11 : 10,
     fontWeight: uiTypography.fontWeight.semibold,
     letterSpacing: uiTypography.letterSpacing.tight,
     flexShrink: 0

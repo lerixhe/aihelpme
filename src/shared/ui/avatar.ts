@@ -9,7 +9,7 @@ export function getServiceInitial(name: string | undefined) {
 export function getAvatarDisplayText(iconText: string | undefined, serviceName: string | undefined) {
   const custom = iconText?.trim() ?? ""
   if (custom) {
-    return custom.slice(0, 2)
+    return custom.slice(0, 4)
   }
   return getServiceInitial(serviceName)
 }
