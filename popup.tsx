@@ -5,6 +5,7 @@ import { BrandIcon } from "~/shared/ui/icons"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import { createCardStyle, createFocusRing } from "~/shared/ui/styles"
+import { getAvatarPalette, getServiceInitial } from "~/shared/ui/avatar"
 import type { ActionTemplate, ExtensionSettings } from "~/shared/types"
 
 function SettingsIcon({ color }: { color: string }) {
@@ -90,36 +91,6 @@ function ActionsIcon({ color }: { color: string }) {
       />
     </svg>
   )
-}
-
-function getServiceInitial(name: string | undefined) {
-  const trimmed = name?.trim() ?? ""
-  if (!trimmed) {
-    return "?"
-  }
-  return trimmed[0]!.toLocaleUpperCase()
-}
-
-function hashString(value: string) {
-  let hash = 0
-  for (const char of value) {
-    hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  }
-  return hash
-}
-
-function getAvatarPalette(name: string | undefined, dark: boolean) {
-  const seed = name?.trim() || "service"
-  const hue = hashString(seed) % 360
-  return dark
-    ? {
-      background: `hsl(${hue} 48% 30%)`,
-      color: "#f8fafc"
-    }
-    : {
-      background: `hsl(${hue} 78% 94%)`,
-      color: `hsl(${hue} 48% 32%)`
-    }
 }
 
 export default function Popup() {
@@ -389,7 +360,7 @@ export default function Popup() {
   const avatarStyle = (palette: { background: string; color: string }, size: number = 24): CSSProperties => ({
     width: size,
     height: size,
-    borderRadius: "50%",
+    borderRadius: uiRadius.sm,
     background: palette.background,
     color: palette.color,
     display: "inline-flex",

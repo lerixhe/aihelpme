@@ -8,6 +8,7 @@ import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import { createButtonStyle, createCardStyle, createFieldLabelStyle, createFocusRing, createInputStyle as createSharedInputStyle, createStatusMessageStyle } from "~/shared/ui/styles"
+import { getAvatarPalette, getServiceInitial } from "~/shared/ui/avatar"
 import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, ApiTestResponse, FetchModelsResponse, ModelServiceConfig } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
@@ -1002,6 +1003,24 @@ export default function OptionsPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16] }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], marginBottom: uiSpace[6], flexWrap: "wrap" }}>
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: uiRadius.sm,
+                              background: getAvatarPalette(service.name, themeName === "dark").background,
+                              color: getAvatarPalette(service.name, themeName === "dark").color,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 11,
+                              fontWeight: uiTypography.fontWeight.semibold,
+                              letterSpacing: uiTypography.letterSpacing.tight,
+                              flexShrink: 0
+                            }}>
+                            {getServiceInitial(service.name)}
+                          </span>
                           <span style={{ fontSize: uiTypography.fontSize.md, fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary }}>
                             {service.name}
                           </span>
