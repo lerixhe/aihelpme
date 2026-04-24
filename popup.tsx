@@ -333,7 +333,7 @@ export default function Popup() {
 
       {/* Service Selector */}
       <div style={{ marginBottom: uiSpace[12] }}>
-        <div style={fieldLabelStyle}>当前模型服务</div>
+        <div style={fieldLabelStyle}>选择模型服务：</div>
 
         <div ref={menuRef} style={{ position: "relative" }}>
           <button
