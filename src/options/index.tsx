@@ -1444,9 +1444,7 @@ export default function OptionsPage() {
             gap: uiSpace[10],
             padding: `${uiSpace[20]}px ${uiSpace[32]}px ${uiSpace[12]}px`
           }}>
-          <div style={{ boxShadow: uiShadow.md, flexShrink: 0, borderRadius: uiRadius.sm, overflow: "hidden" }}>
-            <BrandIcon size={32} />
-          </div>
+          <BrandIcon size={32} />
           <span
             style={{
               fontSize: uiTypography.fontSize.xl,
