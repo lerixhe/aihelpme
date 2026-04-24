@@ -6,6 +6,14 @@ export function getServiceInitial(name: string | undefined) {
   return trimmed[0]!.toLocaleUpperCase()
 }
 
+export function getAvatarDisplayText(iconText: string | undefined, serviceName: string | undefined) {
+  const custom = iconText?.trim() ?? ""
+  if (custom) {
+    return custom.slice(0, 2)
+  }
+  return getServiceInitial(serviceName)
+}
+
 export function hashString(value: string) {
   let hash = 0
   for (const char of value) {

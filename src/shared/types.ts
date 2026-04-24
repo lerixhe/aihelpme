@@ -27,6 +27,7 @@ export interface ModelServiceConfig {
   apiKey: string
   model: string
   modelParams: ModelParams
+  iconText?: string
 }
 
 export interface ExtensionSettings {

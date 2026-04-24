@@ -55,7 +55,8 @@ function validateModelServices(items: unknown[]): ModelServiceConfig[] {
         apiBaseUrl: typeof record.apiBaseUrl === "string" ? record.apiBaseUrl : DEFAULT_CUSTOM_MODEL_SERVICE.apiBaseUrl,
         apiKey: typeof record.apiKey === "string" ? record.apiKey : DEFAULT_CUSTOM_MODEL_SERVICE.apiKey,
         model: typeof record.model === "string" ? record.model : DEFAULT_CUSTOM_MODEL_SERVICE.model,
-        modelParams: validateModelParams(record.modelParams)
+        modelParams: validateModelParams(record.modelParams),
+        iconText: typeof record.iconText === "string" ? record.iconText : undefined
       }
     })
 }

@@ -5,7 +5,7 @@ import { BrandIcon } from "~/shared/ui/icons"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import { createCardStyle, createFocusRing } from "~/shared/ui/styles"
-import { getAvatarPalette, getServiceInitial } from "~/shared/ui/avatar"
+import { getAvatarPalette, getAvatarDisplayText } from "~/shared/ui/avatar"
 import type { ActionTemplate, ExtensionSettings } from "~/shared/types"
 
 function SettingsIcon({ color }: { color: string }) {
@@ -357,7 +357,7 @@ export default function Popup() {
     }
   }
 
-  const avatarStyle = (palette: { background: string; color: string }, size: number = 24): CSSProperties => ({
+  const avatarStyle = (palette: { background: string; color: string }, size: number = 24, textLength: number = 1): CSSProperties => ({
     width: size,
     height: size,
     borderRadius: uiRadius.sm,
@@ -366,7 +366,7 @@ export default function Popup() {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: size >= 24 ? 11 : 10,
+    fontSize: textLength > 1 ? 9 : size >= 24 ? 11 : 10,
     fontWeight: uiTypography.fontWeight.semibold,
     letterSpacing: uiTypography.letterSpacing.tight,
     flexShrink: 0
@@ -426,10 +426,10 @@ export default function Popup() {
                 top: "50%",
                 left: uiSpace[10],
                 transform: "translateY(-50%)",
-                ...avatarStyle(avatarPalette, 30),
+                ...avatarStyle(avatarPalette, 30, getAvatarDisplayText(activeService?.iconText, activeService?.name).length),
                 pointerEvents: "none"
               }}>
-              {getServiceInitial(activeService?.name)}
+              {getAvatarDisplayText(activeService?.iconText, activeService?.name)}
             </div>
 
             {/* Service Name */}
@@ -473,8 +473,8 @@ export default function Popup() {
                     onMouseEnter={() => setHoveredItem(service.id)}
                     onMouseLeave={() => setHoveredItem(null)}
                     style={menuItemStyle(service.id, selected)}>
-                    <span aria-hidden="true" style={{ ...avatarStyle(palette, 30), marginRight: 12 }}>
-                      {getServiceInitial(service.name)}
+                    <span aria-hidden="true" style={{ ...avatarStyle(palette, 30, getAvatarDisplayText(service.iconText, service.name).length), marginRight: 12 }}>
+                      {getAvatarDisplayText(service.iconText, service.name)}
                     </span>
                     <span
                       style={{

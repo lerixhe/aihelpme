@@ -8,7 +8,7 @@ import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
 import { uiMotion, uiRadius, uiShadow, uiSpace, uiThemes, uiTypography } from "~/shared/ui/tokens"
 import { createButtonStyle, createCardStyle, createFieldLabelStyle, createFocusRing, createInputStyle as createSharedInputStyle, createStatusMessageStyle } from "~/shared/ui/styles"
-import { getAvatarPalette, getServiceInitial } from "~/shared/ui/avatar"
+import { getAvatarPalette, getAvatarDisplayText } from "~/shared/ui/avatar"
 import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, ApiTestResponse, FetchModelsResponse, ModelServiceConfig } from "~/shared/types"
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
@@ -152,6 +152,8 @@ export default function OptionsPage() {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
   const [serviceDraft, setServiceDraft] = useState<ModelServiceConfig>(createCustomServiceDraft())
   const [pendingDeleteServiceId, setPendingDeleteServiceId] = useState<string | null>(null)
+  const [editingIconServiceId, setEditingIconServiceId] = useState<string | null>(null)
+  const [iconEditText, setIconEditText] = useState("")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -996,6 +998,9 @@ export default function OptionsPage() {
               {settings.modelServices.map((service) => {
                 const isActive = settings.activeModelServiceId === service.id
 
+                const displayText = getAvatarDisplayText(service.iconText, service.name)
+                const isEditingIcon = editingIconServiceId === service.id
+
                 return (
                   <div
                     key={service.id}
@@ -1003,24 +1008,77 @@ export default function OptionsPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16] }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], marginBottom: uiSpace[6], flexWrap: "wrap" }}>
-                          <span
-                            aria-hidden="true"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingIconServiceId(service.id)
+                              setIconEditText(service.iconText ?? "")
+                            }}
+                            title="点击自定义图标文字"
                             style={{
                               width: 30,
                               height: 30,
                               borderRadius: uiRadius.sm,
+                              border: "none",
                               background: getAvatarPalette(service.name, themeName === "dark").background,
                               color: getAvatarPalette(service.name, themeName === "dark").color,
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              fontSize: 11,
+                              fontSize: displayText.length > 1 ? 9 : 11,
                               fontWeight: uiTypography.fontWeight.semibold,
                               letterSpacing: uiTypography.letterSpacing.tight,
-                              flexShrink: 0
+                              flexShrink: 0,
+                              cursor: "pointer",
+                              padding: 0,
+                              outline: "none"
                             }}>
-                            {getServiceInitial(service.name)}
-                          </span>
+                            {displayText}
+                          </button>
+                          {isEditingIcon ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4] }}>
+                              <input
+                                autoFocus
+                                maxLength={2}
+                                value={iconEditText}
+                                onChange={(e) => setIconEditText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    saveSettingsNow((current) => ({
+                                      ...current,
+                                      modelServices: current.modelServices.map((s) =>
+                                        s.id === service.id ? { ...s, iconText: iconEditText.trim() } : s
+                                      )
+                                    }))
+                                    setEditingIconServiceId(null)
+                                  } else if (e.key === "Escape") {
+                                    setEditingIconServiceId(null)
+                                  }
+                                }}
+                                onBlur={() => {
+                                  saveSettingsNow((current) => ({
+                                    ...current,
+                                    modelServices: current.modelServices.map((s) =>
+                                      s.id === service.id ? { ...s, iconText: iconEditText.trim() } : s
+                                    )
+                                  }))
+                                  setEditingIconServiceId(null)
+                                }}
+                                placeholder="最多2字"
+                                style={{
+                                  width: 48,
+                                  height: 24,
+                                  fontSize: uiTypography.fontSize.sm,
+                                  border: `1px solid ${theme.border.default}`,
+                                  borderRadius: uiRadius.sm,
+                                  padding: `0 ${uiSpace[4]}px`,
+                                  outline: "none",
+                                  background: theme.bg.surface,
+                                  color: theme.text.primary
+                                }}
+                              />
+                            </div>
+                          ) : null}
                           <span style={{ fontSize: uiTypography.fontSize.md, fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary }}>
                             {service.name}
                           </span>
