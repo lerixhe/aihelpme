@@ -2,6 +2,7 @@ import { type JSX, useEffect, useMemo, useRef, useState, type CSSProperties } fr
 
 import { hasTextPlaceholder } from "~/shared/prompt"
 import { BrandIcon } from "~/shared/ui/icons"
+import { trackEvent } from "~/shared/analytics"
 import { DEFAULT_CUSTOM_MODEL_SERVICE, DEFAULT_SETTINGS } from "~/shared/defaults"
 import { getSettings, normalizeSettings, saveSettings } from "~/shared/storage"
 import { useUiThemeName } from "~/shared/ui/theme"
@@ -11,7 +12,7 @@ import type { ActionTemplate, ExtensionSettings, ThemePreference, ToolbarMode, A
 import { MESSAGE_TYPES } from "~/shared/constants"
 import { ConfirmDialog } from "~/options/ConfirmDialog"
 
-type Section = "appearance" | "connection" | "actions" | "backup"
+type Section = "appearance" | "connection" | "actions" | "backup" | "about"
 
 function ToggleSwitch({ checked, onChange, theme }: { checked: boolean; onChange: () => void; theme: any }) {
   return (
@@ -103,11 +104,22 @@ function BackupIcon({ size, color }: { size: number; color: string }) {
   )
 }
 
+function AboutIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="7.5" stroke={color} strokeWidth={1.3} />
+      <path d="M10 9V14" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <circle cx="10" cy="6.5" r="0.75" fill={color} />
+    </svg>
+  )
+}
+
 const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] = [
   { key: "appearance", label: "外观", icon: AppearanceIcon },
   { key: "connection", label: "AI大模型", icon: ConnectionIcon },
   { key: "actions", label: "动作指令", icon: ActionsIcon },
-  { key: "backup", label: "备份与迁移", icon: BackupIcon }
+  { key: "backup", label: "备份与迁移", icon: BackupIcon },
+  { key: "about", label: "关于", icon: AboutIcon }
 ]
 
 function createCustomServiceDraft(): ModelServiceConfig {
@@ -147,7 +159,7 @@ export default function OptionsPage() {
     })
     void chrome.storage.local.get("optionsActiveSection").then((result) => {
       const saved = result.optionsActiveSection as Section | undefined
-      if (saved && ["appearance", "connection", "actions", "backup"].includes(saved)) {
+      if (saved && ["appearance", "connection", "actions", "backup", "about"].includes(saved)) {
         setActiveSection(saved)
       }
       setLoaded(true)
@@ -1313,11 +1325,91 @@ export default function OptionsPage() {
     </section>
   )
 
+  const renderAbout = () => (
+    <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
+      <h2
+        style={{
+          margin: `0 0 ${uiSpace[4]}px`,
+          fontSize: uiTypography.fontSize.lg,
+          fontWeight: uiTypography.fontWeight.semibold,
+          letterSpacing: uiTypography.letterSpacing.tight
+        }}>
+        协助改善用户体验
+      </h2>
+      <p
+        style={{
+          margin: `0 0 ${uiSpace[16]}px`,
+          color: theme.text.secondary,
+          fontSize: uiTypography.fontSize.md,
+          lineHeight: 1.7
+        }}>
+        开启遥测数据后，我们会收集匿名使用统计（如功能使用频率、AI 响应性能），帮助改进产品体验。数据不包含任何个人信息、选中文本内容或 API Key。
+      </p>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: `${uiSpace[14]}px ${uiSpace[16]}px`,
+          border: `1px solid ${theme.border.hairline}`,
+          borderRadius: uiRadius.md,
+          background: theme.bg.surfaceMuted
+        }}>
+        <div>
+          <div
+            style={{
+              fontSize: uiTypography.fontSize.md,
+              fontWeight: uiTypography.fontWeight.semibold,
+              color: theme.text.primary,
+              marginBottom: uiSpace[2]
+            }}>
+            协助改善用户体验
+          </div>
+          <div
+            style={{
+              fontSize: uiTypography.fontSize.sm,
+              color: theme.text.secondary
+            }}>
+            {settings.telemetryEnabled ? "已开启" : "已关闭"}
+          </div>
+        </div>
+        <ToggleSwitch
+          checked={settings.telemetryEnabled}
+          onChange={() => {
+            const next = !settings.telemetryEnabled
+            saveSettingsNow((current) => ({ ...current, telemetryEnabled: next }))
+            void trackEvent("telemetry_toggled", { enabled: next })
+          }}
+          theme={theme}
+        />
+      </div>
+
+      <div
+        style={{
+          marginTop: uiSpace[16],
+          padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
+          border: `1px solid ${theme.border.hairline}`,
+          borderRadius: uiRadius.md,
+          background: theme.bg.surfaceMuted,
+          fontSize: uiTypography.fontSize.sm,
+          color: theme.text.secondary,
+          lineHeight: 1.7
+        }}>
+        <div style={{ fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary, marginBottom: uiSpace[4] }}>
+          扩展信息
+        </div>
+        <div>版本：v{chrome.runtime.getManifest().version}</div>
+      </div>
+    </section>
+  )
+
   const sectionContent: Record<Section, () => JSX.Element> = {
     appearance: renderAppearance,
     connection: renderConnection,
     actions: renderActions,
-    backup: renderBackup
+    backup: renderBackup,
+    about: renderAbout
   }
 
   const sidebarWidth = 320

@@ -1,10 +1,11 @@
-import { useCallback, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
 
 import SelectionToolbar from "~/contents/components/SelectionToolbar"
 import UnifiedPanel from "~/contents/components/UnifiedPanel"
 import { useChatState } from "~/contents/hooks/useChatState"
 import { useSelectionDetection } from "~/contents/hooks/useSelectionDetection"
 import { useToolbarState } from "~/contents/hooks/useToolbarState"
+import { initContentScriptAnalytics, trackEvent } from "~/shared/analytics"
 import { resolveActionTemplate, formatFreeInputPrompt } from "~/shared/prompt"
 import { getSettings } from "~/shared/storage"
 import type { SelectionAnchor, SelectionContext } from "~/shared/types"
@@ -15,6 +16,10 @@ export const config = {
 
 function App() {
   const extensionRootRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    void initContentScriptAnalytics()
+  }, [])
 
   // Use toolbar state hook
   const {
@@ -51,6 +56,7 @@ function App() {
 
       if (context && anchor) {
         openToolbar(context, anchor)
+        void trackEvent("selection_detected", { text_length: context.text.length })
       } else {
         closeToolbar()
       }
@@ -81,6 +87,8 @@ function App() {
       closeToolbar()
       resetMessages()
 
+      void trackEvent("panel_opened")
+
       if (selectionContext) {
         const ctx = { ...selectionContext, text }
         setContext(ctx)
@@ -100,6 +108,13 @@ function App() {
       const settings = await getSettings()
       const context = { ...selectionContext, text }
       const prompt = resolveActionTemplate(template, context, settings)
+
+      const matchedAction = settings.actions.find((a) => a.template === template)
+      void trackEvent("action_clicked", {
+        action_id: matchedAction?.id ?? "unknown",
+        action_label: matchedAction?.label ?? "unknown"
+      })
+
       await openPanelWithAction(text, prompt)
     },
     [selectionContext, openPanelWithAction]
@@ -112,6 +127,8 @@ function App() {
         return
       }
 
+      void trackEvent("free_input_submitted", { input_length: input.length })
+
       const prompt = formatFreeInputPrompt(input, text)
       await openPanelWithAction(text, prompt)
     },
@@ -121,9 +138,10 @@ function App() {
   // Handle followup send from panel input
   const handleFollowupSend = useCallback(
     async (input: string) => {
+      void trackEvent("followup_sent", { input_length: input.length, message_count: messages.length })
       await sendPrompt(input)
     },
-    [sendPrompt]
+    [sendPrompt, messages.length]
   )
 
   return (

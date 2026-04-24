@@ -84,12 +84,15 @@ export function normalizeSettings(value: unknown): ExtensionSettings {
       ? saved.activeModelServiceId
       : modelServices[0]?.id ?? DEFAULT_SETTINGS.activeModelServiceId
 
+  const telemetryEnabled = typeof saved.telemetryEnabled === "boolean" ? saved.telemetryEnabled : DEFAULT_SETTINGS.telemetryEnabled
+
   return {
     modelServices,
     activeModelServiceId,
     theme,
     toolbarMode,
-    actions
+    actions,
+    telemetryEnabled
   }
 }
 

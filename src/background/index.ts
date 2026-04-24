@@ -10,6 +10,11 @@ import type {
 import { MESSAGE_TYPES, ERROR_MESSAGES } from "~/shared/constants"
 import { formatApiError, getErrorMessage, isAbortError } from "~/shared/errors"
 import { getActiveModelService, getSettings } from "~/shared/storage"
+import {
+  trackBackgroundEvent,
+  startBackgroundBatching,
+  stopBackgroundBatching
+} from "~/shared/analytics"
 
 function normalizeBaseUrl(url: string): string {
   return url.replace(/\/$/, "")
@@ -297,6 +302,23 @@ export function setupBackgroundMessageHandler(): void {
 }
 
 setupBackgroundMessageHandler()
+startBackgroundBatching()
+
+chrome.runtime.onInstalled.addListener((details) => {
+  const version = chrome.runtime.getManifest().version
+  if (details.reason === "install") {
+    void trackBackgroundEvent("extension_installed", { version })
+  } else if (details.reason === "update") {
+    void trackBackgroundEvent("extension_updated", {
+      version,
+      previous_version: details.previousVersion
+    })
+  }
+})
+
+chrome.runtime.onSuspend?.addListener?.(() => {
+  stopBackgroundBatching()
+})
 
 chrome.runtime.onMessage.addListener((request: ApiTestRequest, _sender, sendResponse) => {
   if (request?.type !== MESSAGE_TYPES.API_TEST_REQUEST) {
@@ -332,6 +354,7 @@ chrome.runtime.onMessage.addListener((request: ApiTestRequest, _sender, sendResp
         const latencyMs = Math.round(performance.now() - startTime)
         if (!response.ok) {
           const rawError = await response.text()
+          void trackBackgroundEvent("api_test_completed", { success: false, latency_ms: latencyMs })
           sendResponse({
             success: false,
             error: formatApiError(response.status, rawError),
@@ -341,6 +364,7 @@ chrome.runtime.onMessage.addListener((request: ApiTestRequest, _sender, sendResp
         }
         const body = await response.json()
         if (!body.choices || !Array.isArray(body.choices) || body.choices.length === 0) {
+          void trackBackgroundEvent("api_test_completed", { success: false, latency_ms: latencyMs })
           sendResponse({
             success: false,
             error: ERROR_MESSAGES.NO_VALID_CONTENT,
@@ -348,10 +372,12 @@ chrome.runtime.onMessage.addListener((request: ApiTestRequest, _sender, sendResp
           } satisfies ApiTestResponse)
           return
         }
+        void trackBackgroundEvent("api_test_completed", { success: true, latency_ms: latencyMs })
         sendResponse({ success: true, latencyMs } satisfies ApiTestResponse)
       })
       .catch((error: unknown) => {
         const latencyMs = Math.round(performance.now() - startTime)
+        void trackBackgroundEvent("api_test_completed", { success: false, latency_ms: latencyMs })
         sendResponse({
           success: false,
           error: `${ERROR_MESSAGES.REQUEST_FAILED}：${getErrorMessage(error)}`,

@@ -35,6 +35,7 @@ export interface ExtensionSettings {
   theme: ThemePreference
   toolbarMode: ToolbarMode
   actions: ActionTemplate[]
+  telemetryEnabled: boolean
 }
 
 export interface SelectionContext {

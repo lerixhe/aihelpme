@@ -3,6 +3,8 @@ import { useCallback, useRef, useState } from "react"
 import { UI_MESSAGES } from "~/shared/constants"
 import { streamChat } from "~/shared/messaging"
 import { buildContextSystemMessage } from "~/shared/prompt"
+import { trackEvent } from "~/shared/analytics"
+import { getSettings, getActiveModelService } from "~/shared/storage"
 import type { ChatMessage, ChatRequestState, SelectionContext } from "~/shared/types"
 
 /**
@@ -96,6 +98,18 @@ export function useChatState() {
       syncMessages(nextMessages)
       setRequestState({ status: "streaming", assistantMessageId: assistantMessage.id })
 
+      const streamStartTime = performance.now()
+      let modelName = "unknown"
+      try {
+        const settings = await getSettings()
+        const activeService = getActiveModelService(settings)
+        modelName = activeService?.model ?? "unknown"
+      } catch {
+        // Ignore
+      }
+
+      void trackEvent("chat_started", { model: modelName })
+
       try {
         let streamedContent = ""
         let streamedReasoning = ""
@@ -160,10 +174,26 @@ export function useChatState() {
           messagesRef.current = afterEmpty
           setMessages(afterEmpty)
         }
+
+        const durationMs = Math.round(performance.now() - streamStartTime)
+        if (terminalState === "completed") {
+          void trackEvent("chat_completed", {
+            model: modelName,
+            duration_ms: durationMs,
+            content_length: streamedContent.length
+          })
+        } else if (terminalState === "cancelled") {
+          void trackEvent("chat_cancelled", { model: modelName, duration_ms: durationMs })
+        } else if (terminalState === "failed") {
+          void trackEvent("chat_failed", { model: modelName, duration_ms: durationMs })
+        }
       } catch (error: unknown) {
         if (!isCurrentRequest()) {
           return
         }
+
+        const durationMs = Math.round(performance.now() - streamStartTime)
+        void trackEvent("chat_failed", { model: modelName, duration_ms: durationMs })
 
         const message = error instanceof Error ? error.message : "未知错误"
         setRequestState({ status: "failed", assistantMessageId: assistantMessage.id, error: message })
