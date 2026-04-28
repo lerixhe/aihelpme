@@ -135,7 +135,6 @@ export default function OptionsPage() {
   const theme = uiThemes[themeName]
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS)
   const [saving, setSaving] = useState(false)
-  const [actionsStatus, setActionsStatus] = useState<string>("")
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -189,8 +188,6 @@ export default function OptionsPage() {
   const hasInvalidCustomTemplate = useMemo(() => {
     return settings.actions.some((item) => !hasTextPlaceholder(item.template))
   }, [settings.actions])
-
-  const canSave = !hasInvalidCustomTemplate
 
   const isEditingConnection = connectionView !== "list"
   const isServiceDraftValid =
@@ -1133,7 +1130,7 @@ export default function OptionsPage() {
         <button
           type="button"
           onClick={() => {
-            setSettings((current) => ({
+            saveSettingsNow((current) => ({
               ...current,
               actions: [
                 ...current.actions,
@@ -1288,7 +1285,7 @@ export default function OptionsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setSettings((current) => ({
+                    saveSettingsNow((current) => ({
                       ...current,
                       actions: current.actions.filter((action) => action.id !== item.id)
                     }))
@@ -1312,77 +1309,6 @@ export default function OptionsPage() {
           还没有动作，点击上方「新增动作」开始创建。
         </div>
       ) : null}
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: uiSpace[12],
-          marginTop: uiSpace[20],
-          paddingTop: uiSpace[16],
-          paddingBottom: uiSpace[4]
-        }}>
-        <button
-          type="button"
-          disabled={!canSave || saving}
-          onClick={() => {
-            if (!canSave) {
-              setActionsStatus("请先修正设置项后再保存。")
-              return
-            }
-
-            setSaving(true)
-            setActionsStatus("")
-
-            void saveSettings({
-              ...settings,
-              modelServices: settings.modelServices.map((service) => ({
-                ...service,
-                name: service.name.trim(),
-                apiBaseUrl: service.apiBaseUrl.trim(),
-                apiKey: service.apiKey.trim(),
-                model: service.model.trim()
-              }))
-            })
-              .then(() => {
-                setActionsStatus("保存成功")
-              })
-              .catch((error: unknown) => {
-                const message = error instanceof Error ? error.message : "未知错误"
-                setActionsStatus(`保存失败：${message}`)
-              })
-              .finally(() => {
-                setSaving(false)
-              })
-          }}
-          onMouseDown={() => setPressedBtn("save")}
-          onMouseUp={() => setPressedBtn(null)}
-          onMouseLeave={() => setPressedBtn(null)}
-          style={{
-            ...primaryBtnStyle,
-            padding: `${uiSpace[10]}px ${uiSpace[24]}px`,
-            fontSize: uiTypography.fontSize.lg,
-            opacity: !canSave || saving ? 0.5 : 1,
-            cursor: !canSave || saving ? "not-allowed" : "pointer",
-            background: !canSave || saving ? theme.state.disabled : theme.accent.primary,
-            transform: pressedBtn === "save" ? "scale(0.96)" : "scale(1)"
-          }}>
-          {saving ? "保存中..." : "保存指令"}
-        </button>
-        {actionsStatus ? (
-          <span
-            role="status"
-            aria-live="polite"
-            style={{
-              fontSize: uiTypography.fontSize.sm,
-              color: actionsStatus.includes("失败") || actionsStatus.includes("修正") ? theme.state.error : theme.state.success,
-              fontWeight: uiTypography.fontWeight.medium,
-              lineHeight: 1.5
-            }}>
-            {actionsStatus}
-          </span>
-        ) : null}
-      </div>
     </section>
   )
 
