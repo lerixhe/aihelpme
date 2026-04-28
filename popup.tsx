@@ -166,7 +166,6 @@ function AvatarStack({
 }
 
 export default function Popup() {
-  const baseHeight = 330
   const themeName = useUiThemeName()
   const theme = uiThemes[themeName]
   const [settings, setSettings] = useState<ExtensionSettings | null>(null)
@@ -185,15 +184,15 @@ export default function Popup() {
   useEffect(() => {
     document.documentElement.style.margin = "0"
     document.documentElement.style.padding = "0"
-    document.documentElement.style.height = `${baseHeight}px`
+    document.documentElement.style.height = "auto"
     document.documentElement.style.overflow = "visible"
     document.body.style.margin = "0"
     document.body.style.padding = "0"
     document.body.style.minWidth = "320px"
-    document.body.style.height = `${baseHeight}px`
+    document.body.style.height = "auto"
     document.body.style.overflow = "visible"
     document.body.style.background = theme.bg.page
-  }, [baseHeight, theme.bg.page])
+  }, [theme.bg.page])
 
   useEffect(() => {
     void getSettings().then(setSettings)
@@ -272,7 +271,6 @@ export default function Popup() {
 
   const shellStyle: CSSProperties = {
     width: 336,
-    height: baseHeight,
     boxSizing: "border-box",
     padding: uiSpace[12],
     background: theme.bg.page,
