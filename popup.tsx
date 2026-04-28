@@ -54,26 +54,6 @@ function CheckIcon({ color }: { color: string }) {
   )
 }
 
-function ActionsIcon({ color }: { color: string }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4.5 12.5L8.5 8.5L11.5 11.5L15.5 5.5"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12.5 5.5H15.5V8.5"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
 
 function ToggleSwitch({ checked, onChange, theme }: { checked: boolean; onChange: () => void; theme: any }) {
   return (
@@ -585,12 +565,9 @@ export default function Popup() {
             aria-expanded={actionsMenuOpen}
             style={{
               ...triggerStyle(actionsMenuOpen),
+              paddingLeft: uiSpace[12],
               opacity: !settings ? 0.6 : 1
             }}>
-            <div aria-hidden="true" style={triggerLeftIcon}>
-              <ActionsIcon color={theme.text.secondary} />
-            </div>
-
             {/* Text + Avatar Stack */}
             <span
               style={{
