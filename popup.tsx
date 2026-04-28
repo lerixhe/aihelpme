@@ -377,7 +377,7 @@ export default function Popup() {
     left: 0,
     right: 0,
     padding: uiSpace[4],
-    maxHeight: 42 * 2 + 8,
+    maxHeight: 42 * 2 + 20 + 8,
     overflowY: "auto",
     borderRadius: uiRadius.md,
     background: theme.bg.surface,
