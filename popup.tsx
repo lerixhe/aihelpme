@@ -54,24 +54,6 @@ function CheckIcon({ color }: { color: string }) {
   )
 }
 
-function CheckboxIcon({ checked, color }: { checked: boolean; color: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect
-        x="1"
-        y="1"
-        width="14"
-        height="14"
-        rx="4"
-        fill={checked ? color : "transparent"}
-        stroke={checked ? color : "#AEAEB2"}
-        strokeWidth="1.5"
-      />
-      {checked && <path d="M4 8L7 11L12 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />}
-    </svg>
-  )
-}
-
 function ActionsIcon({ color }: { color: string }) {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -93,24 +75,8 @@ function ActionsIcon({ color }: { color: string }) {
   )
 }
 
-export default function Popup() {
-  const baseHeight = 330
-  const themeName = useUiThemeName()
-  const theme = uiThemes[themeName]
-  const [settings, setSettings] = useState<ExtensionSettings | null>(null)
-  const [changing, setChanging] = useState(false)
-  const [serviceMenuOpen, setServiceMenuOpen] = useState(false)
-  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
-  const [pressedBtn, setPressedBtn] = useState<string | null>(null)
-  const serviceMenuRef = useRef<HTMLDivElement | null>(null)
-  const actionsMenuRef = useRef<HTMLDivElement | null>(null)
-  const activeService =
-    settings?.modelServices.find((service) => service.id === settings.activeModelServiceId) ?? null
-  const avatarPalette = getAvatarPalette(activeService?.iconText, activeService?.name, themeName === "dark")
-  const enabledActionsCount = settings?.actions.filter((a) => a.enabled !== false).length ?? 0
-
-  const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+function ToggleSwitch({ checked, onChange, theme }: { checked: boolean; onChange: () => void; theme: any }) {
+  return (
     <button
       type="button"
       role="switch"
@@ -146,6 +112,95 @@ export default function Popup() {
       />
     </button>
   )
+}
+
+const AVATAR_SIZE = 30
+const AVATAR_GAP = 2
+const MAX_VISIBLE_AVATARS = 4
+
+function AvatarStack({
+  actions,
+  themeName,
+  theme
+}: {
+  actions: ActionTemplate[]
+  themeName: string
+  theme: any
+}) {
+  const enabledActions = actions.filter((a) => a.enabled !== false)
+  if (enabledActions.length === 0) return null
+
+  const visibleActions = enabledActions.slice(0, MAX_VISIBLE_AVATARS)
+  const hasOverflow = enabledActions.length > MAX_VISIBLE_AVATARS
+
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        marginLeft: 4,
+        flexShrink: 1,
+        overflow: "hidden",
+        minWidth: 0
+      }}>
+      {visibleActions.map((action) => {
+        const palette = getAvatarPalette(action.iconText, action.label, themeName === "dark")
+        const displayText = getAvatarDisplayText(action.iconText, action.label)
+        return (
+          <span
+            key={action.id}
+            style={{
+              width: AVATAR_SIZE,
+              height: AVATAR_SIZE,
+              borderRadius: uiRadius.sm,
+              background: palette.background,
+              color: palette.color,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: displayText.length >= 4 ? 8 : displayText.length > 1 ? 9 : 11,
+              fontWeight: uiTypography.fontWeight.semibold,
+              letterSpacing: uiTypography.letterSpacing.tight,
+              marginLeft: AVATAR_GAP,
+              flexShrink: 0
+            }}>
+            {displayText}
+          </span>
+        )
+      })}
+      {hasOverflow && (
+        <span
+          style={{
+            marginLeft: AVATAR_GAP,
+            flexShrink: 0,
+            fontSize: uiTypography.fontSize.sm,
+            color: theme.text.secondary,
+            fontWeight: uiTypography.fontWeight.semibold
+          }}>
+          …
+        </span>
+      )}
+    </span>
+  )
+}
+
+export default function Popup() {
+  const baseHeight = 330
+  const themeName = useUiThemeName()
+  const theme = uiThemes[themeName]
+  const [settings, setSettings] = useState<ExtensionSettings | null>(null)
+  const [changing, setChanging] = useState(false)
+  const [serviceMenuOpen, setServiceMenuOpen] = useState(false)
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const [pressedBtn, setPressedBtn] = useState<string | null>(null)
+  const serviceMenuRef = useRef<HTMLDivElement | null>(null)
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null)
+  const activeService =
+    settings?.modelServices.find((service) => service.id === settings.activeModelServiceId) ?? null
+  const avatarPalette = getAvatarPalette(activeService?.iconText, activeService?.name, themeName === "dark")
+  const enabledActionsCount = settings?.actions.filter((a) => a.enabled !== false).length ?? 0
 
   useEffect(() => {
     document.documentElement.style.margin = "0"
@@ -295,12 +350,15 @@ export default function Popup() {
     letterSpacing: uiTypography.letterSpacing.normal
   }
 
+  // Trigger 按钮左侧 icon 占位宽度: icon-left(10) + icon-size(30) + gap-to-text(8) = 48
+  const TRIGGER_LEFT_PAD = uiSpace[10] + AVATAR_SIZE + 8
+
   const triggerStyle = (isOpen: boolean): CSSProperties => ({
     width: "100%",
     border: `1px solid ${isOpen ? theme.accent.primary : theme.border.subtle}`,
     borderRadius: uiRadius.md,
     height: 44,
-    padding: `0 ${uiSpace[12]}px 0 48px`,
+    padding: `0 ${uiSpace[12]}px 0 ${TRIGGER_LEFT_PAD}px`,
     background: theme.bg.surfaceMuted,
     color: theme.text.primary,
     fontSize: uiTypography.fontSize.md,
@@ -315,6 +373,25 @@ export default function Popup() {
     textAlign: "left",
     position: "relative" as const
   })
+
+  const triggerLeftIcon: CSSProperties = {
+    position: "absolute" as const,
+    top: "50%",
+    left: uiSpace[10],
+    transform: "translateY(-50%)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none"
+  }
+
+  const triggerChevron: CSSProperties = {
+    position: "absolute" as const,
+    top: "50%",
+    right: uiSpace[10],
+    transform: "translateY(-50%)",
+    pointerEvents: "none"
+  }
 
   const menuStyle: CSSProperties = {
     position: "absolute" as const,
@@ -334,11 +411,11 @@ export default function Popup() {
     marginTop: uiSpace[4]
   }
 
-  const menuItemStyle = (serviceId: string, selected: boolean): CSSProperties => {
-    const isHovered = hoveredItem === serviceId
+  const menuItemStyle = (itemId: string, selected: boolean): CSSProperties => {
+    const isHovered = hoveredItem === itemId
     return {
       display: "grid",
-      gridTemplateColumns: "24px 1fr auto",
+      gridTemplateColumns: `${AVATAR_SIZE}px 1fr auto`,
       alignItems: "center",
       gap: uiSpace[8],
       width: "100%",
@@ -357,7 +434,7 @@ export default function Popup() {
     }
   }
 
-  const avatarStyle = (palette: { background: string; color: string }, size: number = 24, textLength: number = 1): CSSProperties => ({
+  const avatarStyle = (palette: { background: string; color: string }, size: number = AVATAR_SIZE, textLength: number = 1): CSSProperties => ({
     width: size,
     height: size,
     borderRadius: uiRadius.sm,
@@ -371,6 +448,17 @@ export default function Popup() {
     letterSpacing: uiTypography.letterSpacing.tight,
     flexShrink: 0
   })
+
+  const menuItemAvatarStyle = (palette: { background: string; color: string }, displayText: string): CSSProperties => ({
+    ...avatarStyle(palette, AVATAR_SIZE, displayText.length),
+    marginRight: uiSpace[12]
+  })
+
+  const menuItemTextStyle: CSSProperties = {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  }
 
   return (
     <div style={shellStyle}>
@@ -418,40 +506,18 @@ export default function Popup() {
               ...triggerStyle(serviceMenuOpen),
               opacity: !settings || changing ? 0.6 : 1
             }}>
-            {/* Avatar */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: uiSpace[10],
-                transform: "translateY(-50%)",
-                ...avatarStyle(avatarPalette, 30, getAvatarDisplayText(activeService?.iconText, activeService?.name).length),
-                pointerEvents: "none"
-              }}>
-              {getAvatarDisplayText(activeService?.iconText, activeService?.name)}
+            <div aria-hidden="true" style={triggerLeftIcon}>
+              <span
+                style={{
+                  ...avatarStyle(avatarPalette, AVATAR_SIZE, getAvatarDisplayText(activeService?.iconText, activeService?.name).length)
+                }}>
+                {getAvatarDisplayText(activeService?.iconText, activeService?.name)}
+              </span>
             </div>
-
-            {/* Service Name */}
-            <span
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                flex: 1
-              }}>
+            <span style={{ ...menuItemTextStyle, flex: 1 }}>
               {activeService?.name || "暂无可用模型服务"}
             </span>
-
-            {/* Chevron */}
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                right: uiSpace[10],
-                transform: "translateY(-50%)",
-                pointerEvents: "none"
-              }}>
+            <div style={triggerChevron}>
               <ChevronIcon color={theme.text.secondary} expanded={serviceMenuOpen} />
             </div>
           </button>
@@ -462,6 +528,7 @@ export default function Popup() {
               {settings.modelServices.map((service) => {
                 const palette = getAvatarPalette(service.iconText, service.name, themeName === "dark")
                 const selected = service.id === settings.activeModelServiceId
+                const displayText = getAvatarDisplayText(service.iconText, service.name)
 
                 return (
                   <button
@@ -473,15 +540,10 @@ export default function Popup() {
                     onMouseEnter={() => setHoveredItem(service.id)}
                     onMouseLeave={() => setHoveredItem(null)}
                     style={menuItemStyle(service.id, selected)}>
-                    <span aria-hidden="true" style={{ ...avatarStyle(palette, 30, getAvatarDisplayText(service.iconText, service.name).length), marginRight: 12 }}>
-                      {getAvatarDisplayText(service.iconText, service.name)}
+                    <span aria-hidden="true" style={menuItemAvatarStyle(palette, displayText)}>
+                      {displayText}
                     </span>
-                    <span
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
+                    <span style={menuItemTextStyle}>
                       {service.name || "未命名服务"}
                     </span>
                     {selected ? (
@@ -502,7 +564,6 @@ export default function Popup() {
             </div>
           ) : null}
         </div>
-
       </div>
 
       {/* Actions Selector */}
@@ -524,46 +585,32 @@ export default function Popup() {
             aria-expanded={actionsMenuOpen}
             style={{
               ...triggerStyle(actionsMenuOpen),
-              paddingLeft: uiSpace[12],
               opacity: !settings ? 0.6 : 1
             }}>
-            {/* Actions Icon */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: uiSpace[10],
-                transform: "translateY(-50%)",
-                display: "flex",
-                alignItems: "center",
-                pointerEvents: "none"
-              }}>
+            <div aria-hidden="true" style={triggerLeftIcon}>
               <ActionsIcon color={theme.text.secondary} />
             </div>
 
-            {/* Actions Count */}
+            {/* Text + Avatar Stack */}
             <span
               style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                flex: 1
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                minWidth: 0,
+                overflow: "hidden"
               }}>
-              {enabledActionsCount > 0
-                ? `已启用 ${enabledActionsCount} 个动作`
-                : "暂无可用动作指令"}
+              <span style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+                {enabledActionsCount > 0
+                  ? `已启用 ${enabledActionsCount} 个动作`
+                  : "暂无可用动作指令"}
+              </span>
+              {settings && (
+                <AvatarStack actions={settings.actions} themeName={themeName} theme={theme} />
+              )}
             </span>
 
-            {/* Chevron */}
-            <div
-              style={{
-                position: "absolute",
-                top: "50%",
-                right: uiSpace[10],
-                transform: "translateY(-50%)",
-                pointerEvents: "none"
-              }}>
+            <div style={triggerChevron}>
               <ChevronIcon color={theme.text.secondary} expanded={actionsMenuOpen} />
             </div>
           </button>
@@ -576,7 +623,6 @@ export default function Popup() {
               style={menuStyle}>
               {settings.actions.map((action) => {
                 const isEnabled = action.enabled !== false
-                const isHovered = hoveredItem === action.id
                 const actionPalette = getAvatarPalette(action.iconText, action.label, themeName === "dark")
                 const actionDisplayText = getAvatarDisplayText(action.iconText, action.label)
 
@@ -592,43 +638,20 @@ export default function Popup() {
                     onMouseEnter={() => setHoveredItem(action.id)}
                     onMouseLeave={() => setHoveredItem(null)}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "24px 1fr auto",
-                      alignItems: "center",
-                      gap: uiSpace[8],
-                      width: "100%",
-                      minHeight: 40,
-                      padding: `${uiSpace[8]}px ${uiSpace[10]}px`,
-                      border: "none",
-                      borderRadius: uiRadius.sm,
-                      background: isHovered ? theme.bg.surfaceAlt : "transparent",
+                      ...menuItemStyle(action.id, false),
                       color: isEnabled ? theme.text.primary : theme.text.secondary,
-                      cursor: "pointer",
-                      textAlign: "left" as const,
-                      fontFamily: uiTypography.fontFamily,
-                      fontSize: uiTypography.fontSize.md,
-                      fontWeight: uiTypography.fontWeight.regular,
                       transition: `background ${uiMotion.durationFast} ${uiMotion.easingStandard}, color ${uiMotion.durationFast} ${uiMotion.easingStandard}`
                     }}>
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        ...avatarStyle(actionPalette, 24, actionDisplayText.length),
-                        marginRight: 4
-                      }}>
+                    <span aria-hidden="true" style={menuItemAvatarStyle(actionPalette, actionDisplayText)}>
                       {actionDisplayText}
                     </span>
-                    <span
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}>
+                    <span style={menuItemTextStyle}>
                       {action.label}
                     </span>
                     <ToggleSwitch
                       checked={isEnabled}
                       onChange={() => void handleActionToggle(action.id)}
+                      theme={theme}
                     />
                   </button>
                 )
