@@ -1407,82 +1407,176 @@ export default function OptionsPage() {
   )
 
   const renderAbout = () => (
-    <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
-      <h2
-        style={{
-          margin: `0 0 ${uiSpace[4]}px`,
-          fontSize: uiTypography.fontSize.lg,
-          fontWeight: uiTypography.fontWeight.semibold,
-          letterSpacing: uiTypography.letterSpacing.tight
-        }}>
-        协助改善用户体验
-      </h2>
-      <p
-        style={{
-          margin: `0 0 ${uiSpace[16]}px`,
-          color: theme.text.secondary,
-          fontSize: uiTypography.fontSize.md,
-          lineHeight: 1.7
-        }}>
-        开启遥测数据后，我们会收集匿名使用统计（如功能使用频率、AI 响应性能），帮助改进产品体验。数据不包含任何个人信息、选中文本内容或 API Key。
-      </p>
+    <>
+      <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
+        <h2
+          style={{
+            margin: `0 0 ${uiSpace[4]}px`,
+            fontSize: uiTypography.fontSize.lg,
+            fontWeight: uiTypography.fontWeight.semibold,
+            letterSpacing: uiTypography.letterSpacing.tight
+          }}>
+          关于我们
+        </h2>
+        <p
+          style={{
+            margin: `0 0 ${uiSpace[16]}px`,
+            color: theme.text.secondary,
+            fontSize: uiTypography.fontSize.md,
+            lineHeight: 1.7
+          }}>
+          AI Help Me 是一款轻量级 Chrome 扩展，帮助你在浏览网页时随时获取 AI 辅助。选中任意文本即可快速提问、翻译、总结或自定义指令，让 AI 成为你的浏览助手。
+        </p>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: `${uiSpace[14]}px ${uiSpace[16]}px`,
-          border: `1px solid ${theme.border.hairline}`,
-          borderRadius: uiRadius.md,
-          background: theme.bg.surfaceMuted
-        }}>
-        <div>
+        <div
+          style={{
+            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
+            border: `1px solid ${theme.border.hairline}`,
+            borderRadius: uiRadius.md,
+            background: theme.bg.surfaceMuted
+          }}>
+          <div style={{ fontWeight: uiTypography.fontWeight.semibold, fontSize: uiTypography.fontSize.md, color: theme.text.primary, marginBottom: uiSpace[8] }}>
+            主要功能
+          </div>
           <div
             style={{
               fontSize: uiTypography.fontSize.md,
-              fontWeight: uiTypography.fontWeight.semibold,
-              color: theme.text.primary,
-              marginBottom: uiSpace[2]
+              color: theme.text.secondary,
+              lineHeight: 1.7
             }}>
-            协助改善用户体验
+            <div style={{ display: "flex", alignItems: "baseline", marginBottom: uiSpace[4] }}>
+              <span style={{ color: theme.brand?.primary || theme.accent?.primary || "#0D9488", marginRight: uiSpace[8] }}>·</span>
+              选中网页文本，即刻唤起 AI 工具栏
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", marginBottom: uiSpace[4] }}>
+              <span style={{ color: theme.brand?.primary || theme.accent?.primary || "#0D9488", marginRight: uiSpace[8] }}>·</span>
+              内置翻译、总结、解释等常用指令
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", marginBottom: uiSpace[4] }}>
+              <span style={{ color: theme.brand?.primary || theme.accent?.primary || "#0D9488", marginRight: uiSpace[8] }}>·</span>
+              支持自定义动作指令，灵活扩展
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", marginBottom: uiSpace[4] }}>
+              <span style={{ color: theme.brand?.primary || theme.accent?.primary || "#0D9488", marginRight: uiSpace[8] }}>·</span>
+              兼容 OpenAI、Claude、Gemini 等主流大模型
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline" }}>
+              <span style={{ color: theme.brand?.primary || theme.accent?.primary || "#0D9488", marginRight: uiSpace[8] }}>·</span>
+              对话式交互，持续追问不中断
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: uiSpace[12],
+            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
+            border: `1px solid ${theme.border.hairline}`,
+            borderRadius: uiRadius.md,
+            background: theme.bg.surfaceMuted,
+            fontSize: uiTypography.fontSize.md,
+            color: theme.text.secondary,
+            lineHeight: 1.7
+          }}>
+          <div style={{ fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary, marginBottom: uiSpace[4] }}>
+            联系我们
+          </div>
+          <div>Email：support@aihelp.me</div>
+        </div>
+      </section>
+
+      <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
+        <h2
+          style={{
+            margin: `0 0 ${uiSpace[16]}px`,
+            fontSize: uiTypography.fontSize.lg,
+            fontWeight: uiTypography.fontWeight.semibold,
+            letterSpacing: uiTypography.letterSpacing.tight
+          }}>
+          版本信息
+        </h2>
+        <div
+          style={{
+            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
+            border: `1px solid ${theme.border.hairline}`,
+            borderRadius: uiRadius.md,
+            background: theme.bg.surfaceMuted
+          }}>
+          <div style={{ fontWeight: uiTypography.fontWeight.semibold, fontSize: uiTypography.fontSize.md, color: theme.text.primary, marginBottom: uiSpace[8] }}>
+            版本详情
           </div>
           <div
             style={{
-              fontSize: uiTypography.fontSize.sm,
-              color: theme.text.secondary
+              fontSize: uiTypography.fontSize.md,
+              color: theme.text.secondary,
+              lineHeight: 1.7
             }}>
-            {settings.telemetryEnabled ? "已开启" : "已关闭"}
+            <div>当前版本：v{chrome.runtime.getManifest().version}</div>
+            <div>开源协议：MIT</div>
           </div>
         </div>
-        <ToggleSwitch
-          checked={settings.telemetryEnabled}
-          onChange={() => {
-            const next = !settings.telemetryEnabled
-            saveSettingsNow((current) => ({ ...current, telemetryEnabled: next }))
-            void trackEvent("telemetry_toggled", { enabled: next })
-          }}
-          theme={theme}
-        />
-      </div>
+      </section>
 
-      <div
-        style={{
-          marginTop: uiSpace[16],
-          padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
-          border: `1px solid ${theme.border.hairline}`,
-          borderRadius: uiRadius.md,
-          background: theme.bg.surfaceMuted,
-          fontSize: uiTypography.fontSize.sm,
-          color: theme.text.secondary,
-          lineHeight: 1.7
-        }}>
-        <div style={{ fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary, marginBottom: uiSpace[4] }}>
-          扩展信息
+      <section style={{ ...cardStyle, marginBottom: uiSpace[16] }}>
+        <h2
+          style={{
+            margin: `0 0 ${uiSpace[4]}px`,
+            fontSize: uiTypography.fontSize.lg,
+            fontWeight: uiTypography.fontWeight.semibold,
+            letterSpacing: uiTypography.letterSpacing.tight
+          }}>
+          协助改善用户体验
+        </h2>
+        <p
+          style={{
+            margin: `0 0 ${uiSpace[16]}px`,
+            color: theme.text.secondary,
+            fontSize: uiTypography.fontSize.md,
+            lineHeight: 1.7
+          }}>
+          开启遥测数据后，我们会收集匿名使用统计（如功能使用频率、AI 响应性能），帮助改进产品体验。数据不包含任何个人信息、选中文本内容或 API Key。
+        </p>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: `${uiSpace[14]}px ${uiSpace[16]}px`,
+            border: `1px solid ${theme.border.hairline}`,
+            borderRadius: uiRadius.md,
+            background: theme.bg.surfaceMuted
+          }}>
+          <div>
+            <div
+              style={{
+                fontSize: uiTypography.fontSize.md,
+                fontWeight: uiTypography.fontWeight.semibold,
+                color: theme.text.primary,
+                marginBottom: uiSpace[2]
+              }}>
+              协助改善用户体验
+            </div>
+            <div
+              style={{
+                fontSize: uiTypography.fontSize.sm,
+                color: theme.text.secondary
+              }}>
+              {settings.telemetryEnabled ? "已开启" : "已关闭"}
+            </div>
+          </div>
+          <ToggleSwitch
+            checked={settings.telemetryEnabled}
+            onChange={() => {
+              const next = !settings.telemetryEnabled
+              saveSettingsNow((current) => ({ ...current, telemetryEnabled: next }))
+              void trackEvent("telemetry_toggled", { enabled: next })
+            }}
+            theme={theme}
+          />
         </div>
-        <div>版本：v{chrome.runtime.getManifest().version}</div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 
   const sectionContent: Record<Section, () => JSX.Element> = {
