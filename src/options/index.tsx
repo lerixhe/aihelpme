@@ -1007,35 +1007,35 @@ export default function OptionsPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: uiSpace[16] }}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: uiSpace[8], marginBottom: uiSpace[6], flexWrap: "wrap" }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingIconServiceId(service.id)
-                              setIconEditText(service.iconText ?? "")
-                            }}
-                            title="点击自定义图标文字"
-                            style={{
-                              width: 30,
-                              height: 30,
-                              borderRadius: uiRadius.sm,
-                              border: "none",
-                              background: getAvatarPalette(service.iconText, service.name, themeName === "dark").background,
-                              color: getAvatarPalette(service.iconText, service.name, themeName === "dark").color,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: displayText.length >= 4 ? 8 : displayText.length > 1 ? 9 : 11,
-                              fontWeight: uiTypography.fontWeight.semibold,
-                              letterSpacing: uiTypography.letterSpacing.tight,
-                              flexShrink: 0,
-                              cursor: "pointer",
-                              padding: 0,
-                              outline: "none"
-                            }}>
-                            {displayText}
-                          </button>
-                          {isEditingIcon ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4] }}>
+                          <span style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingIconServiceId(service.id)
+                                setIconEditText(service.iconText ?? "")
+                              }}
+                              title="点击自定义图标文字"
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: uiRadius.sm,
+                                border: "none",
+                                background: getAvatarPalette(service.iconText, service.name, themeName === "dark").background,
+                                color: getAvatarPalette(service.iconText, service.name, themeName === "dark").color,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: displayText.length >= 4 ? 8 : displayText.length > 1 ? 9 : 11,
+                                fontWeight: uiTypography.fontWeight.semibold,
+                                letterSpacing: uiTypography.letterSpacing.tight,
+                                flexShrink: 0,
+                                cursor: "pointer",
+                                padding: 0,
+                                outline: "none"
+                              }}>
+                              {isEditingIcon ? "" : displayText}
+                            </button>
+                            {isEditingIcon ? (
                               <input
                                 autoFocus
                                 maxLength={4}
@@ -1065,19 +1065,24 @@ export default function OptionsPage() {
                                 }}
                                 placeholder="最多4字"
                                 style={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
                                   width: 48,
-                                  height: 24,
+                                  height: 30,
                                   fontSize: uiTypography.fontSize.sm,
                                   border: `1px solid ${theme.border.default}`,
                                   borderRadius: uiRadius.sm,
                                   padding: `0 ${uiSpace[4]}px`,
                                   outline: "none",
                                   background: theme.bg.surface,
-                                  color: theme.text.primary
+                                  color: theme.text.primary,
+                                  zIndex: 10,
+                                  boxShadow: uiShadow.md
                                 }}
                               />
-                            </div>
-                          ) : null}
+                            ) : null}
+                          </span>
                           <span style={{ fontSize: uiTypography.fontSize.md, fontWeight: uiTypography.fontWeight.semibold, color: theme.text.primary }}>
                             {service.name}
                           </span>
@@ -1181,7 +1186,7 @@ export default function OptionsPage() {
               transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
             }}>
             <div style={{ display: "grid", gridTemplateColumns: "30px 140px 1fr auto", gap: uiSpace[8], alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4] }}>
+              <div style={{ position: "relative" }}>
                 <button
                   type="button"
                   onClick={() => {
@@ -1207,11 +1212,9 @@ export default function OptionsPage() {
                     padding: 0,
                     outline: "none"
                   }}>
-                  {displayText}
+                  {isEditingIcon ? "" : displayText}
                 </button>
-              </div>
-              {isEditingIcon ? (
-                <div style={{ display: "flex", alignItems: "center", gap: uiSpace[4], gridColumn: "2 / 4" }}>
+                {isEditingIcon ? (
                   <input
                     autoFocus
                     maxLength={4}
@@ -1241,19 +1244,24 @@ export default function OptionsPage() {
                     }}
                     placeholder="最多4字"
                     style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
                       width: 48,
-                      height: 24,
+                      height: 30,
                       fontSize: uiTypography.fontSize.sm,
                       border: `1px solid ${theme.border.default}`,
                       borderRadius: uiRadius.sm,
                       padding: `0 ${uiSpace[4]}px`,
                       outline: "none",
                       background: theme.bg.surface,
-                      color: theme.text.primary
+                      color: theme.text.primary,
+                      zIndex: 10,
+                      boxShadow: uiShadow.md
                     }}
                   />
-                </div>
-              ) : null}
+                ) : null}
+              </div>
               <input
                 aria-label="动作名称"
                 value={item.label}
