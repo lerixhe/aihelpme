@@ -1430,10 +1430,7 @@ export default function OptionsPage() {
 
         <div
           style={{
-            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
-            border: `1px solid ${theme.border.hairline}`,
-            borderRadius: uiRadius.md,
-            background: theme.bg.surfaceMuted
+            marginTop: uiSpace[8]
           }}>
           <div style={{ fontWeight: uiTypography.fontWeight.semibold, fontSize: uiTypography.fontSize.md, color: theme.text.primary, marginBottom: uiSpace[8] }}>
             主要功能
@@ -1469,11 +1466,7 @@ export default function OptionsPage() {
 
         <div
           style={{
-            marginTop: uiSpace[12],
-            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
-            border: `1px solid ${theme.border.hairline}`,
-            borderRadius: uiRadius.md,
-            background: theme.bg.surfaceMuted,
+            marginTop: uiSpace[16],
             fontSize: uiTypography.fontSize.md,
             color: theme.text.secondary,
             lineHeight: 1.7
@@ -1497,23 +1490,12 @@ export default function OptionsPage() {
         </h2>
         <div
           style={{
-            padding: `${uiSpace[12]}px ${uiSpace[16]}px`,
-            border: `1px solid ${theme.border.hairline}`,
-            borderRadius: uiRadius.md,
-            background: theme.bg.surfaceMuted
+            fontSize: uiTypography.fontSize.md,
+            color: theme.text.secondary,
+            lineHeight: 1.7
           }}>
-          <div style={{ fontWeight: uiTypography.fontWeight.semibold, fontSize: uiTypography.fontSize.md, color: theme.text.primary, marginBottom: uiSpace[8] }}>
-            版本详情
-          </div>
-          <div
-            style={{
-              fontSize: uiTypography.fontSize.md,
-              color: theme.text.secondary,
-              lineHeight: 1.7
-            }}>
-            <div>当前版本：v{chrome.runtime.getManifest().version}</div>
-            <div>开源协议：MIT</div>
-          </div>
+          <div>当前版本：v{chrome.runtime.getManifest().version}</div>
+          <div>开源协议：MIT</div>
         </div>
       </section>
 
