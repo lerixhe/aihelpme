@@ -17,24 +17,34 @@ Chrome extension (MV3) built with **Plasmo + React + TypeScript**. Users select 
 
 ## Architecture
 
-Three runtime contexts communicate via `chrome.runtime.onMessage`:
+Three runtime contexts communicate via `chrome.runtime.onMessage` (one-shot) and `chrome.runtime.connect` Ports (streaming):
 
-1. **Content script** (`src/contents/main.tsx`) — Default-exported React component (Plasmo requirement). Detects selection, renders `SelectionToolbar` and `UnifiedPanel`, stores per-page conversation state in memory.
+1. **Content script** (`contents/ai-help-me.ts` → `src/contents/main.tsx`) — Plasmo content entry is an empty module; the actual UI is a default-exported React component. Detects selection, renders `SelectionToolbar` and `UnifiedPanel`, stores per-page conversation state in memory.
 2. **Background service worker** (`background.ts` → `src/background/index.ts`) — Handles all remote AI calls. Reads settings from `chrome.storage.sync`. Never move API requests into the content script.
 3. **Options page** (`options.tsx` → `src/options/index.tsx`) — Edits and persists API config, translation language, and custom actions.
+4. **Popup** (`popup.tsx`) — Browser action popup for quick service switching and settings link. Direct React component, no thin wrapper.
 
 **Shared logic** (`src/shared/`):
 - `types.ts` — Message, settings, and domain types
 - `selection.ts` — Selection snapshot extraction and anchor calculation
 - `prompt.ts` — Prompt assembly with page context
-- `messaging.ts` — Content-to-background request wrapper (`askAi`)
+- `messaging.ts` — Content-to-background request wrapper (`askAi`); uses `chrome.runtime.connect` Ports for streaming
 - `storage.ts` — `chrome.storage.sync` settings persistence
 - `constants.ts` — Default values and constants
+- `defaults.ts` — Default settings and action presets
 - `errors.ts` — Error types and handling
+- `analytics.ts` — PostHog telemetry (anonymous ID in `chrome.storage.local`)
+
+**Design tokens** (`src/shared/ui/`):
+- `tokens.ts` — Theme colors, typography (SF Pro / system fonts), spacing, shadows, motion (Apple HIG-inspired)
+- `theme.ts` — `useUiTheme` hook for light/dark mode
+- `styles.ts` — Reusable inline style factories (no CSS files; all styling is CSS-in-JS)
+- `icons.tsx` — `BrandIcon` SVG component
+- `avatar.ts` — Color-hash avatar palette and display text
 
 ## Path Alias
 
-`~/*` maps to `src/*` (configured in `tsconfig.json`).
+`~*` maps to `./src/*` (configured in `tsconfig.json` `paths`).
 
 ## Key Invariants
 
@@ -60,11 +70,11 @@ Three runtime contexts communicate via `chrome.runtime.onMessage`:
 
 ## Design System
 
-See `docs/design-system.md` and `docs/ui-design-guidelines.md` for UI design standards, theming, and component conventions used in this project.
+See `DESIGN.MD` (UI/UX spec) and `WIKI.md` (detailed architecture walkthrough) for design standards and conventions.
 
 ## UI 模块命名
 
-沟通中使用以下名称指代各 UI 模块（详见 `docs/design-system.md` 第 0 节）：
+沟通中使用以下名称指代各 UI 模块（详见 `DESIGN.MD`）：
 
 | 昵称 | 组件 | 解释 |
 |------|------|------|
@@ -86,3 +96,15 @@ See `docs/design-system.md` and `docs/ui-design-guidelines.md` for UI design sta
 - For product- or architecture-shaping work, ask clarifying questions before editing.
 - Prefer structural fixes at the state/source-of-truth layer over incremental condition patches.
 - When debugging content-script bugs, reload the extension and refresh the target tab before assuming logic is wrong.
+
+## Icon Generation
+
+Plasmo reads `assets/icon.png` and auto-generates 16/32/48/64/128px icons (source PNG must be ≥256px). Three files define the icon — keep them in sync:
+
+| File | Role |
+|------|------|
+| `favicon.svg` | SVG source of truth (use `clipPath` for transparent rounded corners) |
+| `src/shared/ui/icons.tsx` | `BrandIcon` React component (inline SVG, mirrors `favicon.svg`) |
+| `assets/icon.png` | High-res PNG rendered from SVG (256×256, sharp + lanczos3) |
+
+To update: edit `favicon.svg` → mirror in `icons.tsx` → render PNG via sharp at 256×256 → `npm run build`. Always render from SVG (not `qlmanage`), use `density: 600` for crisp edges.
