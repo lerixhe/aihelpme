@@ -156,6 +156,7 @@ export default function UnifiedPanel({
   const [closePressed, setClosePressed] = useState(false)
   const [sendPressed, setSendPressed] = useState(false)
   const messagesContainerRef = useRef<HTMLDivElement | null>(null)
+  const overlayRef = useRef<HTMLDivElement | null>(null)
 
   const isStreaming = requestState === "streaming"
   const sendDisabled = isStreaming || !input.trim()
@@ -170,11 +171,32 @@ export default function UnifiedPanel({
     container.scrollTop = container.scrollHeight
   }, [messages, requestState])
 
+  useEffect(() => {
+    const root = overlayRef.current?.getRootNode()
+    const host = root instanceof ShadowRoot ? root.host : null
+    if (!host) return
+    const children = Array.from(document.body.children)
+    const inerted: Element[] = []
+    for (const child of children) {
+      if (child === host) {
+        continue
+      }
+      child.setAttribute("inert", "")
+      inerted.push(child)
+    }
+    return () => {
+      for (const child of inerted) {
+        child.removeAttribute("inert")
+      }
+    }
+  }, [])
+
   const focusRing = (state: string | null, target: string) =>
     focused === target ? createFocusRing(theme.accent.primary) : "none"
 
   return (
     <div
+      ref={overlayRef}
       onKeyDownCapture={(event) => {
         if (event.key !== "Escape") {
           return
