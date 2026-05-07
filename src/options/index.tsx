@@ -563,7 +563,7 @@ export default function OptionsPage() {
           color: theme.text.secondary,
           fontSize: uiTypography.fontSize.md
         }}>
-        选择浅色、深色或跟随系统主题
+        浅色、深色或跟随系统（需浏览器支持）
       </p>
 
       <div
@@ -620,7 +620,7 @@ export default function OptionsPage() {
               letterSpacing: uiTypography.letterSpacing.tight
             }}>
 
-            动作菜单样式
+            动作指令菜单样式
           </h2>
           <p
             style={{
@@ -628,7 +628,7 @@ export default function OptionsPage() {
               color: theme.text.secondary,
               fontSize: uiTypography.fontSize.md
             }}>
-            选择触发按钮展开后的动作菜单样式
+            触发按钮展开后的动作指令菜单样式
           </p>
 
           <div
@@ -972,7 +972,7 @@ export default function OptionsPage() {
                   color: theme.text.secondary,
                   fontSize: uiTypography.fontSize.md
                 }}>
-                可添加多个大模型服务，但同时只能启用一个
+                自定义添加多个大模型服务，并可快速切换以满足不同场景需求。
               </p>
             </div>
             <button
@@ -1132,7 +1132,7 @@ export default function OptionsPage() {
               fontWeight: uiTypography.fontWeight.semibold,
               letterSpacing: uiTypography.letterSpacing.tight
             }}>
-            指令模板
+            动作指令列表
           </h2>
           <p style={{ margin: 0, color: theme.text.secondary, fontSize: uiTypography.fontSize.md }}>
             自定义选区操作指令
