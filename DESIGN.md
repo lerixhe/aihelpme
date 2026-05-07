@@ -381,7 +381,7 @@ border-right: 0.5px solid border.hairline
 - Logo 区：`padding: 20px 32px 12px`
 - 导航区：`padding: 4px 32px`
 - 导航项间距：4px
-- 导航项：外观、AI大模型、动作指令、备份
+- 导航项：外观、AI服务、动作指令、备份
 
 **主内容区**：
 ```

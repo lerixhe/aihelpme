@@ -117,7 +117,7 @@ function AboutIcon({ size, color }: { size: number; color: string }) {
 
 const sections: { key: Section; label: string; icon: typeof AppearanceIcon }[] = [
   { key: "appearance", label: "外观", icon: AppearanceIcon },
-  { key: "connection", label: "AI大模型", icon: ConnectionIcon },
+  { key: "connection", label: "AI服务", icon: ConnectionIcon },
   { key: "actions", label: "动作指令", icon: ActionsIcon },
   { key: "backup", label: "备份与迁移", icon: BackupIcon },
   { key: "about", label: "关于", icon: AboutIcon }
@@ -964,7 +964,7 @@ export default function OptionsPage() {
                   fontWeight: uiTypography.fontWeight.semibold,
                   letterSpacing: uiTypography.letterSpacing.tight
                 }}>
-                大模型服务列表
+                AI服务列表
               </h2>
               <p
                 style={{
@@ -972,7 +972,7 @@ export default function OptionsPage() {
                   color: theme.text.secondary,
                   fontSize: uiTypography.fontSize.md
                 }}>
-                自定义添加多个大模型服务，并可快速切换以满足不同场景需求。
+                支持添加多个AI服务，可快速切换以满足不同场景需求。
               </p>
             </div>
             <button
