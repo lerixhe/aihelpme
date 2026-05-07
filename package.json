@@ -21,6 +21,7 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "plasmo": "latest",
+    "svgo": "^3.3.3",
     "typescript": "latest"
   },
   "manifest": {
