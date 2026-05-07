@@ -253,7 +253,7 @@ export default function UnifiedPanel({
         }}
         style={{
           ...createCardStyle(theme),
-          width: 680,
+          width: "min(80vw, 960px)",
           maxWidth: "calc(100vw - 32px)",
           height: "min(70vh, calc(100vh - 32px))",
           display: "flex",
