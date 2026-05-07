@@ -68,12 +68,12 @@ export default function SelectionToolbar({
 
   const handleTriggerEnter = () => {
     setRingOpen(true)
-    window.getSelection()?.removeAllRanges()
   }
 
   const handleActionClick = (action: RingAction) => {
     setRingOpen(false)
     setRingHovered(null)
+    window.getSelection()?.removeAllRanges()
     onAction(action.template, "")
   }
 
