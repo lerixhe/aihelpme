@@ -115,14 +115,23 @@ export async function getSettings(): Promise<ExtensionSettings> {
   return normalizeSettings(saved)
 }
 
+const THEME_CACHE_KEY = "ai-help-me:theme"
+
 export async function saveSettings(settings: ExtensionSettings): Promise<void> {
   try {
     await chrome.storage.sync.set({
       [SETTINGS_KEY]: settings
     })
+    localStorage.setItem(THEME_CACHE_KEY, settings.theme)
   } catch {
     // Extension context may have been invalidated
   }
+}
+
+export function getThemeFromCache(): "auto" | "light" | "dark" {
+  const value = localStorage.getItem(THEME_CACHE_KEY)
+  if (value === "light" || value === "dark" || value === "auto") return value
+  return "auto"
 }
 
 export function getActiveModelService(settings: ExtensionSettings): ModelServiceConfig | null {

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AI Help Me</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        var bg = matchMedia("(prefers-color-scheme: dark)").matches ? "#000000" : "#F5F5F7";
+        document.documentElement.style.background = bg;
+        try {
+          chrome.storage.sync.get("settings", function(r) {
+            var pref = r && r.settings && r.settings.theme;
+            if (pref === "dark") document.documentElement.style.background = "#000000";
+            else if (pref === "light") document.documentElement.style.background = "#F5F5F7";
+          });
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="__plasmo"></div>
+  </body>
+</html>
