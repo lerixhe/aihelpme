@@ -144,6 +144,7 @@ export default function OptionsPage() {
   const [pressedBtn, setPressedBtn] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<Section>("appearance")
   const [loaded, setLoaded] = useState(false)
+  const [themeReady, setThemeReady] = useState(false)
   const [hoveredNav, setHoveredNav] = useState<string | null>(null)
   const [backupStatus, setBackupStatus] = useState<{ success: boolean; message: string } | null>(null)
   const [pendingImportSettings, setPendingImportSettings] = useState<ExtensionSettings | null>(null)
@@ -160,6 +161,11 @@ export default function OptionsPage() {
   useEffect(() => {
     void getSettings().then((loaded) => {
       setSettings(loaded)
+      // Mark theme as ready — the useUiThemeName hook will resolve to the
+      // correct stored preference around the same time since it also reads
+      // from chrome.storage.sync.  Gating rendering on this flag prevents
+      // a flash of the wrong theme when the OS theme differs from the saved preference.
+      setThemeReady(true)
     })
     void chrome.storage.local.get("optionsActiveSection").then((result) => {
       const saved = result.optionsActiveSection as Section | undefined
@@ -1578,6 +1584,8 @@ export default function OptionsPage() {
   }
 
   const sidebarWidth = 320
+
+  if (!themeReady) return null
 
   return (
     <div
