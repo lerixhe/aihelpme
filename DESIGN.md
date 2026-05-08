@@ -25,34 +25,34 @@
 
 | 类别 | Token | 浅色 | 深色 |
 |------|-------|------|------|
-| **背景** | `bg.page` | `#F5F5F7` | `#000000` |
-| | `bg.surface` | `#FFFFFF` | `#1C1C1E` |
-| | `bg.surfaceAlt` | `#F5F5F7` | `#000000` |
-| | `bg.surfaceMuted` | `#E8E8ED` | `#2C2C2E` |
-| | `bg.overlay` | `rgba(0,0,0,0.4)` | `rgba(0,0,0,0.6)` |
-| | `bg.glass` | `rgba(255,255,255,0.72)` | `rgba(28,28,30,0.72)` |
-| **文字** | `text.primary` | `#1D1D1F` | `#F5F5F7` |
-| | `text.secondary` | `#6E6E73` | `#98989D` |
-| | `text.inverse` | `#FFFFFF` | `#000000` |
-| **边框** | `border.default` | `#D2D2D7` | `#38383A` |
-| | `border.strong` | `#1D1D1F` | `#F5F5F7` |
-| | `border.subtle` | `#E5E5EA` | `#1C1C1E` |
-| | `border.hairline` | `rgba(0,0,0,0.08)` | `rgba(255,255,255,0.08)` |
+| **背景** | `bg.page` | `#F8F9FA` | `#0F0F23` |
+| | `bg.surface` | `#FFFFFF` | `#1A1A2E` |
+| | `bg.surfaceAlt` | `#F8F9FA` | `#0F0F23` |
+| | `bg.surfaceMuted` | `#F1F3F5` | `#25253D` |
+| | `bg.overlay` | `rgba(0,0,0,0.45)` | `rgba(0,0,0,0.65)` |
+| | `bg.glass` | `rgba(255,255,255,0.78)` | `rgba(26,26,46,0.82)` |
+| **文字** | `text.primary` | `#1A1A2E` | `#F1F5F9` |
+| | `text.secondary` | `#6B7280` | `#94A3B8` |
+| | `text.inverse` | `#FFFFFF` | `#0F0F23` |
+| **边框** | `border.default` | `#E5E7EB` | `#334155` |
+| | `border.strong` | `#1A1A2E` | `#F1F5F9` |
+| | `border.subtle` | `#F3F4F6` | `#1E293B` |
+| | `border.hairline` | `rgba(0,0,0,0.06)` | `rgba(255,255,255,0.06)` |
 | **品牌** | `brand.primary` | `#0D9488` | `#2DD4BF` |
 | | `brand.primaryHover` | `#0F766E` | `#14B8A6` |
 | | `brand.primaryActive` | `#115E59` | `#0D9488` |
 | | `brand.secondary` | `#E0F5F0` | `#1A3A35` |
 | | `brand.secondaryHover` | `#CCEBEB` | `#1F4A44` |
-| **强调** | `accent.primary` | `#007AFF` | `#0A84FF` |
-| | `accent.primaryHover` | `#0066D6` | `#409CFF` |
-| | `accent.primaryActive` | `#0055B3` | `#0066D6` |
-| **状态** | `state.error` | `#FF3B30` | `#FF453A` |
-| | `state.errorBg` | `#FFF2F2` | `#2A0A0A` |
-| | `state.warning` | `#FF9500` | `#FF9F0A` |
-| | `state.warningBg` | `#FFF8F0` | `#2A1F0A` |
-| | `state.success` | `#34C759` | `#30D158` |
-| | `state.successBg` | `#F0FFF4` | `#0A2A12` |
-| | `state.disabled` | `#AEAEB2` | `#636366` |
+| **强调** | `accent.primary` | `#3B82F6` | `#60A5FA` |
+| | `accent.primaryHover` | `#2563EB` | `#93C5FD` |
+| | `accent.primaryActive` | `#1D4ED8` | `#3B82F6` |
+| **状态** | `state.error` | `#EF4444` | `#F87171` |
+| | `state.errorBg` | `#FEF2F2` | `#2A0F0F` |
+| | `state.warning` | `#F59E0B` | `#FBBF24` |
+| | `state.warningBg` | `#FFFBEB` | `#2A1F0A` |
+| | `state.success` | `#10B981` | `#34D399` |
+| | `state.successBg` | `#ECFDF5` | `#0A2A1A` |
+| | `state.disabled` | `#9CA3AF` | `#64748B` |
 
 ### 2.3 用色规范
 
@@ -68,8 +68,19 @@
 
 ### 3.1 字体栈
 
+**正文**：
 ```
--apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif
+"SF Pro Text", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif
+```
+
+**标题/展示**：
+```
+"SF Pro Display", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif
+```
+
+**等宽**：
+```
+"SF Mono", "Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace
 ```
 
 ### 3.2 字号
@@ -97,9 +108,17 @@
 
 | Token | 值 | 用途 |
 |-------|-----|------|
-| `tight` | -0.02em | 标题（紧凑感） |
+| `tight` | -0.022em | 标题（紧凑感） |
 | `normal` | 0em | 正文 |
-| `wide` | 0.02em | 需要松散感的文字 |
+| `wide` | 0.025em | 需要松散感的文字 |
+
+### 3.5 行高
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `tight` | 1.2 | 标题 |
+| `normal` | 1.5 | 正文 |
+| `relaxed` | 1.65 | 状态消息、长文本 |
 
 ---
 
@@ -128,10 +147,10 @@
 
 | Token | 值 | 用途 |
 |-------|-----|------|
-| `sm` | 8px | 侧边栏按钮、Segmented Control |
-| `md` | 12px | 输入框、卡片内嵌元素、状态消息 |
-| `lg` | 16px | 卡片、对话框 |
-| `xl` | 20px | 特殊场景 |
+| `sm` | 6px | 侧边栏按钮、Segmented Control |
+| `md` | 8px | 输入框、卡片内嵌元素、状态消息 |
+| `lg` | 12px | 卡片、对话框 |
+| `xl` | 16px | 特殊场景 |
 | `pill` | 999px | 按钮（胶囊形）、状态标签 |
 
 ---
@@ -159,6 +178,7 @@
 | `durationNormal` | 220ms | 对话框展开、面板切换 |
 | `durationExpanded` | 300ms | 较大区域展开 |
 | `durationSlow` | 350ms | 复杂动画 |
+| `durationSlower` | 500ms | 更复杂动画、页面级过渡 |
 
 ### 7.2 缓动曲线
 
@@ -166,8 +186,10 @@
 |-------|-----|------|
 | `easingStandard` | `cubic-bezier(0.25, 0.1, 0.25, 1.0)` | 默认过渡 |
 | `easingSpring` | `cubic-bezier(0.34, 1.56, 0.64, 1.0)` | 弹性效果（按钮按下、对话框入场） |
+| `easingSpringGentle` | `cubic-bezier(0.22, 1.2, 0.36, 1)` | 温和弹性（微交互） |
 | `easingDecelerate` | `cubic-bezier(0, 0, 0.2, 1)` | 元素进入 |
 | `easingAccelerate` | `cubic-bezier(0.4, 0, 1, 1)` | 元素退出 |
+| `easingBounce` | `cubic-bezier(0.68, -0.55, 0.265, 1.55)` | 弹跳效果 |
 
 ### 7.3 动画规范
 
@@ -183,16 +205,17 @@
 ### 8.1 卡片 (Card)
 
 ```
-border-radius: 16px
+border-radius: 12px
 padding: 20px 24px
 background: bg.surface
 box-shadow: shadow.md
 border: 1px solid border.hairline
+transition: box-shadow 220ms standard, border-color 220ms standard
 ```
 
 **内嵌卡片 (Inset Card)**：用于卡片内的分组
 ```
-border-radius: 12px
+border-radius: 8px
 padding: 16px
 background: bg.surfaceMuted
 border: 1px solid border.hairline
@@ -243,7 +266,7 @@ border: none
 
 ```
 border: 1px solid border.subtle
-border-radius: 12px
+border-radius: 8px
 padding: 10px 12px
 font-size: 14px
 background: bg.surfaceMuted
@@ -260,7 +283,7 @@ box-shadow: 0 0 0 3px accent.primary33
 ```
 width: 44px
 height: 24px
-border-radius: 12px
+border-radius: 8px
 background: border.default (关) / accent.primary (开)
 ```
 
@@ -279,7 +302,7 @@ left: 3px (关) / 23px (开)
 ```
 display: inline-flex
 background: bg.surfaceMuted
-border-radius: 8px
+border-radius: 6px
 padding: 3px
 gap: 2px
 ```
@@ -287,7 +310,7 @@ gap: 2px
 选项：
 ```
 padding: 6px 16px
-border-radius: 7px (sm - 1)
+border-radius: 5px (sm - 1)
 background: bg.surface (选中) / transparent (未选中)
 font-weight: semibold (选中) / regular (未选中)
 ```
@@ -296,7 +319,7 @@ font-weight: semibold (选中) / regular (未选中)
 
 ```
 border: 1px solid border.default (未选中) / accent.primary (选中)
-border-radius: 12px
+border-radius: 8px
 background: bg.surface (未选中) / bg.surfaceAlt (选中)
 padding: 14px
 box-shadow: none (未选中) / focus ring (选中)
@@ -309,7 +332,7 @@ box-shadow: none (未选中) / focus ring (选中)
 position: fixed
 inset: 0
 background: bg.overlay
-backdrop-filter: blur(8px)
+backdrop-filter: blur(12px)
 z-index: 2147483647 (max)
 animation: fadeIn 150ms standard
 ```
@@ -319,7 +342,7 @@ animation: fadeIn 150ms standard
 max-width: 400px
 width: calc(100% - 48px)
 padding: 28px
-border-radius: 20px
+border-radius: 16px
 box-shadow: shadow.xl
 animation: slideUp 220ms spring
 ```
@@ -333,8 +356,8 @@ animation: slideUp 220ms spring
 ```
 font-size: 12px
 padding: 8px 12px
-border-radius: 12px
-line-height: 1.6
+border-radius: 8px
+line-height: 1.65
 border: 1px solid {color}22
 ```
 
@@ -360,7 +383,7 @@ font-size: 14px
 ```
 background: bg.surfaceMuted
 padding: 2px 6px
-border-radius: 4px
+border-radius: 2px
 font-size: 11px
 ```
 
@@ -430,7 +453,7 @@ background: accent.primary
 ```
 font-size: 16px
 font-weight: semibold
-letter-spacing: -0.02em
+letter-spacing: -0.022em
 margin: 0 0 4px
 ```
 
@@ -438,7 +461,7 @@ margin: 0 0 4px
 ```
 font-size: 14px
 font-weight: semibold
-letter-spacing: -0.02em
+letter-spacing: -0.022em
 ```
 
 **描述文字**：

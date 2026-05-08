@@ -46,23 +46,23 @@ export interface UiTheme {
 export const uiThemes: Record<UiThemeName, UiTheme> = {
   light: {
     bg: {
-      page: "#F5F5F7",
+      page: "#F8F9FA",
       surface: "#FFFFFF",
-      surfaceAlt: "#F5F5F7",
-      surfaceMuted: "#E8E8ED",
-      overlay: "rgba(0, 0, 0, 0.4)",
-      glass: "rgba(255, 255, 255, 0.72)"
+      surfaceAlt: "#F8F9FA",
+      surfaceMuted: "#F1F3F5",
+      overlay: "rgba(0, 0, 0, 0.45)",
+      glass: "rgba(255, 255, 255, 0.78)"
     },
     text: {
-      primary: "#1D1D1F",
-      secondary: "#6E6E73",
+      primary: "#1A1A2E",
+      secondary: "#6B7280",
       inverse: "#FFFFFF"
     },
     border: {
-      default: "#D2D2D7",
-      strong: "#1D1D1F",
-      subtle: "#E5E5EA",
-      hairline: "rgba(0, 0, 0, 0.08)"
+      default: "#E5E7EB",
+      strong: "#1A1A2E",
+      subtle: "#F3F4F6",
+      hairline: "rgba(0, 0, 0, 0.06)"
     },
     brand: {
       primary: "#0D9488",
@@ -72,39 +72,39 @@ export const uiThemes: Record<UiThemeName, UiTheme> = {
       secondaryHover: "#CCEBEB"
     },
     accent: {
-      primary: "#007AFF",
-      primaryHover: "#0066D6",
-      primaryActive: "#0055B3"
+      primary: "#3B82F6",
+      primaryHover: "#2563EB",
+      primaryActive: "#1D4ED8"
     },
     state: {
-      error: "#FF3B30",
-      errorBg: "#FFF2F2",
-      warning: "#FF9500",
-      warningBg: "#FFF8F0",
-      success: "#34C759",
-      successBg: "#F0FFF4",
-      disabled: "#AEAEB2"
+      error: "#EF4444",
+      errorBg: "#FEF2F2",
+      warning: "#F59E0B",
+      warningBg: "#FFFBEB",
+      success: "#10B981",
+      successBg: "#ECFDF5",
+      disabled: "#9CA3AF"
     }
   },
   dark: {
     bg: {
-      page: "#000000",
-      surface: "#1C1C1E",
-      surfaceAlt: "#000000",
-      surfaceMuted: "#2C2C2E",
-      overlay: "rgba(0, 0, 0, 0.6)",
-      glass: "rgba(28, 28, 30, 0.72)"
+      page: "#0F0F23",
+      surface: "#1A1A2E",
+      surfaceAlt: "#0F0F23",
+      surfaceMuted: "#25253D",
+      overlay: "rgba(0, 0, 0, 0.65)",
+      glass: "rgba(26, 26, 46, 0.82)"
     },
     text: {
-      primary: "#F5F5F7",
-      secondary: "#98989D",
-      inverse: "#000000"
+      primary: "#F1F5F9",
+      secondary: "#94A3B8",
+      inverse: "#0F0F23"
     },
     border: {
-      default: "#38383A",
-      strong: "#F5F5F7",
-      subtle: "#1C1C1E",
-      hairline: "rgba(255, 255, 255, 0.08)"
+      default: "#334155",
+      strong: "#F1F5F9",
+      subtle: "#1E293B",
+      hairline: "rgba(255, 255, 255, 0.06)"
     },
     brand: {
       primary: "#2DD4BF",
@@ -114,24 +114,26 @@ export const uiThemes: Record<UiThemeName, UiTheme> = {
       secondaryHover: "#1F4A44"
     },
     accent: {
-      primary: "#0A84FF",
-      primaryHover: "#409CFF",
-      primaryActive: "#0066D6"
+      primary: "#60A5FA",
+      primaryHover: "#93C5FD",
+      primaryActive: "#3B82F6"
     },
     state: {
-      error: "#FF453A",
-      errorBg: "#2A0A0A",
-      warning: "#FF9F0A",
+      error: "#F87171",
+      errorBg: "#2A0F0F",
+      warning: "#FBBF24",
       warningBg: "#2A1F0A",
-      success: "#30D158",
-      successBg: "#0A2A12",
-      disabled: "#636366"
+      success: "#34D399",
+      successBg: "#0A2A1A",
+      disabled: "#64748B"
     }
   }
 }
 
 export const uiTypography = {
-  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif',
+  fontFamily: '"SF Pro Text", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif',
+  fontFamilyDisplay: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif',
+  fontFamilyMono: '"SF Mono", "Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
   fontSize: {
     xs: 11,
     sm: 12,
@@ -148,9 +150,14 @@ export const uiTypography = {
     bold: 700
   },
   letterSpacing: {
-    tight: "-0.02em",
+    tight: "-0.022em",
     normal: "0em",
-    wide: "0.02em"
+    wide: "0.025em"
+  },
+  lineHeight: {
+    tight: 1.2,
+    normal: 1.5,
+    relaxed: 1.65
   }
 } as const
 
@@ -170,10 +177,10 @@ export const uiSpace = {
 } as const
 
 export const uiRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
+  sm: 6,
+  md: 8,
+  lg: 12,
+  xl: 16,
   pill: 999
 } as const
 
@@ -189,10 +196,13 @@ export const uiMotion = {
   durationNormal: "220ms",
   durationExpanded: "300ms",
   durationSlow: "350ms",
+  durationSlower: "500ms",
   easingStandard: "cubic-bezier(0.25, 0.1, 0.25, 1.0)",
   easingSpring: "cubic-bezier(0.34, 1.56, 0.64, 1.0)",
+  easingSpringGentle: "cubic-bezier(0.22, 1.2, 0.36, 1)",
   easingDecelerate: "cubic-bezier(0, 0, 0.2, 1)",
-  easingAccelerate: "cubic-bezier(0.4, 0, 1, 1)"
+  easingAccelerate: "cubic-bezier(0.4, 0, 1, 1)",
+  easingBounce: "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
 } as const
 
 export const uiLayer = {

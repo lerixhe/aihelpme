@@ -1373,7 +1373,7 @@ export default function OptionsPage() {
               ...primaryBtnStyle,
               transform: pressedBtn === "export-settings" ? "scale(0.96)" : "scale(1)"
             }}>
-            导出 JSON
+            导出 JSON 文件
           </button>
         </div>
 

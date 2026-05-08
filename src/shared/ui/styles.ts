@@ -15,7 +15,8 @@ export function createCardStyle(theme: UiTheme): CSSProperties {
     padding: `${uiSpace[20]}px ${uiSpace[24]}px`,
     background: theme.bg.surface,
     boxShadow: uiShadow.md,
-    border: `1px solid ${theme.border.hairline}`
+    border: `1px solid ${theme.border.hairline}`,
+    transition: `box-shadow ${uiMotion.durationNormal} ${uiMotion.easingStandard}, border-color ${uiMotion.durationNormal} ${uiMotion.easingStandard}`
   }
 }
 
@@ -104,7 +105,7 @@ export function createStatusMessageStyle(
     background: palette.background,
     padding: `${uiSpace[8]}px ${uiSpace[12]}px`,
     borderRadius: uiRadius.md,
-    lineHeight: 1.6,
+    lineHeight: uiTypography.lineHeight.relaxed,
     border: `1px solid ${palette.border}22`
   }
 }
@@ -128,7 +129,7 @@ export function createOverlayStyle(theme: UiTheme): CSSProperties {
     alignItems: "center",
     justifyContent: "center",
     background: theme.bg.overlay,
-    backdropFilter: "blur(8px)",
-    WebkitBackdropFilter: "blur(8px)"
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)"
   }
 }
