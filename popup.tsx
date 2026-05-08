@@ -186,6 +186,7 @@ export default function Popup() {
     document.documentElement.style.padding = "0"
     document.documentElement.style.height = "auto"
     document.documentElement.style.overflow = "visible"
+    document.documentElement.style.background = theme.bg.page
     document.body.style.margin = "0"
     document.body.style.padding = "0"
     document.body.style.minWidth = "320px"
