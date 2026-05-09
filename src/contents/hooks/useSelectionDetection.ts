@@ -6,7 +6,8 @@ import type { SelectionAnchor, SelectionContext } from "~/shared/types"
 import {
   hasSelectionInsideExtensionUi,
   isExtensionUiFocused,
-  isInsideExtensionEvent
+  isInsideExtensionEvent,
+  isPdfViewer
 } from "~/contents/utils/domUtils"
 
 interface UseSelectionDetectionOptions {
@@ -90,6 +91,10 @@ export function useSelectionDetection({
   )
 
   useEffect(() => {
+    console.log("[AI Help Me] Selection detection hook mounted")
+    const isPdf = isPdfViewer()
+    console.log("[AI Help Me] Is PDF viewer:", isPdf)
+
     const isInsideExtension = (event: Event) =>
       isInsideExtensionEvent(event, extensionRootRef.current)
 
@@ -163,6 +168,74 @@ export function useSelectionDetection({
     document.addEventListener("focusin", onFocusIn, true)
     document.addEventListener("pointerdown", onDocumentPointerDown, true)
 
+    // PDF-specific: show floating button to read clipboard
+    let pdfBtn: HTMLElement | null = null
+    if (isPdf) {
+      console.log("[AI Help Me] PDF detected - showing clipboard button")
+
+      pdfBtn = document.createElement("div")
+      pdfBtn.id = "ai-help-me-pdf-btn"
+      pdfBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`
+      pdfBtn.title = "复制文本后点击此处"
+      pdfBtn.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 2147483647;
+        width: 44px;
+        height: 44px;
+        background: #3B82F6;
+        color: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        pointer-events: auto;
+        transition: transform 0.15s, background 0.15s;
+      `
+      pdfBtn.onmouseenter = () => {
+        if (pdfBtn) {
+          pdfBtn.style.background = "#2563EB"
+          pdfBtn.style.transform = "scale(1.05)"
+        }
+      }
+      pdfBtn.onmouseleave = () => {
+        if (pdfBtn) {
+          pdfBtn.style.background = "#3B82F6"
+          pdfBtn.style.transform = "scale(1)"
+        }
+      }
+
+      document.body.appendChild(pdfBtn)
+
+      pdfBtn.addEventListener("click", async () => {
+        console.log("[AI Help Me] PDF button clicked")
+        try {
+          const text = await navigator.clipboard.readText()
+          console.log("[AI Help Me] Clipboard:", text?.substring(0, 50))
+          if (text?.trim()) {
+            const context = {
+              text: text.trim(),
+              title: document.title || "",
+              url: window.location.href
+            }
+            const anchor: SelectionAnchor = {
+              x: window.innerWidth - 100,
+              y: window.innerHeight - 100,
+              rectRight: window.innerWidth - 100,
+              mouseX: window.innerWidth - 100,
+              mouseY: window.innerHeight - 100
+            }
+            onSelectionChange(context, anchor)
+          }
+        } catch (err) {
+          console.log("[AI Help Me] Clipboard error:", err)
+        }
+      })
+    }
+
     return () => {
       if (rafIdRef.current != null) {
         window.cancelAnimationFrame(rafIdRef.current)
@@ -173,6 +246,11 @@ export function useSelectionDetection({
       document.removeEventListener("keyup", onKeyUp, true)
       document.removeEventListener("focusin", onFocusIn, true)
       document.removeEventListener("pointerdown", onDocumentPointerDown, true)
+
+      // Remove PDF button if exists
+      if (pdfBtn) {
+        pdfBtn.remove()
+      }
     }
   }, [extensionRootRef, updateSelection, isToolbarVisible, onSelectionChange])
 

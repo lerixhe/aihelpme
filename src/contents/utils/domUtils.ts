@@ -1,6 +1,22 @@
 import { SELECTORS } from "~/shared/constants"
 
 /**
+ * Check if current page is displaying a PDF in Chrome's built-in viewer
+ */
+export function isPdfViewer(): boolean {
+  const embed = document.querySelector("embed[type='application/pdf']")
+  if (embed) return true
+
+  const iframe = document.querySelector("iframe")
+  if (iframe?.src?.endsWith(".pdf")) return true
+
+  return (
+    document.contentType === "application/pdf" ||
+    location.pathname.endsWith(".pdf")
+  )
+}
+
+/**
  * Get deep active element through shadow DOM boundaries
  */
 export function getDeepActiveElement(root: Document | ShadowRoot = document): Element | null {
