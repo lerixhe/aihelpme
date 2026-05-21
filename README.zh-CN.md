@@ -210,7 +210,7 @@ import { useUiTheme } from "~/shared/ui/theme"
 
 ## 许可证
 
-> TODO: 添加许可证
+本项目采用GNU通用公共许可证v3.0 - 详情请参阅[LICENSE](LICENSE)文件。
 
 ## 文档
 

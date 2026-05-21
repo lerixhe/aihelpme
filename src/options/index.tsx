@@ -1569,7 +1569,7 @@ export default function OptionsPage() {
             lineHeight: 1.7
           }}>
           <div>当前版本：v{chrome.runtime.getManifest().version}</div>
-          <div>开源协议：MIT</div>
+          <div>开源协议：GPL-3.0</div>
         </div>
       </section>
 
@@ -1743,6 +1743,18 @@ export default function OptionsPage() {
               </button>
             )
           })}
+        </div>
+
+        {/* Copyright */}
+        <div
+          style={{
+            padding: `${uiSpace[16]}px ${uiSpace[32]}px`,
+            borderTop: `0.5px solid ${theme.border.hairline}`,
+            fontSize: uiTypography.fontSize.xs,
+            color: theme.text.secondary,
+            textAlign: "center"
+          }}>
+          © 2026 aihelp.me All rights reserved.
         </div>
       </nav>
 
