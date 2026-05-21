@@ -59,6 +59,19 @@ function PlusIcon({ size, color }: { size: number; color: string }) {
   )
 }
 
+function DragHandleIcon({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="5" cy="4" r="1.5" fill={color} />
+      <circle cx="11" cy="4" r="1.5" fill={color} />
+      <circle cx="5" cy="8" r="1.5" fill={color} />
+      <circle cx="11" cy="8" r="1.5" fill={color} />
+      <circle cx="5" cy="12" r="1.5" fill={color} />
+      <circle cx="11" cy="12" r="1.5" fill={color} />
+    </svg>
+  )
+}
+
 function RefreshIcon({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -156,6 +169,8 @@ export default function OptionsPage() {
   const [iconEditText, setIconEditText] = useState("")
   const [editingIconActionId, setEditingIconActionId] = useState<string | null>(null)
   const [actionIconEditText, setActionIconEditText] = useState("")
+  const [draggedActionIndex, setDraggedActionIndex] = useState<number | null>(null)
+  const [dragOverActionIndex, setDragOverActionIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -233,6 +248,30 @@ export default function OptionsPage() {
           : item
       )
     }))
+  }
+
+  const handleActionDragStart = (index: number) => {
+    setDraggedActionIndex(index)
+  }
+
+  const handleActionDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedActionIndex !== null && draggedActionIndex !== index) {
+      setDragOverActionIndex(index)
+    }
+  }
+
+  const handleActionDragEnd = () => {
+    if (draggedActionIndex !== null && dragOverActionIndex !== null && draggedActionIndex !== dragOverActionIndex) {
+      saveSettingsNow((current) => {
+        const newActions = [...current.actions]
+        const [draggedItem] = newActions.splice(draggedActionIndex, 1)
+        newActions.splice(dragOverActionIndex, 0, draggedItem)
+        return { ...current, actions: newActions }
+      })
+    }
+    setDraggedActionIndex(null)
+    setDragOverActionIndex(null)
   }
 
   const handleTestConnection = () => {
@@ -1178,20 +1217,41 @@ export default function OptionsPage() {
         const invalid = !hasTextPlaceholder(item.template)
         const displayText = getAvatarDisplayText(item.iconText, item.label)
         const isEditingIcon = editingIconActionId === item.id
+        const isDragging = draggedActionIndex === index
+        const isDragOver = dragOverActionIndex === index
 
         return (
           <div
             key={item.id}
+            draggable
+            onDragStart={() => handleActionDragStart(index)}
+            onDragOver={(e) => handleActionDragOver(e, index)}
+            onDragEnd={handleActionDragEnd}
             style={{
-              border: `1px solid ${invalid ? theme.state.warning : theme.border.hairline}`,
+              border: `1px solid ${invalid ? theme.state.warning : isDragOver ? theme.accent.primary : theme.border.hairline}`,
               borderRadius: uiRadius.md,
               padding: uiSpace[14],
               marginBottom: uiSpace[10],
-              background: invalid ? theme.state.warningBg : theme.bg.surface,
+              background: invalid ? theme.state.warningBg : isDragging ? theme.bg.surfaceMuted : theme.bg.surface,
               boxShadow: invalid ? "none" : uiShadow.sm,
-              transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}`
+              transition: `box-shadow ${uiMotion.durationFast} ${uiMotion.easingStandard}, background ${uiMotion.durationFast} ${uiMotion.easingStandard}, border-color ${uiMotion.durationFast} ${uiMotion.easingStandard}`,
+              opacity: isDragging ? 0.6 : 1,
+              transform: isDragOver ? "translateY(2px)" : "none"
             }}>
-            <div style={{ display: "grid", gridTemplateColumns: "30px 140px 1fr auto", gap: uiSpace[8], alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "20px 30px 140px 1fr auto", gap: uiSpace[8], alignItems: "center" }}>
+              <div
+                style={{
+                  cursor: "grab",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: theme.text.secondary,
+                  opacity: 0.6,
+                  padding: `${uiSpace[2]}px 0`
+                }}
+                title="拖拽排序">
+                <DragHandleIcon size={14} color={theme.text.secondary} />
+              </div>
               <div style={{ position: "relative" }}>
                 <button
                   type="button"
