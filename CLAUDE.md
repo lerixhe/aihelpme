@@ -70,7 +70,7 @@ Three runtime contexts communicate via `chrome.runtime.onMessage` (one-shot) and
 
 ## Design System
 
-See `DESIGN.MD` (UI/UX spec) and `WIKI.md` (detailed architecture walkthrough) for design standards and conventions.
+See `docs/DESIGN.md` (UI/UX spec) and `docs/WIKI.md` (detailed architecture walkthrough) for design standards and conventions.
 
 ## UI 模块命名
 

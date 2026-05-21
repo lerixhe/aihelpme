@@ -18,7 +18,9 @@
 
 ## 截图
 
-> TODO: 添加截图
+### 动作按钮演示
+
+![动作按钮演示](./docs/images/动作按钮演示.gif)
 
 ## 安装
 
@@ -212,5 +214,6 @@ import { useUiTheme } from "~/shared/ui/theme"
 
 ## 文档
 
-- [DESIGN.md](./DESIGN.md) — UI/UX 设计系统（颜色、字体、间距、组件）
-- [WIKI.md](./WIKI.md) — 详细架构与代码解析
+- [docs/DESIGN.md](./docs/DESIGN.md) — UI/UX 设计系统（颜色、字体、间距、组件）
+- [docs/WIKI.md](./docs/WIKI.md) — 详细架构与代码解析
+- [docs/](./docs/) — 文档文件夹，含图片资源

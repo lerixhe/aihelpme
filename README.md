@@ -18,7 +18,9 @@ Select text on any page, trigger AI actions from an inline toolbar, and continue
 
 ## Screenshots
 
-> TODO: Add screenshots
+### Action Button Demo
+
+![动作按钮演示](./docs/images/动作按钮演示.gif)
 
 ## Installation
 
@@ -211,5 +213,6 @@ import { useUiTheme } from "~/shared/ui/theme"
 
 ## Documentation
 
-- [DESIGN.md](./DESIGN.md) — UI/UX design system (colors, typography, spacing, components)
-- [WIKI.md](./WIKI.md) — Detailed architecture and code walkthrough
+- [docs/DESIGN.md](./docs/DESIGN.md) — UI/UX design system (colors, typography, spacing, components)
+- [docs/WIKI.md](./docs/WIKI.md) — Detailed architecture and code walkthrough
+- [docs/](./docs/) — Documentation folder with images
