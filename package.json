@@ -6,11 +6,12 @@
   "author": "",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build",
+    "build": "plasmo build && cp assets/pdf.worker.mjs build/chrome-mv3-prod/",
     "package": "plasmo package",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "pdfjs-dist": "^5.7.284",
     "posthog-js": "^1.371.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -29,13 +30,20 @@
       "default_popup": "popup.html"
     },
     "permissions": [
-      "storage"
+      "storage",
+      "contextMenus"
     ],
     "host_permissions": [
       "<all_urls>"
     ],
     "options_ui": {
       "open_in_tab": true
-    }
+    },
+    "web_accessible_resources": [
+      {
+        "resources": ["pdf.worker.mjs"],
+        "matches": ["<all_urls>"]
+      }
+    ]
   }
 }

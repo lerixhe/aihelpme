@@ -314,6 +314,32 @@ chrome.runtime.onInstalled.addListener((details) => {
       previous_version: details.previousVersion
     })
   }
+
+  // Create context menu for PDF files
+  chrome.contextMenus.create({
+    id: "open-pdf-with-aihelpme",
+    title: "用 AI Help Me 打开 PDF",
+    contexts: ["page", "frame"],
+    documentUrlPatterns: [
+      "*://*/*.pdf",
+      "*://*/*.PDF",
+      "file://*/*.pdf",
+      "file://*/*.PDF"
+    ]
+  })
+})
+
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "open-pdf-with-aihelpme") {
+    const pdfUrl = info.pageUrl || info.frameUrl || tab?.url
+    if (pdfUrl) {
+      const encodedUrl = encodeURIComponent(pdfUrl)
+      chrome.tabs.create({
+        url: chrome.runtime.getURL(`tabs/pdf-viewer.html?url=${encodedUrl}`)
+      })
+    }
+  }
 })
 
 chrome.runtime.onSuspend?.addListener?.(() => {
